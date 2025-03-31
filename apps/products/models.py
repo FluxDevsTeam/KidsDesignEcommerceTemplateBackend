@@ -12,7 +12,7 @@ class ProductCategory(models.Model):
 
 
 class ProductSubCategory(models.Model):
-    Category = models.ForeignKey(ProductCategory, on_delete=models.CASCADE, related_name="subcategories")
+    category = models.ForeignKey(ProductCategory, on_delete=models.CASCADE, related_name="subcategories")
     name = models.CharField(max_length=50, unique=True)
 
     class Meta:
@@ -23,7 +23,7 @@ class ProductSubCategory(models.Model):
 
 
 class Product(models.Model):
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, unique=True)
     description = models.TextField()
     sub_category = models.ForeignKey(ProductSubCategory, on_delete=models.SET_NULL, null=True, blank=True, related_name="products")
     colour = models.CharField(max_length=100)
@@ -40,7 +40,7 @@ class Product(models.Model):
 
 class ProductSize(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="sizes")
-    size = models.CharField(max_length=100)
+    size = models.CharField(max_length=100, unique=True)
     quantity = models.PositiveIntegerField()
 
     def __str__(self):
