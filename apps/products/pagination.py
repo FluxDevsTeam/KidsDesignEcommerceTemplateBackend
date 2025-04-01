@@ -6,7 +6,7 @@ class CustomPagination(PageNumberPagination):
     page_size_query_param = "page_size"
     max_page_size = 100
 
-#
+
 PAGINATION_PARAMS = [
     openapi.Parameter(
         'page',
@@ -21,4 +21,3 @@ PAGINATION_PARAMS = [
         type=openapi.TYPE_INTEGER
     )
 ]
-#     @swagger_auto_schema(manual_parameters=PAGINATION_PARAMS, operation_id="list product category", operation_description="retrieve a list of product categories", tags=["ProductCategory"])
