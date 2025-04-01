@@ -5,7 +5,7 @@ class ProductCategory(models.Model):
     name = models.CharField(max_length=50, unique=True)
 
     class Meta:
-        verbose_name_plural = "categories"
+        verbose_name_plural = "product categories"
 
     def __str__(self):
         return self.name
@@ -16,7 +16,7 @@ class ProductSubCategory(models.Model):
     name = models.CharField(max_length=50, unique=True)
 
     class Meta:
-        verbose_name_plural = "subcategories"
+        verbose_name_plural = "product subcategories"
 
     def __str__(self):
         return self.name
