@@ -13,9 +13,8 @@ schema_view = get_schema_view(
             - Local: [http://localhost:8000](http://localhost:8000)
             - Production: [https://domain.com/](https://domain.com/)
             """,
-        terms_of_service="https://www.google.com/policies/terms/",
         contact=openapi.Contact(email="suskidee@gmail.com"),
-        license=openapi.License(name="Test License"),
+        license=openapi.License(name="MIT License"),
     ),
     public=True,
     permission_classes=[permissions.AllowAny],
