@@ -5,7 +5,7 @@ from .serializers import ProductCategorySerializer, ProductSubCategorySerializer
     ProductSizeViewSerializer
 from .models import Product, ProductSubCategory, ProductCategory, ProductSize
 from rest_framework import viewsets
-from drf_yasg.utils import swagger_auto_schema
+from .utils import swagger_helper
 
 
 class ApiProductCategory(viewsets.ModelViewSet):
@@ -18,23 +18,23 @@ class ApiProductCategory(viewsets.ModelViewSet):
             return ProductCategoryDetailSerializer
         return ProductCategorySerializer
 
-    @swagger_auto_schema(operation_id="list product category", operation_description="retrieve a list of product categories", tags=["ProductCategory"])
+    @swagger_helper(tags="ProductCategory", model="Product category", type="list")
     def list(self, *args, **kwargs):
         return super().list(self, *args, **kwargs)
 
-    @swagger_auto_schema(operation_id="retrieve product category", operation_desciption="Retrieves details of a specific product category", tags=["ProductCategory"])
+    @swagger_helper(tags="ProductCategory", model="Product category", type="retrieve")
     def retrieve(self, *args, **kwargs):
         return super().create(self, *args, **kwargs)
 
-    @swagger_auto_schema(operation_id="create product category", operation_desciption="Create a new product category", tags=["ProductCategory"])
+    @swagger_helper(tags="ProductCategory", model="Product category", type="create")
     def create(self, *args, **kwargs):
         return super().create(self, *args, **kwargs)
 
-    @swagger_auto_schema(operation_id="update product category", operation_description="update a product category", tags=["ProductCategory"])
+    @swagger_helper(tags="ProductCategory", model="Product category", type="partial_update")
     def partial_update(self, *args, **kwargs):
         return super().partial_update(self, *args, **kwargs)
 
-    @swagger_auto_schema(operation_id="delete product category", operation_description="delete a product category", tags=["ProductCategory"])
+    @swagger_helper(tags="ProductCategory", model="Product category", type="destroy")
     def destroy(self, *args, **kwargs):
         return super().destroy(self, *args, **kwargs)
 
@@ -49,23 +49,23 @@ class ApiProductSubCategory(viewsets.ModelViewSet):
             return ProductSubCategoryViewSerializer
         return ProductSubCategorySerializer
 
-    @swagger_auto_schema(operation_id="list product sub-category", operation_description="retrieve a list of product sub-category", tags=["ProductSubCategory"])
+    @swagger_helper(tags="ProductSubCategory", model="Product sub category", type="list")
     def list(self, *args, **kwargs):
         return super().list(self, *args, **kwargs)
 
-    @swagger_auto_schema(operation_id="retrieve product sub-category", operation_desciption="Retrieves details of a specific product sub-category", tags=["ProductSubCategory"])
+    @swagger_helper(tags="ProductSubCategory", model="Product sub category", type="retrieve")
     def retrieve(self, *args, **kwargs):
         return super().create(self, *args, **kwargs)
 
-    @swagger_auto_schema(operation_id="create product sub-category", operation_desciption="Create a new product sub-category", tags=["ProductSubCategory"])
+    @swagger_helper(tags="ProductSubCategory", model="Product sub category", type="create")
     def create(self, *args, **kwargs):
         return super().create(self, *args, **kwargs)
 
-    @swagger_auto_schema(operation_id="update product sub-category", operation_description="update a product sub-category", tags=["ProductSubCategory"])
+    @swagger_helper(tags="ProductSubCategory", model="Product sub category", type="partial_update")
     def partial_update(self, *args, **kwargs):
         return super().partial_update(self, *args, **kwargs)
 
-    @swagger_auto_schema(operation_id="delete product sub-category", operation_description="delete a product sub-category", tags=["ProductSubCategory"])
+    @swagger_helper(tags="ProductSubCategory", model="Product sub category", type="destroy")
     def destroy(self, *args, **kwargs):
         return super().destroy(self, *args, **kwargs)
 
@@ -80,6 +80,26 @@ class ApiProduct(viewsets.ModelViewSet):
             return ProductViewSerializer
         return ProductSerializer
 
+    @swagger_helper(tags="Product", model="Product", type="list")
+    def list(self, *args, **kwargs):
+        return super().list(self, *args, **kwargs)
+
+    @swagger_helper(tags="Product", model="Product", type="retrieve")
+    def retrieve(self, *args, **kwargs):
+        return super().create(self, *args, **kwargs)
+
+    @swagger_helper(tags="Product", model="Product", type="create")
+    def create(self, *args, **kwargs):
+        return super().create(self, *args, **kwargs)
+
+    @swagger_helper(tags="Product", model="Product", type="partial_update")
+    def partial_update(self, *args, **kwargs):
+        return super().partial_update(self, *args, **kwargs)
+
+    @swagger_helper(tags="Product", model="Product", type="destroy")
+    def destroy(self, *args, **kwargs):
+        return super().destroy(self, *args, **kwargs)
+
 
 class ApiProductSize(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
@@ -91,3 +111,22 @@ class ApiProductSize(viewsets.ModelViewSet):
             return ProductSizeViewSerializer
         return ProductSizeSerializer
 
+    @swagger_helper(tags="ProductSize", model="Product size", type="list")
+    def list(self, *args, **kwargs):
+        return super().list(self, *args, **kwargs)
+
+    @swagger_helper(tags="ProductSize", model="Product size", type="retrieve")
+    def retrieve(self, *args, **kwargs):
+        return super().create(self, *args, **kwargs)
+
+    @swagger_helper(tags="ProductSize", model="Product size", type="create")
+    def create(self, *args, **kwargs):
+        return super().create(self, *args, **kwargs)
+
+    @swagger_helper(tags="ProductSize", model="Product size", type="partial_update")
+    def partial_update(self, *args, **kwargs):
+        return super().partial_update(self, *args, **kwargs)
+
+    @swagger_helper(tags="ProductSize", model="Product size", type="destroy")
+    def destroy(self, *args, **kwargs):
+        return super().destroy(self, *args, **kwargs)
