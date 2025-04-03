@@ -62,7 +62,7 @@ class ProductSimpleViewSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ["id", "name", "image1", "price"]
+        fields = ["id", "name", "image1", "discounted_price", "price"]
         read_only_fields = ["id"]
 
 

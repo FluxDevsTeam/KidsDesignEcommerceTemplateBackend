@@ -16,7 +16,7 @@ class ProductSubCategory(models.Model):
     name = models.CharField(max_length=50, unique=True)
 
     class Meta:
-        verbose_name_plural = "product subcategories"
+        verbose_name_plural = "product sub-categories"
 
     def __str__(self):
         return self.name
