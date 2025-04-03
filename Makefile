@@ -53,12 +53,14 @@ start:
 
 # Apply migrations
 migrate:
+	$(DJANGO_MANAGE) makemigrations
 	$(DJANGO_MANAGE) migrate
 
 # Make migrations
 
 migrations:
 	$(DJANGO_MANAGE) makemigrations
+	$(DJANGO_MANAGE) migrate
 
 # Create superuser
 superuser:
