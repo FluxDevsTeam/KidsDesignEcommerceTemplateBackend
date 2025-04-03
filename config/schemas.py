@@ -4,10 +4,10 @@ from drf_yasg import openapi
 
 schema_view = get_schema_view(
     openapi.Info(
-        title="Tryb3 Foodapp API",
+        title="Ecommerce Api Template",
         default_version="v1",
         description="""
-            An API selling food.
+            An API Template For Ecommerce App.
 
             **Servers:**
             - Local: [http://localhost:8000](http://localhost:8000)
