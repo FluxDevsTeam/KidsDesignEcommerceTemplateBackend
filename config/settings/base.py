@@ -138,8 +138,8 @@ REST_FRAMEWORK = {
 
 SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('JWT',),
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=2),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=100),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=200),
 }
 SWAGGER_SETTINGS = {
     'SECURITY_DEFINITIONS': {
@@ -153,7 +153,7 @@ SWAGGER_SETTINGS = {
 JAZZMIN_SETTINGS = {
     "site_title": "Tryb3 Food App",
     "site_header": "Food App",
-    "site_brand": "Tryb3",
+    "site_brand": "Try  b3",
     "site_copyright": "foodapp.com",
     "show_ui_builder": True
 }
