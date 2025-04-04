@@ -1,6 +1,8 @@
+from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 
 from .models import Cart, CartItem
+from .permissions import IsAuthenticatedOrCartOwner, IsAuthenticatedOrCartItemOwner
 from .serializers import CartSerializer, CartItemSerializer, CartItemSerializerView
 from rest_framework import viewsets
 from .pagination import CustomPagination
@@ -11,7 +13,7 @@ class ApiCart(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
     pagination = CustomPagination
     serializer_class = CartSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedOrCartOwner]
 
     def get_queryset(self):
         return Cart.objects.filter(user=self.request.user)
@@ -36,6 +38,14 @@ class ApiCart(viewsets.ModelViewSet):
     def destroy(self, *args, **kwargs):
         return super().destroy(*args, **kwargs)
 
+    def perform_create(self, serializer):
+        user = self.request.user
+        serializer.save(user=user)
+
+    def perform_update(self, serializer):
+        user = self.request.user
+        serializer.save(user=user)
+
 
 class ApiCartItem(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
@@ -48,7 +58,7 @@ class ApiCartItem(viewsets.ModelViewSet):
         return CartItemSerializer
 
     def get_queryset(self):
-        return CartItem.objects.filter(cart=self.request.kwargs["pk"])
+        return CartItem.objects.filter(cart=self.kwargs.get("cart_pk"), cart__user=self.request.user)
 
     @swagger_helper("CartItem", "cart item")
     def list(self, *args, **kwargs):
@@ -69,3 +79,12 @@ class ApiCartItem(viewsets.ModelViewSet):
     @swagger_helper("CartItem", "cart item")
     def destroy(self, *args, **kwargs):
         return super().destroy(*args, **kwargs)
+
+    def perform_create(self, serializer):
+        cart = get_object_or_404(Cart, id=self.kwargs.get("cart_pk"))
+        serializer.save(cart=cart)
+
+    def perform_update(self, serializer):
+        cart_id = self.kwargs.get("cart_pk")
+        cart = get_object_or_404(Cart, id=cart_id)
+        serializer.save(cart=cart)

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Cart, CartItem
-from ..products.serializers import ProductSimpleViewSerializer
+from ..products.serializers import ProductSimpleViewSerializer, SimpleProductSizeSerializer
 
 
 class CartSerializer(serializers.ModelSerializer):
@@ -20,15 +20,16 @@ class SimpleCartSerializerView(serializers.ModelSerializer):
 class CartItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = CartItem
-        fields = ["id", "product", "cart", "quantity"]
-        read_only_fields = ["id"]
+        fields = ["id", "product", "cart", "size", "quantity"]
+        read_only_fields = ["id", "cart"]
 
 
 class CartItemSerializerView(serializers.ModelSerializer):
     product = ProductSimpleViewSerializer()
     cart = SimpleCartSerializerView()
+    size = SimpleProductSizeSerializer()
 
     class Meta:
         model = CartItem
-        fields = ["id", "product", "cart", "quantity"]
+        fields = ["id", "product", "cart", "size", "quantity"]
         read_only_fields = ["id"]

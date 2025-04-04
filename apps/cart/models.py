@@ -1,7 +1,8 @@
 import uuid
 from django.db import models
 from django.conf import settings
-from ..products.models import Product
+from ..products.models import Product, ProductSize
+from django.core.exceptions import ValidationError
 
 
 class Cart(models.Model):
@@ -21,8 +22,17 @@ class Cart(models.Model):
 
 class CartItem(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="cartitem_product")
+    size = models.ForeignKey(ProductSize, on_delete=models.CASCADE, related_name="cartitem_size")
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name="cartitem_cart")
     quantity = models.PositiveIntegerField()
+
+    def clean(self):
+        if self.product != self.size.product:
+            raise ValidationError("Selected size does not belong to the chosen product.")
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        return super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Cart item for cart - {self.cart.id} - {self.cart.user.email}"

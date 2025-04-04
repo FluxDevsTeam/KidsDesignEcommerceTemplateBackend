@@ -1,8 +1,15 @@
-from rest_framework.permissions import BasePermission, SAFE_METHODS
+from rest_framework.permissions import BasePermission
+from .models import Cart
 
 
-class IsAuthenticatedOrIsUser(BasePermission):
+class IsAuthenticatedOrCartItemOwner(BasePermission):
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        return Cart.objects.filter(id=view.kwargs.get("cart_pk"), user=request.user).exists()
 
-    def has_object_permission(self, request, view, obj):
-        if request.user and request.user.is_authenticated:
-            return obj.cart__user == request.user
+
+class IsAuthenticatedOrCartOwner(BasePermission):
+
+    def has_permission(self, request, view):
+        return request.user and request.user.is_authenticated
