@@ -32,6 +32,7 @@ DEBUG = os.getenv("DEBUG")
 # Application definition
 
 INSTALLED_APPS = [
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -151,10 +152,10 @@ SWAGGER_SETTINGS = {
     }
 }
 JAZZMIN_SETTINGS = {
-    "site_title": "Tryb3 Food App",
-    "site_header": "Food App",
-    "site_brand": "Try  b3",
-    "site_copyright": "foodapp.com",
+    "site_title": "EcommerceTemplate",
+    "site_header": "Ecommerce API Template",
+    "site_brand": "",
+    "site_copyright": "ecommercetemplate.com",
     "show_ui_builder": True
 }
 
