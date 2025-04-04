@@ -20,23 +20,23 @@ class ApiProductCategory(viewsets.ModelViewSet):
 
     @swagger_helper(tags="ProductCategory", model="Product category")
     def list(self, *args, **kwargs):
-        return super().list(self, *args, **kwargs)
+        return super().list(*args, **kwargs)
 
     @swagger_helper(tags="ProductCategory", model="Product category")
     def retrieve(self, *args, **kwargs):
-        return super().create(self, *args, **kwargs)
+        return super().retrieve(*args, **kwargs)
 
     @swagger_helper(tags="ProductCategory", model="Product category")
     def create(self, *args, **kwargs):
-        return super().create(self, *args, **kwargs)
+        return super().create(*args, **kwargs)
 
     @swagger_helper(tags="ProductCategory", model="Product category")
     def partial_update(self, *args, **kwargs):
-        return super().partial_update(self, *args, **kwargs)
+        return super().partial_update(*args, **kwargs)
 
     @swagger_helper(tags="ProductCategory", model="Product category")
     def destroy(self, *args, **kwargs):
-        return super().destroy(self, *args, **kwargs)
+        return super().destroy(*args, **kwargs)
 
 
 class ApiProductSubCategory(viewsets.ModelViewSet):
@@ -51,23 +51,23 @@ class ApiProductSubCategory(viewsets.ModelViewSet):
 
     @swagger_helper(tags="ProductSubCategory", model="Product sub category")
     def list(self, *args, **kwargs):
-        return super().list(self, *args, **kwargs)
+        return super().list(*args, **kwargs)
 
     @swagger_helper(tags="ProductSubCategory", model="Product sub category")
     def retrieve(self, *args, **kwargs):
-        return super().create(self, *args, **kwargs)
+        return super().retrieve(*args, **kwargs)
 
     @swagger_helper(tags="ProductSubCategory", model="Product sub category")
     def create(self, *args, **kwargs):
-        return super().create(self, *args, **kwargs)
+        return super().create(*args, **kwargs)
 
     @swagger_helper(tags="ProductSubCategory", model="Product sub category")
     def partial_update(self, *args, **kwargs):
-        return super().partial_update(self, *args, **kwargs)
+        return super().partial_update(*args, **kwargs)
 
     @swagger_helper(tags="ProductSubCategory", model="Product sub category")
     def destroy(self, *args, **kwargs):
-        return super().destroy(self, *args, **kwargs)
+        return super().destroy(*args, **kwargs)
 
 
 class ApiProduct(viewsets.ModelViewSet):
@@ -82,23 +82,23 @@ class ApiProduct(viewsets.ModelViewSet):
 
     @swagger_helper(tags="Product", model="Product")
     def list(self, *args, **kwargs):
-        return super().list(self, *args, **kwargs)
+        return super().list(*args, **kwargs)
 
     @swagger_helper(tags="Product", model="Product")
     def retrieve(self, *args, **kwargs):
-        return super().create(self, *args, **kwargs)
+        return super().retrieve(*args, **kwargs)
 
     @swagger_helper(tags="Product", model="Product")
     def create(self, *args, **kwargs):
-        return super().create(self, *args, **kwargs)
+        return super().create(*args, **kwargs)
 
     @swagger_helper(tags="Product", model="Product")
     def partial_update(self, *args, **kwargs):
-        return super().partial_update(self, *args, **kwargs)
+        return super().partial_update(*args, **kwargs)
 
     @swagger_helper(tags="Product", model="Product")
     def destroy(self, *args, **kwargs):
-        return super().destroy(self, *args, **kwargs)
+        return super().destroy(*args, **kwargs)
 
 
 class ApiProductSize(viewsets.ModelViewSet):
@@ -113,20 +113,20 @@ class ApiProductSize(viewsets.ModelViewSet):
 
     @swagger_helper(tags="ProductSize", model="Product size")
     def list(self, *args, **kwargs):
-        return super().list(self, *args, **kwargs)
+        return super().list(*args, **kwargs)
 
     @swagger_helper(tags="ProductSize", model="Product size")
     def retrieve(self, *args, **kwargs):
-        return super().create(self, *args, **kwargs)
+        return super().retrieve(*args, **kwargs)
 
     @swagger_helper(tags="ProductSize", model="Product size")
     def create(self, *args, **kwargs):
-        return super().create(self, *args, **kwargs)
+        return super().create(*args, **kwargs)
 
     @swagger_helper(tags="ProductSize", model="Product size")
     def partial_update(self, *args, **kwargs):
-        return super().partial_update(self, *args, **kwargs)
+        return super().partial_update(*args, **kwargs)
 
     @swagger_helper(tags="ProductSize", model="Product size")
     def destroy(self, *args, **kwargs):
-        return super().destroy(self, *args, **kwargs)
+        return super().destroy(*args, **kwargs)
