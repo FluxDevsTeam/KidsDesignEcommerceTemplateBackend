@@ -78,3 +78,9 @@ class ProductSizeViewSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductSize
         fields = ["id", "product", "size", "quantity"]
+
+
+class SimpleProductSizeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductSize
+        fields = ["id", "size", "quantity"]
