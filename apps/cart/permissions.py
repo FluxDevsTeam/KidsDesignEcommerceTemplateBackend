@@ -7,9 +7,3 @@ class IsAuthenticatedOrCartItemOwner(BasePermission):
         if not request.user or not request.user.is_authenticated:
             return False
         return Cart.objects.filter(id=view.kwargs.get("cart_pk"), user=request.user).exists()
-
-
-class IsAuthenticatedOrCartOwner(BasePermission):
-
-    def has_permission(self, request, view):
-        return request.user and request.user.is_authenticated
