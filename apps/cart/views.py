@@ -72,14 +72,15 @@ class ApiCartItem(viewsets.ModelViewSet):
         size_id = request.data.get("size")
         quantity = int(request.data.get("quantity"))
         cart_id = self.kwargs.get("cart_pk")
-
         cart = get_object_or_404(Cart, id=cart_id)
         size = get_object_or_404(ProductSize, id=size_id)
         product = get_object_or_404(Product, id=product_id)
 
         if product != size.product:
-            return Response({"error": "Selected size does not belong to the chosen product."},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Selected size does not belong to the chosen product."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if CartItem.objects.filter(product=product, size=size, cart=cart).exists():
+            return Response({"error": "This item is already in your cart."}, status=status.HTTP_400_BAD_REQUEST)
 
         database_quantity = size.quantity
         if database_quantity < 1:
@@ -101,43 +102,59 @@ class ApiCartItem(viewsets.ModelViewSet):
 
     @swagger_helper("CartItem", "cart item")
     def partial_update(self, request, *args, **kwargs):
-        size_id = self.request.data.get("size")
+        size_id = request.data.get("size")
         quantity = request.data.get("quantity")
         cart_item = self.get_object()
-        size = get_object_or_404(ProductSize, id=size_id)
-        if quantity:
-            quantity = int(quantity)
+        original_size = cart_item.size
+        original_quantity = cart_item.quantity
 
-        # size change
-        if size and size != cart_item.size:
-            size_db_quantity = size.quantity
-            if not quantity:
-                quantity = cart_item.quantity
-            if size_db_quantity <= 0:
+        # Validate quantity input
+        if quantity is not None:
+            try:
+                quantity = int(quantity)
+            except ValueError:
+                return Response({"error": "Quantity must be a valid number."}, status=status.HTTP_400_BAD_REQUEST)
+
+        size = get_object_or_404(ProductSize, id=size_id) if size_id else original_size
+
+        response_messages = []
+        updated = False
+
+        # Handle size change
+        if size != original_size:
+            if size.quantity <= 0:
                 return Response({"error": "The selected size is out of stock."}, status=status.HTTP_400_BAD_REQUEST)
-            # if quantity greater than 
-            if quantity > size_db_quantity:
-                cart_item.size = size
-                cart_item.quantity = size_db_quantity
-                cart_item.save()
+
+            if quantity is None:
+                quantity = original_quantity
+
+            if quantity > size.quantity:
+                cart_item.quantity = size.quantity
+                response_messages.append(f"Requested quantity exceeds stock for selected size. Quantity adjusted to {size.quantity}.")
+
+            else:
+                cart_item.quantity = quantity
 
             cart_item.size = size
-            cart_item.quantity = quantity
-            cart_item.save()
-        # quantity change
+            response_messages.append(f"Size updated to {size.size}.")
+
+        # Handle quantity change only (no size change)
         if quantity and quantity != cart_item.quantity:
-            size_db_quantity = size.quantity
-            if size_db_quantity < quantity:
-                cart_item.quantity = size_db_quantity
-                cart_item.save()
-                return Response({"data": f"not enough quantity of item left. you asked for {quantity} but only {size_db_quantity}is left. quantity updated successfully to {quantity}"},status=status.HTTP_200_OK)
+            if cart_item.quantity <= 0:
+                return Response({"error": "The selected size is out of stock."}, status=status.HTTP_400_BAD_REQUEST)
+            if quantity > size.quantity:
+                cart_item.quantity = size.quantity
+                response_messages.append(f"Not enough stock. Requested {quantity}, but only {size.quantity} left. Quantity updated to {size.quantity}.")
 
-            cart_item.quantity = quantity
+            else:
+                cart_item.quantity = quantity
+                response_messages.append(f"Quantity updated successfully to {quantity}.")
+
+        if response_messages:
             cart_item.save()
-            return Response({"data": f"quantity updated successfully to {quantity}"}, status=status.HTTP_200_OK)
+            return Response({"message": " ".join(response_messages)}, status=status.HTTP_200_OK)
 
-        # if no params
-        return Response({"data": "no change made"}, status=status.HTTP_200_OK)
+        return Response({"message": "No changes made."}, status=status.HTTP_200_OK)
 
     @swagger_helper("CartItem", "cart item")
     def destroy(self, *args, **kwargs):
