@@ -6,14 +6,14 @@ from ..products.serializers import ProductSimpleViewSerializer
 class OrderSerializer(ModelSerializer):
     class Meta:
         model = Order
-        fields = ["id", "user", "first_name", "last_name", "email", "state", "city", "delivery_address", "phone_number"]
-        read_only_fields = ["id", "user"]
+        fields = ["id", "user", "order_date", "status", "delivery_fee", "first_name", "last_name", "email", "state", "city", "delivery_address", "phone_number", "delivery_date"]
+        read_only_fields = ["id", "user", "order_date"]
 
 
 class SimpleOrderSerializer(ModelSerializer):
     class Meta:
         model = Order
-        fields = ["id", "user", ]
+        fields = ["id", "user", "status"]
         read_only_fields = ["id", "user"]
 
 
