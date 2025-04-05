@@ -16,6 +16,8 @@ class Order(models.Model):
     city = models.CharField(max_length=50)
     delivery_address = models.CharField(max_length=50)
     phone_number = models.CharField(max_length=50)
+    order_date = models.DateField(auto_now_add=True)
+    delivery_date = models.DateField(null=True, blank=True)
 
     def __str__(self):
         return f"Order - {self.id} - {self.user.email}"
@@ -26,7 +28,7 @@ class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="orderitem_order")
     quantity = models.PositiveIntegerField()
     # create duplicate of products
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=100)
     description = models.TextField()
     colour = models.CharField(max_length=100)
     image1 = models.ImageField(upload_to="order_images/")
