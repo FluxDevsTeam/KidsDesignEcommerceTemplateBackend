@@ -6,7 +6,7 @@ from django.conf import settings
 from datetime import timedelta
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils.timezone import now
-
+import a
 
 def generate_confirm_token(user, cart_id):
     """
