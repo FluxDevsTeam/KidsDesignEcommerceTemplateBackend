@@ -18,3 +18,6 @@ sqlparse==0.5.3
 tzdata==2025.2
 uritemplate==4.1.1
 whitenoise==6.9.0
+celery
+redis
+django-celery-results
