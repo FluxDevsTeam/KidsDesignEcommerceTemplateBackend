@@ -9,6 +9,7 @@ class Order(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="order_user")
     status = models.CharField(max_length=50)
     delivery_fee = models.DecimalField(max_digits=100, decimal_places=2)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
     first_name = models.CharField(max_length=50,)
     last_name = models.CharField(max_length=50)
     email = models.EmailField(null=True)
@@ -18,6 +19,9 @@ class Order(models.Model):
     phone_number = models.CharField(max_length=50)
     order_date = models.DateField(auto_now_add=True)
     delivery_date = models.DateField(null=True, blank=True)
+    transaction_id = models.CharField(max_length=100, null=True, blank=True, unique=True)
+    payment_provider = models.CharField(max_length=20, null=True, blank=True)
+    estimated_delivery = models.CharField(max_length=100)
 
     def __str__(self):
         return f"Order - {self.id} - {self.user.email}"
@@ -33,6 +37,7 @@ class OrderItem(models.Model):
     colour = models.CharField(max_length=100)
     image1 = models.ImageField(upload_to="order_images/")
     price = models.DecimalField(max_digits=10, decimal_places=2)
+    size = models.CharField(max_length=50) 
 
     def __str__(self):
         return f"Order item for order - {self.order.id} - {self.order.user.email}"

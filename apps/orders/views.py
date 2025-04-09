@@ -51,7 +51,7 @@ class ApiOrder(viewsets.ModelViewSet):
 
 class ApiOrderItem(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
-    pagination = CustomPagination
+    pagination_class = CustomPagination
     permission_classes = [IsAuthenticatedAndOrderItemOwner]
 
     def get_serializer_class(self):
@@ -73,7 +73,11 @@ class ApiOrderItem(viewsets.ModelViewSet):
         if serializer.is_valid():
             order_id = self.kwargs.get("order_pk")
             order = get_object_or_404(Order, id=order_id)
-            serializer.save(order=order)
+            size = self.request.data.get("size")  # Get the size from the request data
+            if not size:
+                return Response({"error": "Size is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+            serializer.save(order=order, size=size)  # Save the size along with the order item
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
