@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'drf_yasg',
+    'django_celery_results',
     # 'django_filters',
     'rest_framework',
     'api',
@@ -49,6 +50,7 @@ INSTALLED_APPS = [
     'apps.payment',
     'apps.products',
     'apps.wishlist',
+
 ]
 
 MIDDLEWARE = [
@@ -127,8 +129,6 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-FLW_SEC_KEY = os.getenv("FLW_SEC_KEY")
-
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 3,
@@ -161,4 +161,30 @@ JAZZMIN_SETTINGS = {
 
 JAZZMIN_UI_TWEAKS = {
     "theme": "cyborg",
+}
+
+# celery
+CELERY_TIMEZONE = 'UTC'
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60
+CELERY_TASK_DEFAULT_RETRY_DELAY = 60
+CELERY_TASK_MAX_RETRIES = 3
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+
+
+# payment configurations
+
+PAYMENT_CURRENCY = os.getenv('PAYMENT_CURRENCY', 'NGN')
+PAYMENT_SUCCESS_URL = os.getenv('PAYMENT_SUCCESS_URL', 'http://localhost:8000/payment-success/')
+PAYMENT_PROVIDERS = {
+    'flutterwave': {
+        'verify_url': 'https://api.flutterwave.com/v3/transactions/{}/verify',
+        'secret_key': os.getenv('FLW_SEC_KEY'),
+    },
+    'paystack': {
+        'verify_url': 'https://api.paystack.co/transaction/verify/{}',
+        'secret_key': os.getenv('PAYSTACK_SEC_KEY'),
+    }
 }

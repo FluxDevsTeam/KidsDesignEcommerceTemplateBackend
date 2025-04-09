@@ -9,7 +9,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.getenv("NAME"),
         'USER': os.getenv("USER"),
-        'PASSWORD': os.getenv("DB_PASSWORD"),
+        'PASSWORD': os.getenv("DATABASE_PASSWORD"),
         'HOST': os.getenv("HOST"),
         'PORT': os.getenv("PORT"),
 
@@ -25,3 +25,7 @@ EMAIL_PORT = 465
 EMAIL_HOST_USER = os.getenv("EMAIL")
 EMAIL_HOST_PASSWORD = os.getenv("PASSWORD")
 DEFAULT_FROM_EMAIL = os.getenv("EMAIL")
+
+# celery for prod (docker)
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://redis:6379/0')
+CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://redis:6379/0')
