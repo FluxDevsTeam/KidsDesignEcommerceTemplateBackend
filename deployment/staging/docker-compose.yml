@@ -1,0 +1,54 @@
+version: '3.8'
+services:
+  web:
+    build:
+      context: ../..
+      dockerfile: deployment/staging/Dockerfile
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ../..:/app  # Mount local dir for hot reloading
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_ENV=prod  # Uses prod.py but with debug tweaks
+      - DEBUG=True       # Enable debug for staging
+    env_file:
+      - ../../.env
+    depends_on:
+      - redis
+      - db
+
+  redis:
+    image: redis:7.0-alpine
+    ports:
+      - "6379:6379"
+
+  celery:
+    build:
+      context: ../..
+      dockerfile: deployment/staging/Dockerfile
+    command: celery -A config worker -l info
+    volumes:
+      - ../..:/app  # Mount for code changes
+    env_file:
+      - ../../.env
+    environment:
+      - DJANGO_ENV=prod
+      - DEBUG=True
+    depends_on:
+      - redis
+      - db
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=${STAGING_DB_NAME}
+      - POSTGRES_USER=${STAGING_DB_USER}
+      - POSTGRES_PASSWORD=${STAGING_DB_PASSWORD}
+    volumes:
+      - staging_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"  # Different port to avoid prod conflict
+
+volumes:
+  staging_postgres_data:
