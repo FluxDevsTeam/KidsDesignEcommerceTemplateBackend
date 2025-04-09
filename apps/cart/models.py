@@ -15,6 +15,7 @@ class Cart(models.Model):
     city = models.CharField(max_length=50, null=True, blank=True)
     delivery_address = models.CharField(max_length=50, null=True, blank=True)
     phone_number = models.CharField(max_length=50, null=True, blank=True)
+    estimated_delivery = models.CharField(max_length=100, null=True, blank=True)
 
     def __str__(self):
         return f"Cart - {self.id} - {self.user.email}"
