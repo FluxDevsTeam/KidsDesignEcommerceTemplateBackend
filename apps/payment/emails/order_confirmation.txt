@@ -1,0 +1,8 @@
+Dear {{ first_name }},
+
+Thank you for your order! Your order (#{{ order_id }}) has been successfully placed.
+Total Amount: {{ currency }} {{ total_amount }}
+We’ll notify you once your order ships.
+
+Best regards,
+ASLUXURY ORIGINALS Team
