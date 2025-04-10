@@ -54,6 +54,7 @@ state_coords = {
     "FCT - Abuja": (9.0765, 7.3986),
 }
 
+
 # Function to calculate distance between two geographical coordinates (lat, lon)
 def calculate_distance(coord1, coord2):
     R = 6371.0  # Radius of the Earth in km
@@ -65,9 +66,10 @@ def calculate_distance(coord1, coord2):
     dlon = lon2 - lon1
     dlat = lat2 - lat1
 
-    a = sin(dlat / 2)**2 + cos(lat1) * cos(lat2) * sin(dlon / 2)**2
+    a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
     c = 2 * atan2(sqrt(a), sqrt(1 - a))
     return R * c  # Distance in kilometers
+
 
 # Function to calculate the delivery gap
 def get_delivery_gap(zone):
