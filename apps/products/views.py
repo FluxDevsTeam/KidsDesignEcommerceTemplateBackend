@@ -1,3 +1,7 @@
+import json
+from urllib import request
+
+from django.core.cache import cache
 from django.shortcuts import render
 from .pagination import CustomPagination
 from .serializers import ProductCategorySerializer, ProductSubCategorySerializer, ProductSerializer, \
@@ -6,6 +10,11 @@ from .serializers import ProductCategorySerializer, ProductSubCategorySerializer
 from .models import Product, ProductSubCategory, ProductCategory, ProductSize
 from rest_framework import viewsets
 from .utils import swagger_helper
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from django.db.models import F
+from django.db import transaction
+import random
 
 
 class ApiProductCategory(viewsets.ModelViewSet):
@@ -81,9 +90,18 @@ class ApiProduct(viewsets.ModelViewSet):
         return ProductSerializer
 
     @swagger_helper(tags="Product", model="Product")
-    def list(self, *args, **kwargs):
-        return super().list(*args, **kwargs)
+    def list(self, request, *args, **kwargs):
+        query_params = dict(request.query_params)
+        cache_key = f"product_list:{json.dumps(query_params, sorted_keys=True)}"
+        cache_timeout=300
 
+        cached_response = cache.get(cache_key)
+        if cached_response:
+            return Response(cached_response)
+
+        response = super().list(*args, **kwargs)
+        cache.set(cache_key, response.data, cache_timeout)
+        return response 
     @swagger_helper(tags="Product", model="Product")
     def retrieve(self, *args, **kwargs):
         return super().retrieve(*args, **kwargs)
@@ -93,12 +111,16 @@ class ApiProduct(viewsets.ModelViewSet):
         return super().create(*args, **kwargs)
 
     @swagger_helper(tags="Product", model="Product")
+    def destroy(self, *args, **kwargs):
+        return super().destroy(*args, **kwargs)
+
+    @swagger_helper(tags="Product", model="Product")
     def partial_update(self, *args, **kwargs):
         return super().partial_update(*args, **kwargs)
 
-    @swagger_helper(tags="Product", model="Product")
-    def destroy(self, *args, **kwargs):
-        return super().destroy(*args, **kwargs)
+    @action(methods=['GET'], detail=False)
+    def homepage(self, request):
+        pass
 
 
 class ApiProductSize(viewsets.ModelViewSet):

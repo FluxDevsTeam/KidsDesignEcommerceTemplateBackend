@@ -13,7 +13,7 @@ from ..products.models import Product, ProductSize
 
 class ApiCart(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
-    pagination = CustomPagination
+    pagination_class = CustomPagination
     serializer_class = CartSerializer
     permission_classes = [IsAuthenticated]
 
