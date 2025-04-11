@@ -1,7 +1,9 @@
+import json
+
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-
+from django.core.cache import cache
 from .models import Cart, CartItem
 from .permissions import IsAuthenticatedOrCartItemOwner
 from .serializers import CartSerializer, CartItemSerializer, CartItemSerializerView
@@ -21,24 +23,55 @@ class ApiCart(viewsets.ModelViewSet):
         return Cart.objects.filter(user=self.request.user)
 
     @swagger_helper("Cart", "cart")
-    def list(self, *args, **kwargs):
-        return super().list(*args, **kwargs)
+    def list(self, request,  *args, **kwargs):
+        user = request.user.id
+        query_params = dict(request.query_params)
+        cache_key = f"cart_list:{user}:{json.dumps(query_params, sort_keys=True)}"
+        cache_timeout = 300
+        cached_response = cache.get(cache_key)
+        if cached_response:
+            return Response(cached_response)
+
+        response = super().list(*args, **kwargs)
+        cache.set(cache_key, query_params, cache_timeout)
+        return response
 
     @swagger_helper("Cart", "cart")
-    def create(self, *args, **kwargs):
-        return super().create(*args, **kwargs)
+    def create(self, request, *args, **kwargs):
+        user = request.user
+        response = super().create(*args, **kwargs)
+        cache.delete(f"cart_list:{user}:*")
+        return response
 
     @swagger_helper("Cart", "cart")
-    def retrieve(self, *args, **kwargs):
-        return super().retrieve(*args, **kwargs)
+    def retrieve(self, request, *args, **kwargs):
+        query_params = dict(request.query_params)
+        cache_timeout = 300
+        user = request.user
+        cache_key = f"cart_detail:{user}:{kwargs["pk"]}:{json.dumps(query_params, sort_keys=True)}"
+        cached_response = cache.get(cache_key)
+        if cached_response:
+            return Response(cached_response)
+
+        response = super().retrieve(*args, **kwargs)
+        cache.set(query_params, cache_key, cache_timeout)
+        return response
 
     @swagger_helper("Cart", "cart")
-    def partial_update(self, *args, **kwargs):
-        return super().partial_update(*args, **kwargs)
+    def partial_update(self, request, *args, **kwargs):
+        user = request.user
+        response = super().partial_update(*args, **kwargs)
+        cache.delete(f"cart_list:{user}:*")
+        cache.delete(f"cart_detail:{user}:{kwargs["pk"]}")
+        return response
 
     @swagger_helper("Cart", "cart")
-    def destroy(self, *args, **kwargs):
-        return super().destroy(*args, **kwargs)
+    def destroy(self, request, *args, **kwargs):
+        user = request.user
+        response = super().destroy(*args, **kwargs)
+        cache.delete(f"cart_list:{user}:*")
+        cache.delete(f"cart_detail:{user}:{kwargs["pk"]}")
+        return response
 
     def perform_create(self, serializer):
         user = self.request.user
