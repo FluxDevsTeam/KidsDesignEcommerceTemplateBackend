@@ -92,35 +92,61 @@ class ApiProduct(viewsets.ModelViewSet):
     @swagger_helper(tags="Product", model="Product")
     def list(self, request, *args, **kwargs):
         query_params = dict(request.query_params)
-        cache_key = f"product_list:{json.dumps(query_params, sorted_keys=True)}"
-        cache_timeout=300
+        cache_key = f"product_list:{json.dumps(query_params, sort_keys=True)}"
+        cache_timeout = 300
 
         cached_response = cache.get(cache_key)
         if cached_response:
             return Response(cached_response)
 
-        response = super().list(*args, **kwargs)
+        response = super().list(request, *args, **kwargs)
         cache.set(cache_key, response.data, cache_timeout)
-        return response 
+        return response
+
     @swagger_helper(tags="Product", model="Product")
-    def retrieve(self, *args, **kwargs):
-        return super().retrieve(*args, **kwargs)
+    def retrieve(self, request, *args, **kwargs):
+        query_params = dict(request.query_params)
+        product_pk = kwargs["pk"]
+        cache_key = f"product_detail:{product_pk}:{json.dumps(query_params, sort_keys=True)}"
+        cache_timeout = 300
+
+        cached_response = cache.get(cache_key)
+        if cached_response:
+            return Response(cached_response)
+
+        response = super().retrieve(*args, **kwargs)
+        cache.set(cache_key, response.data, cache_timeout)
+        return response
 
     @swagger_helper(tags="Product", model="Product")
     def create(self, *args, **kwargs):
-        return super().create(*args, **kwargs)
+        response = super().create(*args, **kwargs)
+        cache.delete(f"product_list:*")
+        return response
 
     @swagger_helper(tags="Product", model="Product")
     def destroy(self, *args, **kwargs):
-        return super().destroy(*args, **kwargs)
+        response = super().destroy(*args, **kwargs)
+        cache.delete(f"product_list:*")
+        cache.delete(f"product_detail:{kwargs["pk"]}")
+        return response
 
     @swagger_helper(tags="Product", model="Product")
     def partial_update(self, *args, **kwargs):
-        return super().partial_update(*args, **kwargs)
+        response = super().partial_update(*args, **kwargs)
+        cache.delete(f"product_list:*")
+        cache.delete(f"product_detail:{kwargs["pk"]}")
+        return response
 
+    @swagger_helper(tags="Product", model="Product")
     @action(methods=['GET'], detail=False)
     def homepage(self, request):
         pass
+
+    @action(detail=False, methods=['get'], url_path='search')
+    @swagger_helper(tags="Search", model="Product")
+    def search(self, request, *args, **kwargs):
+        query = request.query_params.get("search", "").strip()
 
 
 class ApiProductSize(viewsets.ModelViewSet):
