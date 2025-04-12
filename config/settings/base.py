@@ -41,7 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'drf_yasg',
     'django_celery_results',
-    # 'django_filters',
+    'django_filters',
     'rest_framework',
     'api',
     'apps.authentication',
@@ -135,6 +135,11 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
+        'rest_framework.filters.OrderingFilter',
+    ]
 }
 
 SIMPLE_JWT = {
@@ -188,3 +193,4 @@ PAYMENT_PROVIDERS = {
         'secret_key': os.getenv('PAYSTACK_SEC_KEY'),
     }
 }
+
