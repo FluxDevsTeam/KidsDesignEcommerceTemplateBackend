@@ -37,6 +37,7 @@ class Product(models.Model):
     latest_item_position = models.PositiveIntegerField(null=True, blank=True)
     top_selling_items = models.BooleanField(default=False)
     top_selling_position = models.PositiveIntegerField(null=True, blank=True)
+    date_created = models.DateField(auto_now_add=True)
 
     def __str__(self):
         return self.name
