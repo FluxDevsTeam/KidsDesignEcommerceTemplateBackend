@@ -125,6 +125,7 @@ class ApiProduct(viewsets.ModelViewSet):
         response = super().create(*args, **kwargs)
         cache.delete(f"product_list:*")
         cache.delete(f"search:*")
+        cache.delete(f"search_suggestions:*")
         return response
 
     @swagger_helper(tags="Product", model="Product")
@@ -133,15 +134,33 @@ class ApiProduct(viewsets.ModelViewSet):
         cache.delete(f"product_list:*")
         cache.delete(f"product_detail:{kwargs["pk"]}")
         cache.delete(f"search:*")
+        cache.delete(f"search_suggestions:*")
         return response
 
     @swagger_helper(tags="Product", model="Product")
-    def partial_update(self, *args, **kwargs):
+    def partial_update(self, request, *args, **kwargs):
         response = super().partial_update(*args, **kwargs)
         cache.delete(f"product_list:*")
         cache.delete(f"product_detail:{kwargs["pk"]}")
         cache.delete(f"search:*")
-        return response
+        cache.delete(f"search_suggestions:*")
+
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial_update=True)
+        if serializer.is_valid():
+
+            with transaction.atomic:
+                data = serializer.data
+                if "latest_item_position" in data:
+                    new_position = data["latest_item_position"]
+                    self.get_queryset().filter(
+                        latest_item_position__gte=new_position,
+                        latest_item__isnull=False
+                    )
+
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_helper(tags="Product", model="Product")
     @action(methods=['GET'], detail=False)
@@ -186,7 +205,7 @@ class ApiProduct(viewsets.ModelViewSet):
     @swagger_auto_schema(manual_parameters=[openapi.Parameter('query', openapi.IN_QUERY, description="autocomplete for search", type=openapi.TYPE_STRING), openapi.Parameter('page', openapi.IN_QUERY, description="Page number", type=openapi.TYPE_INTEGER), openapi.Parameter('page_size', openapi.IN_QUERY, description="Items per page (max: 100)", type=openapi.TYPE_INTEGER)], operation_id="GET products", operation_description="Search products for autocomplete", tags=["Product"])
     @action(detail=False, methods=['get'], url_path='autocomplete')
     def autocomplete(self, request, *args, **kwargs):
-        query = request.query_params.get('q', '').strip()
+        query = request.query_params.get('query', '').strip()
         if not query:
             return Response([])
 
@@ -208,13 +227,20 @@ class ApiProduct(viewsets.ModelViewSet):
             Q(sizes__size__icontains=query) & ~Q(sizes__size__istartswith=query)
         ).values('name', 'sub_category__name', 'sub_category__category__name', 'sizes__size').distinct()[:40]
 
-        results = set()
+        starts_with = set()
+        contains = set()
+        query_lower = query.lower()
         for value in chain.from_iterable(row.values() for row in products):
-            if value and (value.startswith(query) or query.lower() in value.lower()):
-                results.add(value)
-                if len(results) >= 20:
-                    break
-        suggestions = sorted(results)[:20]
+            if value:
+                value_lower = value.lower()
+                if value_lower.startswith(query_lower):
+                    starts_with.add(value)
+                elif query_lower in value_lower:
+                    contains.add(value)
+            if len(starts_with) + len(contains) >= 20:
+                break
+
+        suggestions = (sorted(starts_with) + sorted(contains))[:20]
         cache.set(cache_key, suggestions, cache_timeout)
         return Response(suggestions)
 
