@@ -1,11 +1,12 @@
 import json
-from urllib import request
+from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.pagination import PageNumberPagination
 from drf_yasg import openapi
 from django.core.cache import cache
-from django.shortcuts import render
+
+from .filters import ProductFilter
 from .pagination import CustomPagination
+from .permissions import IsAdminOrReadOnly
 from .serializers import ProductCategorySerializer, ProductSubCategorySerializer, ProductSerializer, \
     ProductSizeSerializer, ProductViewSerializer, ProductSubCategoryViewSerializer, ProductCategoryDetailSerializer, \
     ProductSizeViewSerializer
@@ -14,15 +15,17 @@ from rest_framework import viewsets, status
 from .utils import swagger_helper
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from django.db.models import F, Q
+from django.db.models import F, Q, Case, When
 from django.db import transaction
-import random
 from itertools import chain
+
 
 class ApiProductCategory(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
     queryset = ProductCategory.objects.all()
     pagination_class = CustomPagination
+    permission_classes = [IsAdminOrReadOnly]
+    search_fields = ["name"]
 
     def get_serializer_class(self):
         if self.action == "retrieve":
@@ -30,30 +33,73 @@ class ApiProductCategory(viewsets.ModelViewSet):
         return ProductCategorySerializer
 
     @swagger_helper(tags="ProductCategory", model="Product category")
-    def list(self, *args, **kwargs):
-        return super().list(*args, **kwargs)
+    def list(self, request, *args, **kwargs):
+        cache_timeout = 300
+        cache_params = dict(request.query_params)
+        cache_key = f"category_list:{json.dumps(cache_params, sort_keys=True)}"
+
+        cached_response = cache.get(cache_key)
+        if cached_response:
+            return Response(cached_response)
+
+        response = super().list(request, *args, **kwargs)
+        cache.set(cache_key, response.data, cache_timeout)
+        return response
 
     @swagger_helper(tags="ProductCategory", model="Product category")
-    def retrieve(self, *args, **kwargs):
-        return super().retrieve(*args, **kwargs)
+    def retrieve(self, request, *args, **kwargs):
+        cache_timeout = 300
+        cache_params = dict(request.query_params)
+        category_pk = kwargs["pk"]
+        cache_key = f"category_detail:{category_pk}:{json.dumps(cache_params, sort_keys=True)}"
+
+        cached_response = cache.get(cache_key)
+        if cached_response:
+            return Response(cached_response)
+
+        response = super().retrieve(request, *args, **kwargs)
+        cache.set(cache_key, response.data, cache_timeout)
+        return response
 
     @swagger_helper(tags="ProductCategory", model="Product category")
     def create(self, *args, **kwargs):
-        return super().create(*args, **kwargs)
+        response = super().create(*args, **kwargs)
+        cache.delete_pattern("category_list:*")
+        cache.delete_pattern("category_detail:*")
+        cache.delete_pattern("subcategory_list:*")
+        cache.delete_pattern("subcategory_detail:*")
+        cache.delete_pattern("product_list:*")
+        return response
 
     @swagger_helper(tags="ProductCategory", model="Product category")
     def partial_update(self, *args, **kwargs):
-        return super().partial_update(*args, **kwargs)
+        response = super().partial_update(*args, **kwargs)
+        cache.delete_pattern("category_list:*")
+        cache.delete_pattern(f"category_detail:{kwargs['pk']}:*")
+        cache.delete_pattern("subcategory_list:*")
+        cache.delete_pattern("subcategory_detail:*")
+        cache.delete_pattern("product_list:*")
+        return response
 
     @swagger_helper(tags="ProductCategory", model="Product category")
     def destroy(self, *args, **kwargs):
-        return super().destroy(*args, **kwargs)
+        category_pk = kwargs["pk"]
+        response = super().destroy(*args, **kwargs)
+        cache.delete_pattern("category_list:*")
+        cache.delete_pattern(f"category_detail:{category_pk}:*")
+        cache.delete_pattern("subcategory_list:*")
+        cache.delete_pattern("subcategory_detail:*")
+        cache.delete_pattern("product_list:*")
+        return response
 
 
 class ApiProductSubCategory(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
     queryset = ProductSubCategory.objects.all()
     pagination_class = CustomPagination
+    permission_classes = [IsAdminOrReadOnly]
+    filterset_fields = ["category"]
+    search_fields = ["name"]
 
     def get_serializer_class(self):
         if self.request.method == "GET":
@@ -61,30 +107,63 @@ class ApiProductSubCategory(viewsets.ModelViewSet):
         return ProductSubCategorySerializer
 
     @swagger_helper(tags="ProductSubCategory", model="Product sub category")
-    def list(self, *args, **kwargs):
-        return super().list(*args, **kwargs)
+    def list(self, request, *args, **kwargs):
+        cache_timeout = 300
+        cache_params = dict(request.query_params)
+        cache_key = f"subcategory_list:{json.dumps(cache_params, sort_keys=True)}"
+
+        cached_response = cache.get(cache_key)
+        if cached_response:
+            return Response(cached_response)
+
+        response = super().list(request, *args, **kwargs)
+        cache.set(cache_key, response.data, cache_timeout)
+        return response
 
     @swagger_helper(tags="ProductSubCategory", model="Product sub category")
-    def retrieve(self, *args, **kwargs):
-        return super().retrieve(*args, **kwargs)
+    def retrieve(self, request, *args, **kwargs):
+        cache_timeout = 300
+        cache_params = dict(request.query_params)
+        subcategory_pk = kwargs["pk"]
+        cache_key = f"subcategory_detail:{subcategory_pk}:{json.dumps(cache_params, sort_keys=True)}"
+
+        cached_response = cache.get(cache_key)
+        if cached_response:
+            return Response(cached_response)
+
+        response = super().retrieve(request, *args, **kwargs)
+        cache.set(cache_key, response.data, cache_timeout)
+        return response
 
     @swagger_helper(tags="ProductSubCategory", model="Product sub category")
     def create(self, *args, **kwargs):
-        return super().create(*args, **kwargs)
+        response = super().create(*args, **kwargs)
+        cache.delete_pattern("subcategory_list:*")
+        cache.delete_pattern("subcategory_detail:*")
+        return response
 
     @swagger_helper(tags="ProductSubCategory", model="Product sub category")
     def partial_update(self, *args, **kwargs):
-        return super().partial_update(*args, **kwargs)
+        response = super().partial_update(*args, **kwargs)
+        cache.delete_pattern("subcategory_list:*")
+        cache.delete_pattern(f"subcategory_detail:{kwargs['pk']}:*")
+        return response
 
     @swagger_helper(tags="ProductSubCategory", model="Product sub category")
     def destroy(self, *args, **kwargs):
-        return super().destroy(*args, **kwargs)
-
+        subcategory_pk = kwargs["pk"]
+        response = super().destroy(*args, **kwargs)
+        cache.delete_pattern("subcategory_list:*")
+        cache.delete_pattern(f"subcategory_detail:{subcategory_pk}:*")
+        return response
 
 class ApiProduct(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
     queryset = Product.objects.all()
     pagination_class = CustomPagination
+    permission_classes = IsAdminOrReadOnly
+    ordering_fields = ["price", "date_created", "is_available", "latest_item", "top_selling_items"]
+    filterset_class = ProductFilter
 
     def get_serializer_class(self):
         if self.request.method == "GET":
@@ -139,33 +218,87 @@ class ApiProduct(viewsets.ModelViewSet):
 
     @swagger_helper(tags="Product", model="Product")
     def partial_update(self, request, *args, **kwargs):
-        response = super().partial_update(*args, **kwargs)
-        cache.delete(f"product_list:*")
-        cache.delete(f"product_detail:{kwargs["pk"]}")
-        cache.delete(f"search:*")
-        cache.delete(f"search_suggestions:*")
-
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial_update=True)
-        if serializer.is_valid():
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
 
-            with transaction.atomic:
-                data = serializer.data
-                if "latest_item_position" in data:
-                    new_position = data["latest_item_position"]
+        if serializer.is_valid():
+            with transaction.atomic():
+
+                validated_data = serializer.validated_data
+                max_position = 20
+
+                if "latest_item_position" in validated_data:
+                    new_position = validated_data["latest_item_position"]
                     self.get_queryset().filter(
+                        latest_item=True,
                         latest_item_position__gte=new_position,
-                        latest_item__isnull=False
+                        latest_item_position__isnull=False
+                    ).exclude(id=instance.id).select_for_update().update(
+                        latest_item_position=Case(
+                            When(latest_item_position__gt=max_position, then=None),
+                            default=F("latest_item_position") + 1
+                        ),
+                        latest_item=Case(
+                            When(latest_item_position__gt=max_position, then=False),
+                            default=True
+                        )
                     )
 
-                return Response(serializer.data, status=status.HTTP_200_OK)
+                if "top_selling_position" in validated_data:
+                    new_selling_position = validated_data["top_selling_position"]
+                    self.get_queryset().filter(
+                        top_selling_items=True,
+                        top_selling_position__gte=new_selling_position,
+                        top_selling_position__isnull=False
+                    ).exclude(id=instance.id).select_for_update().update(
+                        top_selling_position=Case(
+                            When(top_selling_position__gt=max_position, then=None),
+                            default=F("top_selling_position") + 1
+                        ),
+                        top_selling_items=Case(
+                            When(top_selling_position__gt=max_position, then=False),
+                            default=True
+                        )
+                    )
+                serializer.save()
+
+            # clear cache
+            cache.delete(f"product_list:*")
+            cache.delete(f"product_detail:{kwargs['pk']}")
+            cache.delete(f"search:*")
+            cache.delete(f"search_suggestions:*")
+
+            return Response(serializer.data, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_helper(tags="Product", model="Product")
     @action(methods=['GET'], detail=False)
     def homepage(self, request):
-        pass
+        products = Product.objects.select_related('sub_category__category')
+        latest_prioritized = products.filter(Q(latest_item=True) & Q(latest_item_position__isnull=False)).order_by('latest_item_position')
+        random_others = products.exclude(id__in=latest_prioritized.values_list('id', flat=True)).order_by('?')[:max(0, 20 - latest_prioritized.count())]
+        latest_products = list(latest_prioritized) + list(random_others)
+
+        top_selling_prioritized = products.filter(Q(top_selling_items=True) & Q(top_selling_position__isnull=False)).order_by('top_selling_position')
+        other_latest = products.exclude(id__in=top_selling_prioritized.values_list('id', flat=True)).order_by('?')[:max(0, 20 - top_selling_prioritized.count())]
+        top_selling_products = list(top_selling_prioritized) + list(other_latest)
+
+        latest_paginator = self.pagination_class()
+        top_selling_paginator = self.pagination_class()
+        latest_paginator.page_query_param = 'page_latest'
+        top_selling_paginator.page_query_param = 'page_top'
+
+        latest_page = latest_paginator.paginate_queryset(latest_products, request, view=self)
+        top_selling_page = top_selling_paginator.paginate_queryset(top_selling_products, request, view=self)
+
+        latest_serializer = self.get_serializer(latest_page, many=True)
+        top_selling_serializer = self.get_serializer(top_selling_page, many=True)
+
+        return Response({
+            "latest_items": latest_paginator.get_paginated_response(latest_serializer.data).data,
+            "top_selling_items": top_selling_paginator.get_paginated_response(top_selling_serializer.data).data
+        })
 
     @swagger_auto_schema(manual_parameters=[openapi.Parameter('search', openapi.IN_QUERY, description="Search keyword", type=openapi.TYPE_STRING), openapi.Parameter('page', openapi.IN_QUERY, description="Page number", type=openapi.TYPE_INTEGER), openapi.Parameter('page_size', openapi.IN_QUERY, description="Items per page (max: 100)", type=openapi.TYPE_INTEGER)], operation_id="GET products", operation_description="Search and paginate products", tags=["Product"])
     @action(detail=False, methods=['get'], url_path='search')
@@ -249,6 +382,10 @@ class ApiProductSize(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
     queryset = ProductSize.objects.all()
     pagination_class = CustomPagination
+    permission_classes = [IsAdminOrReadOnly]
+    filterset_fields = ["product"]
+    search_fields = ["size"]
+    ordering_fields = ["quantity"]
 
     def get_serializer_class(self):
         if self.request.method == "GET":
@@ -256,21 +393,58 @@ class ApiProductSize(viewsets.ModelViewSet):
         return ProductSizeSerializer
 
     @swagger_helper(tags="ProductSize", model="Product size")
-    def list(self, *args, **kwargs):
-        return super().list(*args, **kwargs)
+    def list(self, request, *args, **kwargs):
+        cache_timeout = 300
+        cache_params = dict(request.query_params)
+        cache_key = f"product_size_list:{json.dumps(cache_params, sort_keys=True)}"
+
+        cached_response = cache.get(cache_key)
+        if cached_response:
+            return Response(cached_response)
+
+        response = super().list(request, *args, **kwargs)
+        cache.set(cache_key, response.data, cache_timeout)
+        return response
 
     @swagger_helper(tags="ProductSize", model="Product size")
-    def retrieve(self, *args, **kwargs):
-        return super().retrieve(*args, **kwargs)
+    def retrieve(self, request, *args, **kwargs):
+        cache_timeout = 300
+        cache_params = dict(request.query_params)
+        size_pk = kwargs["pk"]
+        cache_key = f"product_size_detail:{size_pk}:{json.dumps(cache_params, sort_keys=True)}"
+
+        cached_response = cache.get(cache_key)
+        if cached_response:
+            return Response(cached_response)
+
+        response = super().retrieve(request, *args, **kwargs)
+        cache.set(cache_key, response.data, cache_timeout)
+        return response
 
     @swagger_helper(tags="ProductSize", model="Product size")
     def create(self, *args, **kwargs):
-        return super().create(*args, **kwargs)
+        response = super().create(*args, **kwargs)
+        cache.delete_pattern("product_size_list:*")
+        cache.delete_pattern("product_size_detail:*")
+        cache.delete_pattern("product_list:*")
+        cache.delete_pattern("product_detail:*")
+        return response
 
     @swagger_helper(tags="ProductSize", model="Product size")
     def partial_update(self, *args, **kwargs):
-        return super().partial_update(*args, **kwargs)
+        response = super().partial_update(*args, **kwargs)
+        cache.delete_pattern("product_size_list:*")
+        cache.delete_pattern(f"product_size_detail:{kwargs['pk']}:*")
+        cache.delete_pattern("product_list:*")
+        cache.delete_pattern("product_detail:*")
+        return response
 
     @swagger_helper(tags="ProductSize", model="Product size")
     def destroy(self, *args, **kwargs):
-        return super().destroy(*args, **kwargs)
+        size_pk = kwargs["pk"]
+        response = super().destroy(*args, **kwargs)
+        cache.delete_pattern("product_size_list:*")
+        cache.delete_pattern(f"product_size_detail:{size_pk}:*")
+        cache.delete_pattern("product_list:*")
+        cache.delete_pattern("product_detail:*")
+        return response
