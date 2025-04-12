@@ -26,7 +26,7 @@ class ApiWishlist(ModelViewSet):
     def list(self, request, *args, **kwargs):
         cache_timeout = 300
         cache_params = dict(request.query_params)
-        cache_key = f"wishlist:{request.user.id}:{json.dumps(cache_params, sort_keys=True)}"
+        cache_key = f"wishlist_list:{request.user.id}:{json.dumps(cache_params, sort_keys=True)}"
 
         cached_response = cache.get(cache_key)
         if cached_response:
@@ -39,9 +39,8 @@ class ApiWishlist(ModelViewSet):
     @swagger_helper("Wishlist", "wishlist")
     def retrieve(self, request, *args, **kwargs):
         cache_timeout = 300
-        cache_params = dict(request.query_params)
         wishlist_pk = kwargs["pk"]
-        cache_key = f"wishlist_detail:{request.user.id}:{wishlist_pk}:{json.dumps(cache_params, sort_keys=True)}"
+        cache_key = f"wishlist_detail:{request.user.id}:{wishlist_pk}"
 
         cached_response = cache.get(cache_key)
         if cached_response:
@@ -54,13 +53,13 @@ class ApiWishlist(ModelViewSet):
     @swagger_helper("Wishlist", "wishlist")
     def create(self, *args, **kwargs):
         response = super().create(*args, **kwargs)
-        cache.delete_pattern(f"wishlist:{self.request.user.id}:*")
+        cache.delete_pattern(f"wishlist_list:{self.request.user.id}:*")
         return response
 
     @swagger_helper("Wishlist", "wishlist")
     def destroy(self, *args, **kwargs):
         response = super().destroy(*args, **kwargs)
-        cache.delete_pattern(f"wishlist:{self.request.user.id}:*")
+        cache.delete_pattern(f"wishlist_list:{self.request.user.id}:*")
         return response
 
     def perform_create(self, serializer):
