@@ -1,13 +1,16 @@
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.response import Response
 from .serializers import WishlistViewSerializer, WishlistSerializer
 from .models import Wishlist
 from .pagination import CustomPagination
 from .utils import swagger_helper
+from django.core.cache import cache
+import json
 
 
 class ApiWishlist(ModelViewSet):
-    http_method_names = ["get", "post", "delete", "head", "options", ]
+    http_method_names = ["get", "post", "delete", "head", "options"]
     pagination_class = CustomPagination
     permission_classes = [IsAuthenticated]
 
@@ -20,21 +23,45 @@ class ApiWishlist(ModelViewSet):
         return WishlistSerializer
 
     @swagger_helper("Wishlist", "wishlist")
-    def list(self, *args, **kwargs):
-        return super().list(*args, **kwargs)
+    def list(self, request, *args, **kwargs):
+        cache_timeout = 300
+        cache_params = dict(request.query_params)
+        cache_key = f"wishlist:{request.user.id}:{json.dumps(cache_params, sort_keys=True)}"
+
+        cached_response = cache.get(cache_key)
+        if cached_response:
+            return Response(cached_response)
+
+        response = super().list(request, *args, **kwargs)
+        cache.set(cache_key, response.data, cache_timeout)
+        return response
 
     @swagger_helper("Wishlist", "wishlist")
-    def retrieve(self, *args, **kwargs):
-        return super().retrieve(*args, **kwargs)
+    def retrieve(self, request, *args, **kwargs):
+        cache_timeout = 300
+        cache_params = dict(request.query_params)
+        wishlist_pk = kwargs["pk"]
+        cache_key = f"wishlist_detail:{request.user.id}:{wishlist_pk}:{json.dumps(cache_params, sort_keys=True)}"
+
+        cached_response = cache.get(cache_key)
+        if cached_response:
+            return Response(cached_response)
+
+        response = super().retrieve(request, *args, **kwargs)
+        cache.set(cache_key, response.data, cache_timeout)
+        return response
 
     @swagger_helper("Wishlist", "wishlist")
     def create(self, *args, **kwargs):
-        return super().create(*args, **kwargs)
+        response = super().create(*args, **kwargs)
+        cache.delete_pattern(f"wishlist:{self.request.user.id}:*")
+        return response
 
     @swagger_helper("Wishlist", "wishlist")
     def destroy(self, *args, **kwargs):
-        return super().destroy(*args, **kwargs)
+        response = super().destroy(*args, **kwargs)
+        cache.delete_pattern(f"wishlist:{self.request.user.id}:*")
+        return response
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
-
