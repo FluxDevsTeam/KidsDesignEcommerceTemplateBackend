@@ -1,5 +1,4 @@
 import json
-
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -84,7 +83,7 @@ class ApiCart(viewsets.ModelViewSet):
 
 class ApiCartItem(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
-    pagination = CustomPagination
+    pagination_class = CustomPagination
     permission_classes = [IsAuthenticatedOrCartItemOwner]
 
     def get_serializer_class(self):
@@ -96,8 +95,17 @@ class ApiCartItem(viewsets.ModelViewSet):
         return CartItem.objects.filter(cart=self.kwargs.get("cart_pk"), cart__user=self.request.user)
 
     @swagger_helper("CartItem", "cart item")
-    def list(self, *args, **kwargs):
-        return super().list(*args, **kwargs)
+    def list(self, request, *args, **kwargs):
+        user = request.user.id
+        query_params = dict(request.query_params)
+        cache_key = f"cart_item_list:{user}:{json.dumps(query_params, sort_keys=True)}"
+        cache_timeout = 300
+        cached_response = cache.get(cache_key)
+        if cached_response:
+            return Response(cached_response)
+        response = super().list(*args, **kwargs)
+        cache.set(cache_key, query_params, cache_timeout)
+        return response
 
     @swagger_helper("CartItem", "cart item")
     def create(self, request, *args, **kwargs):
@@ -126,12 +134,24 @@ class ApiCartItem(viewsets.ModelViewSet):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             serializer.save(quantity=quantity, cart=cart)
+            cache.delete(f"cart_item_list:{request.user.id}:*")
+            cache.delete(f"cart_item_detail:{request.user.id}:{kwargs["pk"]}")
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @swagger_helper("CartItem", "cart item")
-    def retrieve(self, *args, **kwargs):
-        return super().retrieve(*args, **kwargs)
+    def retrieve(self, request, *args, **kwargs):
+        user = request.user.id
+        query_params = dict(request.query_params)
+        cache_key = f"cart_item_detail:{user}:{kwargs["pk"]}:{json.dumps(query_params, sort_keys=True)}"
+        cache_timeout = 300
+        cached_response = cache.get(cache_key)
+        if cached_response:
+            return Response(cached_response)
+
+        response = super().retrieve(*args, **kwargs)
+        cache.set(cache_key, query_params, cache_timeout)
+        return response
 
     @swagger_helper("CartItem", "cart item")
     def partial_update(self, request, *args, **kwargs):
@@ -185,10 +205,15 @@ class ApiCartItem(viewsets.ModelViewSet):
 
         if response_messages:
             cart_item.save()
+            cache.delete(f"cart_item_list:{request.user.id}:*")
+            cache.delete(f"cart_item_detail:{request.user.id}:{kwargs["pk"]}")
             return Response({"message": " ".join(response_messages)}, status=status.HTTP_200_OK)
 
         return Response({"message": "No changes made."}, status=status.HTTP_200_OK)
 
     @swagger_helper("CartItem", "cart item")
-    def destroy(self, *args, **kwargs):
-        return super().destroy(*args, **kwargs)
+    def destroy(self, request, *args, **kwargs):
+        response = super().destroy(*args, **kwargs)
+        cache.delete(f"cart_item_list:{request.user.id}:*")
+        cache.delete(f"cart_item_detail:{request.user.id}:{kwargs["pk"]}")
+        return response
