@@ -86,6 +86,7 @@ class ApiProductCategory(viewsets.ModelViewSet):
         cache.delete_pattern("product_list:*")
         return response
 
+
 class ApiProductSubCategory(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
     queryset = ProductSubCategory.objects.all()
@@ -148,11 +149,12 @@ class ApiProductSubCategory(viewsets.ModelViewSet):
         cache.delete_pattern("product_list:*")
         return response
 
+
 class ApiProduct(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
     queryset = Product.objects.all()
     pagination_class = CustomPagination
-    permission_classes = IsAdminOrReadOnly
+    # permission_classes = IsAdminOrReadOnly
     ordering_fields = ["price", "date_created", "is_available", "latest_item", "top_selling_items"]
     filterset_class = ProductFilter
 
