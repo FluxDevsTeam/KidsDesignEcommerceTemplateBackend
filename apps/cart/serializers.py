@@ -6,7 +6,7 @@ from ..products.serializers import ProductSimpleViewSerializer, SimpleProductSiz
 class CartSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cart
-        fields = ["id", "user", "first_name", "last_name", "email", "state", "city", "delivery_address", "phone_number"]
+        fields = ["id", "user", "first_name", "last_name", "email", "state", "city", "delivery_address", "phone_number", "estimated_delivery"]
         read_only_fields = ["id", "user"]
 
 
@@ -33,3 +33,13 @@ class CartItemSerializerView(serializers.ModelSerializer):
         model = CartItem
         fields = ["id", "product", "cart", "size", "quantity"]
         read_only_fields = ["id"]
+
+
+class CartSerializerView(serializers.ModelSerializer):
+    cart_items = CartItemSerializerView(many=True, read_only=True, source="cartitem_cart")
+
+    class Meta:
+        model = Cart
+        fields = ["id", "user", "first_name", "last_name", "email", "state", "city", "delivery_address", "phone_number",
+                  "estimated_delivery", "cart_items"]
+        read_only_fields = ["id", "user"]

@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from django.core.cache import cache
 from .models import Cart, CartItem
 from .permissions import IsAuthenticatedOrCartItemOwner
-from .serializers import CartSerializer, CartItemSerializer, CartItemSerializerView
+from .serializers import CartSerializer, CartItemSerializer, CartItemSerializerView, CartSerializerView
 from rest_framework import viewsets, status
 from .pagination import CustomPagination
 from .utils import swagger_helper
@@ -15,8 +15,12 @@ from ..products.models import Product, ProductSize
 class ApiCart(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
     pagination_class = CustomPagination
-    serializer_class = CartSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return CartSerializerView
+        return CartSerializer
 
     def get_queryset(self):
         return Cart.objects.filter(user=self.request.user)
@@ -36,7 +40,7 @@ class ApiCart(viewsets.ModelViewSet):
 
     @swagger_helper("Cart", "cart")
     def create(self, request, *args, **kwargs):
-        response = super().create(*args, **kwargs)
+        response = super().create(request, *args, **kwargs)
         cache.delete_pattern(f"cart_list:{request.user.id}:*")
         return response
 
@@ -54,16 +58,16 @@ class ApiCart(viewsets.ModelViewSet):
 
     @swagger_helper("Cart", "cart")
     def partial_update(self, request, *args, **kwargs):
-        response = super().partial_update(*args, **kwargs)
+        response = super().partial_update(request, *args, **kwargs)
         cache.delete_pattern(f"cart_list:{request.user.id}:*")
-        cache.delete_pattern(f"cart_detail:{request.user.id}:{kwargs['pk']}:*")
+        cache.delete_pattern(f"cart_detail:{request.user.id}:{kwargs['pk']}")
         return response
 
     @swagger_helper("Cart", "cart")
     def destroy(self, request, *args, **kwargs):
-        response = super().destroy(*args, **kwargs)
+        response = super().destroy(request, *args, **kwargs)
         cache.delete_pattern(f"cart_list:{request.user.id}:*")
-        cache.delete_pattern(f"cart_detail:{request.user.id}:{kwargs['pk']}:*")
+        cache.delete_pattern(f"cart_detail:{request.user.id}:{kwargs['pk']}")
         return response
 
     def perform_create(self, serializer):
@@ -73,6 +77,7 @@ class ApiCart(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         user = self.request.user
         serializer.save(user=user)
+
 
 class ApiCartItem(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
@@ -191,7 +196,7 @@ class ApiCartItem(viewsets.ModelViewSet):
         if response_messages:
             cart_item.save()
             cache.delete_pattern(f"cart_item_list:{request.user.id}:*")
-            cache.delete_pattern(f"cart_item_detail:{request.user.id}:{kwargs['pk']}:*")
+            cache.delete_pattern(f"cart_item_detail:{request.user.id}:{kwargs['pk']}")
             cache.delete_pattern(f"cart_list:{request.user.id}:*")
             return Response({"message": " ".join(response_messages)}, status=status.HTTP_200_OK)
 
@@ -201,6 +206,6 @@ class ApiCartItem(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         response = super().destroy(*args, **kwargs)
         cache.delete_pattern(f"cart_item_list:{request.user.id}:*")
-        cache.delete_pattern(f"cart_item_detail:{request.user.id}:{kwargs['pk']}:*")
+        cache.delete_pattern(f"cart_item_detail:{request.user.id}:{kwargs['pk']}")
         cache.delete_pattern(f"cart_list:{request.user.id}:*")
         return response
