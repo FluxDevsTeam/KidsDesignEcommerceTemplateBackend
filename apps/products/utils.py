@@ -14,6 +14,8 @@ def swagger_helper(tags, model):
 
         action_type = func.__name__
         get_description = descriptions.get(action_type, f"{action_type} {model}")
+        if action_type in ["create", "partial_update", "destroy"]:
+            return swagger_auto_schema(operation_id=f"{action_type} {model}", operation_description=get_description, tags=[tags])(func)
         return swagger_auto_schema(manual_parameters=PAGINATION_PARAMS, operation_id=f"{action_type} {model}", operation_description=get_description, tags=[tags])(func)
 
     return decorators
