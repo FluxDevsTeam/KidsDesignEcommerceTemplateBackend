@@ -40,8 +40,10 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = ["id", "name", "description", "sub_category", "colour", "image1", "image2", "image3",
-                  "discounted_price", "price", "is_available"]
-        read_only_fields = ["id"]
+                  "discounted_price", "price", "is_available", "latest_item", "latest_item_position",
+                  "top_selling_items", "top_selling_position", "date_created", "date_updated"]
+
+        read_only_fields = ["id", "date_created", "date_updated"]
 
 
 class ProductViewSerializer(serializers.ModelSerializer):
@@ -51,8 +53,10 @@ class ProductViewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = ["id", "name", "description", "total_quantity", "sub_category", "colour", "image1", "image2", "image3",
-                  "discounted_price", "price", "is_available"]
-        read_only_fields = ["id"]
+                  "discounted_price", "price", "is_available", "latest_item", "latest_item_position",
+                  "top_selling_items", "top_selling_position", "date_created", "date_updated"]
+
+        read_only_fields = ["id", "date_created", "date_updated"]
 
     def get_total_quantity(self, obj):
         return obj.sizes.aggregate(total=Sum("quantity"))["total"] or 0

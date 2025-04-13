@@ -1,5 +1,4 @@
 import json
-from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from django.core.cache import cache
@@ -64,26 +63,32 @@ class ApiProductCategory(viewsets.ModelViewSet):
         cache.delete_pattern("subcategory_list:*")
         cache.delete_pattern("subcategory_detail:*")
         cache.delete_pattern("product_list:*")
+        cache.delete_pattern("search:*")
+        cache.delete_pattern("search_suggestions:*")
         return response
 
     @swagger_helper(tags="ProductCategory", model="Product category")
     def partial_update(self, *args, **kwargs):
         response = super().partial_update(*args, **kwargs)
         cache.delete_pattern("category_list:*")
-        cache.delete_pattern(f"category_detail:{kwargs['pk']}:*")
+        cache.delete_pattern(f"category_detail:{kwargs['pk']}")
         cache.delete_pattern("subcategory_list:*")
         cache.delete_pattern("subcategory_detail:*")
         cache.delete_pattern("product_list:*")
+        cache.delete_pattern("search:*")
+        cache.delete_pattern("search_suggestions:*")
         return response
 
     @swagger_helper(tags="ProductCategory", model="Product category")
     def destroy(self, *args, **kwargs):
         response = super().destroy(*args, **kwargs)
         cache.delete_pattern("category_list:*")
-        cache.delete_pattern(f"category_detail:{kwargs['pk']}:*")
+        cache.delete_pattern(f"category_detail:{kwargs['pk']}")
         cache.delete_pattern("subcategory_list:*")
         cache.delete_pattern("subcategory_detail:*")
         cache.delete_pattern("product_list:*")
+        cache.delete_pattern("search:*")
+        cache.delete_pattern("search_suggestions:*")
         return response
 
 
@@ -131,22 +136,28 @@ class ApiProductSubCategory(viewsets.ModelViewSet):
         cache.delete_pattern("subcategory_list:*")
         cache.delete_pattern("subcategory_detail:*")
         cache.delete_pattern("product_list:*")
+        cache.delete_pattern("search:*")
+        cache.delete_pattern("search_suggestions:*")
         return response
 
     @swagger_helper(tags="ProductSubCategory", model="Product sub category")
     def partial_update(self, *args, **kwargs):
         response = super().partial_update(*args, **kwargs)
         cache.delete_pattern("subcategory_list:*")
-        cache.delete_pattern(f"subcategory_detail:{kwargs['pk']}:*")
+        cache.delete_pattern(f"subcategory_detail:{kwargs['pk']}")
         cache.delete_pattern("product_list:*")
+        cache.delete_pattern("search:*")
+        cache.delete_pattern("search_suggestions:*")
         return response
 
     @swagger_helper(tags="ProductSubCategory", model="Product sub category")
     def destroy(self, *args, **kwargs):
         response = super().destroy(*args, **kwargs)
         cache.delete_pattern("subcategory_list:*")
-        cache.delete_pattern(f"subcategory_detail:{kwargs['pk']}:*")
+        cache.delete_pattern(f"subcategory_detail:{kwargs['pk']}")
         cache.delete_pattern("product_list:*")
+        cache.delete_pattern("search:*")
+        cache.delete_pattern("search_suggestions:*")
         return response
 
 
@@ -245,7 +256,7 @@ class ApiProduct(viewsets.ModelViewSet):
                 serializer.save()
 
             cache.delete_pattern("product_list:*")
-            cache.delete_pattern(f"product_detail:{kwargs['pk']}:*")
+            cache.delete_pattern(f"product_detail:{kwargs['pk']}")
             cache.delete_pattern("search:*")
             cache.delete_pattern("search_suggestions:*")
             cache.delete_pattern("cart_list:*")
@@ -260,7 +271,7 @@ class ApiProduct(viewsets.ModelViewSet):
     def destroy(self, *args, **kwargs):
         response = super().destroy(*args, **kwargs)
         cache.delete_pattern("product_list:*")
-        cache.delete_pattern(f"product_detail:{kwargs['pk']}:*")
+        cache.delete_pattern(f"product_detail:{kwargs['pk']}")
         cache.delete_pattern("search:*")
         cache.delete_pattern("search_suggestions:*")
         cache.delete_pattern("cart_list:*")
@@ -426,22 +437,28 @@ class ApiProductSize(viewsets.ModelViewSet):
         cache.delete_pattern("product_size_detail:*")
         cache.delete_pattern("product_list:*")
         cache.delete_pattern("product_detail:*")
+        cache.delete_pattern("search:*")
+        cache.delete_pattern("search_suggestions:*")
         return response
 
     @swagger_helper(tags="ProductSize", model="Product size")
     def partial_update(self, *args, **kwargs):
         response = super().partial_update(*args, **kwargs)
         cache.delete_pattern("product_size_list:*")
-        cache.delete_pattern(f"product_size_detail:{kwargs['pk']}:*")
+        cache.delete_pattern(f"product_size_detail:{kwargs['pk']}")
         cache.delete_pattern("product_list:*")
         cache.delete_pattern("product_detail:*")
+        cache.delete_pattern("search:*")
+        cache.delete_pattern("search_suggestions:*")
         return response
 
     @swagger_helper(tags="ProductSize", model="Product size")
     def destroy(self, *args, **kwargs):
         response = super().destroy(*args, **kwargs)
         cache.delete_pattern("product_size_list:*")
-        cache.delete_pattern(f"product_size_detail:{kwargs['pk']}:*")
+        cache.delete_pattern(f"product_size_detail:{kwargs['pk']}")
         cache.delete_pattern("product_list:*")
         cache.delete_pattern("product_detail:*")
+        cache.delete_pattern("search:*")
+        cache.delete_pattern("search_suggestions:*")
         return response

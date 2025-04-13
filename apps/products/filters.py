@@ -7,9 +7,10 @@ class ProductFilter(FilterSet):
     min_price = NumberFilter(field_name="price", lookup_expr='gte')
     max_price = NumberFilter(field_name="price", lookup_expr='lte')
     discount = BooleanFilter(method='filter_discount')
+
     class Meta:
         model = Product
-        fields = ['sub_category', 'sub_category__category', 'price', 'date_created', 'min_price', 'max_price', "is_available", "latest_item", "top_selling_items"]
+        fields = ['sub_category', 'sub_category__category', 'date_created', 'min_price', 'max_price', "is_available", "latest_item", "top_selling_items"]
 
     def filter_discount(self, queryset, name, value):
         if value:
