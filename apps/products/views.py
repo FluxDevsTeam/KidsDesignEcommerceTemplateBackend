@@ -154,7 +154,7 @@ class ApiProduct(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
     queryset = Product.objects.all()
     pagination_class = CustomPagination
-    # permission_classes = IsAdminOrReadOnly
+    permission_classes = [IsAdminOrReadOnly]
     ordering_fields = ["price", "date_created", "is_available", "latest_item", "top_selling_items"]
     filterset_class = ProductFilter
 
@@ -305,7 +305,7 @@ class ApiProduct(viewsets.ModelViewSet):
         cache.set(cache_key, response_data, cache_timeout)
         return Response(response_data)
 
-    @swagger_auto_schema(...)
+    @swagger_auto_schema(manual_parameters=[openapi.Parameter('search', openapi.IN_QUERY, description="Search keyword", type=openapi.TYPE_STRING), openapi.Parameter('page', openapi.IN_QUERY, description="Page number", type=openapi.TYPE_INTEGER), openapi.Parameter('page_size', openapi.IN_QUERY, description="Items per page (max: 100)", type=openapi.TYPE_INTEGER)], operation_id="Search Products", operation_description="Search and paginate products", tags=["Product"])
     @action(detail=False, methods=['get'], url_path='search')
     def search(self, request, *args, **kwargs):
         query = request.query_params.get("search", "").strip()
@@ -338,7 +338,7 @@ class ApiProduct(viewsets.ModelViewSet):
         cache.set(cache_key, response_data, cache_timeout)
         return Response(response_data, status=status.HTTP_200_OK)
 
-    @swagger_auto_schema(...)
+    @swagger_auto_schema(manual_parameters=[openapi.Parameter('query', openapi.IN_QUERY, description="autocomplete for search", type=openapi.TYPE_STRING), openapi.Parameter('page', openapi.IN_QUERY, description="Page number", type=openapi.TYPE_INTEGER), openapi.Parameter('page_size', openapi.IN_QUERY, description="Items per page (max: 100)", type=openapi.TYPE_INTEGER)], operation_id="Auocomplete Products", operation_description="Search products for autocomplete", tags=["Product"])
     @action(detail=False, methods=['get'], url_path='autocomplete')
     def autocomplete(self, request, *args, **kwargs):
         query = request.query_params.get('query', '').strip()
