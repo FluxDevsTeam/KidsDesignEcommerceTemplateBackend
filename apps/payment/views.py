@@ -2,6 +2,8 @@ from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
+
+from .delivery_fee import calculate_delivery_fee
 from ..cart.models import Cart, CartItem
 from .serializers import PaymentCartSerializer
 from ..orders.models import Order, OrderItem
@@ -10,14 +12,12 @@ from django.utils.timezone import now
 from datetime import timedelta
 import requests
 from decimal import Decimal
-from rest_framework import status
 import logging
 from django.db import transaction
 from rest_framework_simplejwt.tokens import AccessToken
 import hmac
 import hashlib
 import json
-from django.core.mail import send_mail
 from django.conf import settings
 from .tasks import send_order_confirmation_email, create_order_from_webhook
 from celery.exceptions import OperationalError
@@ -29,61 +29,22 @@ logger = logging.getLogger(__name__)
 User = get_user_model()
 
 
-def calculate_delivery_fee(cart):
-    subtotal = sum(item.product.price * item.quantity for item in cart.cartitem_cart.all())
-    return Decimal("15.00") if subtotal > 0 else Decimal("0.00")
-
-
-def get_day_suffix(day):
-    return "th" if 11 <= day <= 13 else {1: "st", 2: "nd", 3: "rd"}.get(day % 10, "th")
-
-
-def send_confirmation_email(order_id, user_email, first_name, total_amount):
-    try:
-        send_order_confirmation_email.delay(order_id, user_email, first_name, total_amount)
-        logger.info("Queued email task via Celery", extra={'order_id': order_id, 'user_email': user_email})
-    except (OperationalError, AttributeError) as e:
-        logger.warning("Celery not configured or failed", extra={'order_id': order_id, 'error': str(e)})
-        subject = f"Order Confirmation - Order #{order_id}"
-        message = (
-            f"Dear {first_name},\n\n"
-            f"Thank you for your order! Your order (#{order_id}) has been successfully placed.\n"
-            f"Total Amount: {settings.PAYMENT_CURRENCY} {total_amount}\n"
-            f"We’ll notify you once your order ships.\n\n"
-            f"Best regards,\nASLUXURY ORIGINALS Team"
-        )
-        try:
-            send_mail(
-                subject,
-                message,
-                settings.EMAIL_HOST_USER,
-                [user_email],
-                fail_silently=False,
-            )
-            logger.info("Sent email synchronously", extra={'order_id': order_id, 'user_email': user_email})
-        except Exception as email_err:
-            logger.exception("Failed to send email synchronously",
-                             extra={'order_id': order_id, 'user_email': user_email, 'error': str(email_err)})
-
-
 class PaymentSummaryViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
 
     def list(self, request):
         try:
             cart = get_object_or_404(Cart, user=request.user)
-            if cart.delivery_fee is None:
-                cart.delivery_fee = calculate_delivery_fee(cart)
-
+            cart.delivery_fee = calculate_delivery_fee(cart)
+            # cart.delivery_fee = 200
             serializer = PaymentCartSerializer(cart)
             data = serializer.data
 
-            # Use calculate_delivery_dates based on cart.state
             if not cart.state:
                 return Response({"error": "State is required to calculate delivery date"}, status=400)
             estimated_delivery = calculate_delivery_dates(cart.state)
 
-            cart.estimated_delivery = estimated_delivery  # Save to cart
+            cart.estimated_delivery = estimated_delivery
             cart.save()
 
             data["estimated_delivery"] = estimated_delivery
@@ -91,7 +52,7 @@ class PaymentSummaryViewSet(viewsets.ViewSet):
             return Response(data)
         except Exception as e:
             logger.exception("Error in payment summary", extra={'user_id': request.user.id})
-            return Response({"error": "Could not generate payment summary. Please try again."}, status=500)
+            return Response({"error": f"Could not generate payment summary. Please try again."}, status=500)
 
 
 class PaymentInitiateViewSet(viewsets.ViewSet):
@@ -101,40 +62,50 @@ class PaymentInitiateViewSet(viewsets.ViewSet):
         try:
             cart = get_object_or_404(Cart, user=request.user)
 
-            serializer = PaymentCartSerializer(cart, data=request.data, partial=True)
-            if not serializer.is_valid():
-                return Response({"error": "Invalid payment data", "details": serializer.errors}, status=400)
+            input_serializer = PaymentCartSerializer(cart, data=request.data, partial=True)
+            if not input_serializer.is_valid():
+                return Response(
+                    {"error": "Invalid payment data", "details": input_serializer.errors},
+                    status=400
+                )
 
             if cart.delivery_fee is None:
                 cart.delivery_fee = calculate_delivery_fee(cart)
                 cart.save()
 
-            serializer = PaymentCartSerializer(cart)
-            total_amount = serializer.data["total"]
+            provider = input_serializer.validated_data.get("provider")
+            redirect_url = settings.PAYMENT_SUCCESS_URL
+
+            output_serializer = PaymentCartSerializer(cart)
+            total_amount = output_serializer.data.get("total")
             if total_amount is None or total_amount <= 0:
-                return Response({"error": "Invalid payment amount", "message": "Amount must be greater than zero."},
-                                status=400)
+                return Response(
+                    {
+                        "error": "Invalid payment amount",
+                        "message": "Amount must be greater than zero."
+                    }, status=400)
 
             email = request.user.email or cart.email
             phone_no = request.user.phone_number or cart.phone_number or ""
             if not email:
                 return Response({"error": "Email address is required for payment"}, status=400)
 
-            provider = serializer.validated_data["provider"]
-            redirect_url = serializer.validated_data["redirect_url"]
-
             if provider == "flutterwave":
                 response = initiate_flutterwave_payment(total_amount, email, request.user, redirect_url)
             elif provider == "paystack":
                 response = initiate_paystack_payment(total_amount, email, request.user, redirect_url)
+            else:
+                return Response({"error": "Invalid payment provider"}, status=400)
 
             if response.status_code == 200:
                 token = generate_confirm_token(request.user, str(cart.id))
                 response.data["confirm_token"] = token
-            return response
+                return response
+
+            return Response({"error": "Payment initiation failed", "details": response.data}, status=response.status_code)
 
         except Exception as e:
-            logger.exception("Error initiating payment", extra={'user_id': request.user.id})
+            logger.exception("Error initiating payment", extra={"user_id": request.user.id})
             return Response({"error": "Payment initiation failed. Please try again."}, status=500)
 
 
@@ -273,7 +244,7 @@ class PaymentSuccessViewSet(viewsets.ViewSet):
             logger.info(f"Order {order.id} created successfully",
                         extra={'provider': provider, 'tx_ref': tx_ref, 'user_id': request.user.id})
 
-            send_confirmation_email(
+            send_order_confirmation_email(
                 order_id=str(order.id),
                 user_email=order.email,
                 first_name=order.first_name,
