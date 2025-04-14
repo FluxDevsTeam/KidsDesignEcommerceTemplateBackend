@@ -12,6 +12,12 @@ class CartSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "user"]
 
 
+class PatchCartSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Cart
+        fields = ["first_name", "last_name", "email", "state", "city", "delivery_address", "phone_number", "estimated_delivery"]
+
+
 class SimpleCartSerializerView(serializers.ModelSerializer):
     class Meta:
         model = Cart

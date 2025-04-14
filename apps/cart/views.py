@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from django.core.cache import cache
 from .models import Cart, CartItem
 from .permissions import IsAuthenticatedOrCartItemOwner
-from .serializers import CartSerializer, CartItemSerializer, CartItemSerializerView, CartSerializerView
+from .serializers import CartSerializer, CartItemSerializer, CartItemSerializerView, CartSerializerView, PatchCartSerializer
 from rest_framework import viewsets, status
 from .pagination import CustomPagination
 from .utils import swagger_helper
@@ -20,6 +20,8 @@ class ApiCart(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.request.method == "GET":
             return CartSerializerView
+        if self.request.method == "PATCH":
+            return PatchCartSerializer
         return CartSerializer
 
     def get_queryset(self):
