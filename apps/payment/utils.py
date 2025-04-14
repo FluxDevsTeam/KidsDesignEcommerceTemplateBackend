@@ -1,19 +1,10 @@
-# utils.py
-
 import datetime
-from math import radians, sin, cos, sqrt, atan2  # Add missing imports
+from math import radians, sin, cos, sqrt, atan2
 
-# Global Configuration Variables
 AVAILABLE_STATES = ["Lagos", "Ogun", "Abuja", "Kaduna", "Anambra", "Cross River"]
 WAREHOUSE_CITY = "Lagos"
-ZONE_DELIVERY_GAPS = {
-    "same_state": (1, 2),  # Special delivery gap for the warehouse city (1-2 days)
-    "near": (2, 4),
-    "medium": (4, 6),
-    "far": (6, 9)
-}
 
-# Coordinates for states (this is the data you provided)
+
 state_coords = {
     "Lagos": (6.5244, 3.3792),
     "Ogun": (7.1604, 3.3481),
@@ -55,9 +46,8 @@ state_coords = {
 }
 
 
-# Function to calculate distance between two geographical coordinates (lat, lon)
 def calculate_distance(coord1, coord2):
-    R = 6371.0  # Radius of the Earth in km
+    R = 6371.0
     lat1, lon1 = coord1
     lat2, lon2 = coord2
 
@@ -68,17 +58,5 @@ def calculate_distance(coord1, coord2):
 
     a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
     c = 2 * atan2(sqrt(a), sqrt(1 - a))
-    return R * c  # Distance in kilometers
+    return R * c
 
-
-# Function to calculate the delivery gap
-def get_delivery_gap(zone):
-    """
-    Returns the delivery gap for a given zone.
-
-    :param zone: The zone name (e.g., 'same_state', 'near', etc.).
-    :return: A tuple representing the delivery gap (start, end) in days.
-    """
-    if zone not in ZONE_DELIVERY_GAPS:
-        raise ValueError(f"Invalid zone: {zone}")
-    return ZONE_DELIVERY_GAPS[zone]
