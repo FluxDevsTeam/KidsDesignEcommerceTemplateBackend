@@ -9,6 +9,32 @@ logger = logging.getLogger(__name__)
 
 # Base directory for email templates (relative to this file)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# def send_confirmation_email(order_id, user_email, first_name, total_amount):
+#     try:
+#         send_order_confirmation_email.delay(order_id, user_email, first_name, total_amount)
+#         logger.info("Queued email task via Celery", extra={'order_id': order_id, 'user_email': user_email})
+#     except (OperationalError, AttributeError) as e:
+#         logger.warning("Celery not configured or failed", extra={'order_id': order_id, 'error': str(e)})
+#         subject = f"Order Confirmation - Order #{order_id}"
+#         message = (
+#             f"Dear {first_name},\n\n"
+#             f"Thank you for your order! Your order (#{order_id}) has been successfully placed.\n"
+#             f"Total Amount: {settings.PAYMENT_CURRENCY} {total_amount}\n"
+#             f"We’ll notify you once your order ships.\n\n"
+#             f"Best regards,\nASLUXURY ORIGINALS Team"
+#         )
+#         try:
+#             send_mail(
+#                 subject,
+#                 message,
+#                 settings.EMAIL_HOST_USER,
+#                 [user_email],
+#                 fail_silently=False,
+#             )
+#             logger.info("Sent email synchronously", extra={'order_id': order_id, 'user_email': user_email})
+#         except Exception as email_err:
+#             logger.exception("Failed to send email synchronously",
+#                              extra={'order_id': order_id, 'user_email': user_email, 'error': str(email_err)})
 
 
 def send_order_confirmation_email(order_id, user_email, first_name, total_amount):
