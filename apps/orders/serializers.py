@@ -20,6 +20,13 @@ class OrderSerializer(ModelSerializer):
         fields = ["id", "user", "order_date", "status", "delivery_fee", "first_name", "last_name", "email", "state", "city", "delivery_address", "phone_number", "delivery_date", "estimated_delivery", "order_items"]
         read_only_fields = ["id", "user", "order_date"]
 
+
+class PatchOrderSerializer(ModelSerializer):
+
+    class Meta:
+        model = Order
+        fields = ["status", "delivery_date"]
+
 # temporary feature for only development
 
 # class OrderItemSerializer(ModelSerializer):

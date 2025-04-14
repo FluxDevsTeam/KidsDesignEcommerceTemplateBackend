@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 
-from .serializers import OrderSerializer, OrderItemSerializerView
+from .serializers import OrderSerializer, OrderItemSerializerView, PatchOrderSerializer
 from .models import Order, OrderItem
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework import viewsets, status, filters
@@ -56,12 +56,17 @@ class ApiOrder(viewsets.ModelViewSet):
 class ApiAdminOrder(viewsets.ModelViewSet):
     http_method_names = ["get", "patch", "head", "options"]
     pagination_class = CustomPagination
-    serializer_class = OrderSerializer
+    # serializer_class = OrderSerializer
     permission_classes = [IsAdminUser]
     filterset_class = OrderFilter
     ordering_fields = ['order_date', 'total_amount', 'delivery_date']
     ordering = ['-order_date']
     search_fields = ["id", "user"]
+
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return OrderSerializer
+        return PatchOrderSerializer
 
     def get_queryset(self):
         return Order.objects.all()
