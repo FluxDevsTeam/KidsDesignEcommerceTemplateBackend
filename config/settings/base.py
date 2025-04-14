@@ -181,8 +181,9 @@ CELERY_RESULT_SERIALIZER = 'json'
 
 # payment configurations
 
+FLW_SEC_KEY = os.getenv('FLW_SEC_KEY')
 PAYMENT_CURRENCY = os.getenv('PAYMENT_CURRENCY', 'NGN')
-PAYMENT_SUCCESS_URL = os.getenv('PAYMENT_SUCCESS_URL', 'http://localhost:8000/payment-success/')
+PAYMENT_SUCCESS_URL = os.getenv('PAYMENT_SUCCESS_URL', 'http://127.0.0.1:8000/api/v1/payment/payment-success/')
 PAYMENT_PROVIDERS = {
     'flutterwave': {
         'verify_url': 'https://api.flutterwave.com/v3/transactions/{}/verify',
