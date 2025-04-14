@@ -1,5 +1,22 @@
 from django.db import models
 
+SIZE_CHOICES = [
+    ('Very Small', 'Very Small'),
+    ('Small', 'Small'),
+    ('Medium', 'Medium'),
+    ('Large', 'Large'),
+    ('Very Large', 'Very Large'),
+    ('XXL', 'XXL')
+]
+WEIGHT_CHOICES = [
+    ('Very Light', 'Very Light'),
+    ('Light', 'Light'),
+    ('Medium', 'Medium'),
+    ('Heavy', 'Heavy'),
+    ('Very Heavy', 'Very Heavy'),
+    ('XXHeavy', 'XXHeavy')
+]
+
 
 class ProductCategory(models.Model):
     name = models.CharField(max_length=50, unique=True)
@@ -32,6 +49,8 @@ class Product(models.Model):
     image3 = models.ImageField(upload_to="product_images/", null=True, blank=True)
     discounted_price = models.DecimalField(max_digits=10, decimal_places=2)
     price = models.DecimalField(max_digits=10, decimal_places=2)
+    weight = models.CharField(max_length=50, choices=WEIGHT_CHOICES, default="Light")
+    dimensional_size = models.CharField(max_length=50, choices=SIZE_CHOICES, default="Small")
     is_available = models.BooleanField(default=True)
     latest_item = models.BooleanField(default=False)
     latest_item_position = models.PositiveIntegerField(null=True, blank=True)
