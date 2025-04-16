@@ -5,9 +5,10 @@ from .views import PaymentSummaryViewSet, PaymentInitiateViewSet, PaymentSuccess
 router = DefaultRouter()
 router.register("summary", PaymentSummaryViewSet, basename="payment-summary")
 router.register("initiate", PaymentInitiateViewSet, basename="payment-initiate")
-router.register("success", PaymentSuccessViewSet, basename="payment-success")
+# router.register("success", PaymentSuccessViewSet, basename="payment-success")
 router.register("webhook", PaymentWebhookViewSet, basename="payment-webhook")
 
 urlpatterns = [
     path("", include(router.urls)),
+    path('success/', PaymentSuccessViewSet.as_view({'get': 'confirm'}), name='payment-success'),
 ]
