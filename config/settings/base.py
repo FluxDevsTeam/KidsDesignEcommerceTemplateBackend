@@ -85,8 +85,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -169,29 +167,58 @@ JAZZMIN_UI_TWEAKS = {
 }
 
 # celery
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/2'
+
+# Time & retry settings
 CELERY_TIMEZONE = 'UTC'
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60
+CELERY_TASK_SOFT_TIME_LIMIT = 15 * 60  # Optional
 CELERY_TASK_DEFAULT_RETRY_DELAY = 60
 CELERY_TASK_MAX_RETRIES = 3
+
+# Serialization
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 
+# Task routing
+CELERY_IMPORTS = ('apps.payment.tasks',)
 
+CELERY_WORKER_POOL = 'solo'
+CELERY_WORKER_CONCURRENCY = 1
 # payment configurations
 
-FLW_SEC_KEY = os.getenv('FLW_SEC_KEY')
-PAYMENT_CURRENCY = os.getenv('PAYMENT_CURRENCY', 'NGN')
-PAYMENT_SUCCESS_URL = os.getenv('PAYMENT_SUCCESS_URL', 'http://127.0.0.1:8000/api/v1/payment/payment-success/')
+PAYMENT_CURRENCY = os.getenv("PAYMENT_CURRENCY", "NGN")
+ORDER_URL = os.getenv("ORDER_URL", "http://127.0.0.1:8000/api/v1/orders/")
+PAYMENT_SUCCESS_URL = os.getenv("PAYMENT_SUCCESS_URL", "http:/127.0.0.1:8000/api/v1/payment/success/")
 PAYMENT_PROVIDERS = {
-    'flutterwave': {
-        'verify_url': 'https://api.flutterwave.com/v3/transactions/{}/verify',
-        'secret_key': os.getenv('FLW_SEC_KEY'),
+    "flutterwave": {
+        "verify_url": "https://api.flutterwave.com/v3/transactions/verify_by_reference?tx_ref={}",
+        "secret_key": os.getenv("FLW_SEC_KEY"),
     },
-    'paystack': {
-        'verify_url': 'https://api.paystack.co/transaction/verify/{}',
-        'secret_key': os.getenv('PAYSTACK_SEC_KEY'),
+    "paystack": {
+        "verify_url": "https://api.paystack.co/transaction/verify/{}",
+        "secret_key": os.getenv("PAYSTACK_SEC_KEY"),
     }
 }
 
+CACHES = {
+    'default': {
+        'BACKEND': 'config.cache.FallbackCache',
+        'OPTIONS': {
+            'REDIS_BACKEND': {
+                'BACKEND': 'django_redis.cache.RedisCache',
+                'LOCATION': 'redis://127.0.0.1:6379/1',
+                'OPTIONS': {
+                    'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+                }
+            },
+            'FALLBACK_BACKEND': {
+                'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+                'LOCATION': 'fallback-cache',
+            }
+        }
+    }
+}
