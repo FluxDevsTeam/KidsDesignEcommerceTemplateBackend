@@ -53,14 +53,14 @@ class ApiWishlist(ModelViewSet):
     @swagger_helper("Wishlist", "wishlist")
     def create(self, *args, **kwargs):
         response = super().create(*args, **kwargs)
-        cache.delete_pattern(f"wishlist_list:{self.request.user.id}:*")
+        cache.delete(f"wishlist_list:{self.request.user.id}:*")
         return response
 
     @swagger_helper("Wishlist", "wishlist")
     def destroy(self, *args, **kwargs):
         response = super().destroy(*args, **kwargs)
-        cache.delete_pattern(f"wishlist_list:{self.request.user.id}:*")
-        cache.delete_pattern(f"wishlist_detail:{self.request.user.id}:{kwargs["pk"]}")
+        cache.delete(f"wishlist_list:{self.request.user.id}:*")
+        cache.delete(f"wishlist_detail:{self.request.user.id}:{kwargs["pk"]}")
         return response
 
     def perform_create(self, serializer):
