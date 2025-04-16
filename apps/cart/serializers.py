@@ -32,7 +32,7 @@ class CartItemSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "cart"]
 
 
-class ProductSimpleViewSerializer(serializers.ModelSerializer):
+class CartProductViewSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
@@ -41,7 +41,7 @@ class ProductSimpleViewSerializer(serializers.ModelSerializer):
 
 
 class CartItemSerializerView(serializers.ModelSerializer):
-    product = ProductSimpleViewSerializer()
+    product = CartProductViewSerializer()
     cart = SimpleCartSerializerView()
     size = SimpleProductSizeSerializer()
 

@@ -43,7 +43,7 @@ class ApiCart(viewsets.ModelViewSet):
     @swagger_helper("Cart", "cart")
     def create(self, request, *args, **kwargs):
         response = super().create(request, *args, **kwargs)
-        cache.delete_pattern(f"cart_list:{request.user.id}:*")
+        cache.delete(f"cart_list:{request.user.id}:*")
         return response
 
     @swagger_helper("Cart", "cart")
@@ -61,15 +61,15 @@ class ApiCart(viewsets.ModelViewSet):
     @swagger_helper("Cart", "cart")
     def partial_update(self, request, *args, **kwargs):
         response = super().partial_update(request, *args, **kwargs)
-        cache.delete_pattern(f"cart_list:{request.user.id}:*")
-        cache.delete_pattern(f"cart_detail:{request.user.id}:{kwargs['pk']}")
+        cache.delete(f"cart_list:{request.user.id}:*")
+        cache.delete(f"cart_detail:{request.user.id}:{kwargs['pk']}")
         return response
 
     @swagger_helper("Cart", "cart")
     def destroy(self, request, *args, **kwargs):
         response = super().destroy(request, *args, **kwargs)
-        cache.delete_pattern(f"cart_list:{request.user.id}:*")
-        cache.delete_pattern(f"cart_detail:{request.user.id}:{kwargs['pk']}")
+        cache.delete(f"cart_list:{request.user.id}:*")
+        cache.delete(f"cart_detail:{request.user.id}:{kwargs['pk']}")
         return response
 
     def perform_create(self, serializer):
@@ -133,8 +133,8 @@ class ApiCartItem(viewsets.ModelViewSet):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             serializer.save(quantity=quantity, cart=cart)
-            cache.delete_pattern(f"cart_item_list:{request.user.id}:*")
-            cache.delete_pattern(f"cart_list:{request.user.id}:*")
+            cache.delete(f"cart_item_list:{request.user.id}:*")
+            cache.delete(f"cart_list:{request.user.id}:*")
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -197,9 +197,9 @@ class ApiCartItem(viewsets.ModelViewSet):
 
         if response_messages:
             cart_item.save()
-            cache.delete_pattern(f"cart_item_list:{request.user.id}:*")
-            cache.delete_pattern(f"cart_item_detail:{request.user.id}:{kwargs['pk']}")
-            cache.delete_pattern(f"cart_list:{request.user.id}:*")
+            cache.delete(f"cart_item_list:{request.user.id}:*")
+            cache.delete(f"cart_item_detail:{request.user.id}:{kwargs['pk']}")
+            cache.delete(f"cart_list:{request.user.id}:*")
             return Response({"message": " ".join(response_messages)}, status=status.HTTP_200_OK)
 
         return Response({"message": "No changes made."}, status=status.HTTP_200_OK)
@@ -207,7 +207,7 @@ class ApiCartItem(viewsets.ModelViewSet):
     @swagger_helper("CartItem", "cart item")
     def destroy(self, request, *args, **kwargs):
         response = super().destroy(*args, **kwargs)
-        cache.delete_pattern(f"cart_item_list:{request.user.id}:*")
-        cache.delete_pattern(f"cart_item_detail:{request.user.id}:{kwargs['pk']}")
-        cache.delete_pattern(f"cart_list:{request.user.id}:*")
+        cache.delete(f"cart_item_list:{request.user.id}:*")
+        cache.delete(f"cart_item_detail:{request.user.id}:{kwargs['pk']}")
+        cache.delete(f"cart_list:{request.user.id}:*")
         return response
