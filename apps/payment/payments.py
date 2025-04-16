@@ -2,49 +2,37 @@ import uuid
 import requests
 from rest_framework.response import Response
 from django.conf import settings
-from datetime import timedelta
-from rest_framework_simplejwt.tokens import RefreshToken
-from django.utils.timezone import now
 import logging
+
+from apps.payment.utils import generate_confirm_token
 
 logger = logging.getLogger(__name__)
 
 
-def generate_confirm_token(user, cart_id):
+def initiate_flutterwave_payment(confirm_token, amount, user, redirect_url):
     try:
-        refresh = RefreshToken.for_user(user)
-        refresh['cart_id'] = cart_id
-        refresh['exp'] = int((now() + timedelta(hours=1)).timestamp())
-        return str(refresh.access_token)
-    except Exception as e:
-        logger.exception("Error generating confirmation token", extra={'user_id': user.id})
-        raise
-
-
-def initiate_flutterwave_payment(amount, email, user, redirect_url):
-    try:
+        flutterwave_key = settings.PAYMENT_PROVIDERS["flutterwave"]["secret_key"]
         url = "https://api.flutterwave.com/v3/payments"
-        headers = {"Authorization": f"Bearer {settings.FLW_SEC_KEY}"}
+        headers = {
+            "Authorization": f"Bearer {flutterwave_key}"
+        }
         first_name = user.first_name or ""
         last_name = user.last_name or ""
         phone_no = user.phone_number or ""
-
-        if not email:
-            return Response({"error": "Email is required for payment"}, status=400)
-
+        reference = str(uuid.uuid4())
         data = {
-            "tx_ref": str(uuid.uuid4()),
+            "tx_ref": reference,
             "amount": str(amount),
             "currency": settings.PAYMENT_CURRENCY,
-            "redirect_url": redirect_url,
+            "redirect_url": f"http:/127.0.0.1:8000/api/v1/payment/success/?tx_ref={reference}&confirm_token={confirm_token}&provider=flutterwave&amount={int(amount)}&transaction_id={{transaction_id}}",
             "meta": {"consumer_id": user.id},
             "customer": {
-                "email": email,
+                "email": user.email,
                 "phonenumber": phone_no,
-                "name": f"{last_name} {first_name}".strip()
+                "name": f"{last_name} {first_name}"
             },
             "customizations": {
-                "title": "ASLUXURY ORIGINALS",
+                "title": "Ecommerce Template",
                 "logo": "https://th.bing.com/th/id/OIP.YUyvxZV46V46TKoPLtcyjwHaIj?w=183&h=211&c=7&r=0&o=5&pid=1.7"
             }
         }
@@ -72,27 +60,25 @@ def initiate_flutterwave_payment(amount, email, user, redirect_url):
         return Response({"error": "Payment processing failed. Please try again."}, status=500)
 
 
-def initiate_paystack_payment(amount, email, user, redirect_url):
+def initiate_paystack_payment(confirm_token, amount, user, redirect_url):
     try:
         url = "https://api.paystack.co/transaction/initialize"
-        headers = {"Authorization": f"Bearer {settings.PAYSTACK_SEC_KEY}", "Content-Type": "application/json"}
+        paystack_key = settings.PAYMENT_PROVIDERS['paystack']['secret_key']
+        headers = {"Authorization": f"Bearer {paystack_key}", "Content-Type": "application/json"}
         first_name = user.first_name or ""
         last_name = user.last_name or ""
         phone_no = user.phone_number or ""
-
-        if not email:
-            return Response({"error": "Email is required for payment"}, status=400)
-
+        reference = str(uuid.uuid4())
         data = {
             "amount": int(amount * 100),
-            "email": email,
+            "email": user.email,
             "currency": settings.PAYMENT_CURRENCY,
-            "reference": str(uuid.uuid4()),
-            "callback_url": redirect_url,
+            "reference": reference,
+            "callback_url": f"http://127.0.0.1:8000/api/v1/payment/success/?tx_ref={reference}&confirm_token={confirm_token}&provider=paystack&amount={int(amount)}&transaction_id={{transaction_id}}",
             "metadata": {"consumer_id": user.id}
         }
-
         response = requests.post(url, headers=headers, json=data)
+
         response.raise_for_status()
         response_data = response.json()
 

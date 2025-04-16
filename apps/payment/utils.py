@@ -1,5 +1,11 @@
-import datetime
+from drf_yasg.utils import swagger_auto_schema
 from math import radians, sin, cos, sqrt, atan2
+from datetime import timedelta
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.utils.timezone import now
+import logging
+logger = logging.getLogger(__name__)
+
 
 AVAILABLE_STATES = ["Lagos", "Ogun", "Abuja", "Kaduna", "Anambra", "Cross River"]
 WAREHOUSE_CITY = "Lagos"
@@ -60,3 +66,29 @@ def calculate_distance(coord1, coord2):
     c = 2 * atan2(sqrt(a), sqrt(1 - a))
     return R * c
 
+
+def generate_confirm_token(user, cart_id):
+    try:
+        refresh = RefreshToken.for_user(user)
+        refresh['cart_id'] = cart_id
+        refresh['exp'] = int((now() + timedelta(hours=1)).timestamp())
+        return str(refresh.access_token)
+    except Exception as e:
+        logger.exception("Error generating confirmation token", extra={'user_id': user.id})
+        raise
+
+def swagger_helper(tags, model):
+    def decorators(func):
+        descriptions = {
+            "list": f"Retrieve a list of {model}",
+            "retrieve": f"Retrieve details of a specific {model}",
+            "create": f"Create a new {model}",
+            "partial_update": f"Update a {model}",
+            "destroy": f"Delete a {model}",
+        }
+
+        action_type = func.__name__
+        get_description = descriptions.get(action_type, f"{action_type} {model}")
+        return swagger_auto_schema(operation_id=f"{action_type} {model}", operation_description=f"{get_description}. you dont need to pass in any data. just be authenticated (pass in JWT key) and the backend would process everything", tags=[tags])(func)
+
+    return decorators
