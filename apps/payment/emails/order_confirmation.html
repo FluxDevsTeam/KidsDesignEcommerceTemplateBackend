@@ -3,33 +3,147 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Order Confirmation</title>
-    <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f4f4f4; margin: 0; padding: 0; }
-        .container { max-width: 600px; margin: 20px auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
-        .header { background: #007bff; color: #fff; padding: 10px; text-align: center; border-radius: 8px 8px 0 0; }
-        .content { padding: 20px; }
-        .footer { text-align: center; font-size: 12px; color: #777; padding: 10px; border-top: 1px solid #eee; }
-        .button { display: inline-block; padding: 10px 20px; background: #007bff; color: #fff; text-decoration: none; border-radius: 5px; margin-top: 20px; }
-        h1, h2, p { margin: 0 0 10px; }
-    </style>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Order Confirmation - ECOMMERCE TEMPLATE</title>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Order Confirmation</h1>
-        </div>
-        <div class="content">
-            <h2>Dear {{ first_name }},</h2>
-            <p>Thank you for your order! Your order (#{{ order_id }}) has been successfully placed.</p>
-            <p><strong>Total Amount:</strong> {{ currency }} {{ total_amount }}</p>
-            <p>We’ll notify you once your order ships.</p>
-            <a href="{{ site_url }}" class="button">View Your Order</a>
-        </div>
-        <div class="footer">
-            <p>Best regards,<br>ASLUXURY ORIGINALS Team</p>
-            <p>© {{ current_year }} ASLUXURY ORIGINALS. All rights reserved.</p>
-        </div>
-    </div>
+<body style="margin: 0; padding: 20px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica', 'Arial', sans-serif; line-height: 1.6; color: #333333; background-color: #f4f4f4;">
+    <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);">
+        <!-- Header -->
+        <tr>
+            <td style="background: linear-gradient(135deg, #008080 0%, #00a3a3 100%); color: #ffffff; padding: 40px 20px; text-align: center;">
+                <img src="https://static.vecteezy.com/system/resources/previews/008/325/517/original/shopping-cart-or-basket-illustration-grocery-store-icon-free-vector.jpg" alt="ECOMMERCE TEMPLATE Logo" style="max-width: 120px; margin-bottom: 15px; display: block; margin-left: auto; margin-right: auto;">
+                <h1 style="font-size: 28px; font-weight: 700; letter-spacing: 0.5px; margin: 0;">Order Confirmation</h1>
+                <p style="font-size: 16px; margin: 10px 0 0; opacity: 0.9;">Your shopping experience starts here!</p>
+            </td>
+        </tr>
+
+        <!-- Content -->
+        <tr>
+            <td style="padding: 30px;">
+                <h2 style="font-size: 22px; font-weight: 600; color: #008080; margin-bottom: 15px;">Dear {{ first_name|escape }},</h2>
+                <p style="font-size: 16px; color: #555555; margin-bottom: 15px;">Thank you for shopping with <a href="{{ site_url }}" style="color: #008080; text-decoration: none; font-weight: 500;">ECOMMERCE TEMPLATE</a>! We are delighted to confirm that your order (#{{ order_id|escape }}) has been successfully placed. Below are the key details of your purchase.</p>
+
+                <!-- Order Highlights -->
+                <table cellpadding="0" cellspacing="0" width="100%" style="background: #e6f2f2; padding: 15px; border-radius: 8px; border-left: 4px solid #008080; margin-bottom: 20px;">
+                    <tr>
+                        <td style="font-size: 16px; color: #555555; padding: 5px 0;">
+                            <strong style="color: #008080;">Order Number:</strong> #{{ order_id|escape }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="font-size: 16px; color: #555555; padding: 5px 0;">
+                            <strong style="color: #008080;">Total Amount:</strong> {{ currency|escape }} {{ total_amount|escape }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="font-size: 16px; color: #555555; padding: 5px 0;">
+                            <strong style="color: #008080;">Order Date:</strong> {{ order_date|escape }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="font-size: 16px; color: #555555; padding: 5px 0;">
+                            <strong style="color: #008080;">Estimated Delivery:</strong> {{ estimated_delivery|escape }}
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- Shipping Information -->
+                <h2 style="font-size: 20px; font-weight: 600; color: #008080; margin-bottom: 15px;">Shipping Information</h2>
+                <!-- Call to Action -->
+                <p style="font-size: 16px; color: #555555; margin-bottom: 15px;">We will send you a shipping confirmation when your order is on its way. Track your order or contact us with any questions.</p>
+                <a href="{{ site_url }}" style="display: inline-block; padding: 12px 30px; background: #008080; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px; border-radius: 50px; text-align: center;">Track Your Order</a>
+
+                <!-- Customer Support -->
+                <table cellpadding="0" cellspacing="0" width="100%" style="background: #f8fafc; padding: 20px; border-radius: 8px; text-align: center; margin-top: 20px;">
+                    <tr>
+                        <td>
+                            <h3 style="font-size: 18px; font-weight: 600; color: #008080; margin-bottom: 10px;">We Are Here to Help</h3>
+                            <p style="font-size: 14px; color: #555555; margin-bottom: 10px;">Have questions? Our support team is available anytime.</p>
+                            <p style="font-size: 14px; color: #555555; margin-bottom: 10px;">
+                                <a href="mailto:support@yourdomain.com" style="color: #008080; text-decoration: none; font-weight: 500;">support@yourdomain.com</a> |
+                                <a href="tel:+1234567890" style="color: #008080; text-decoration: none; font-weight: 500;">+1 (234) 567-890</a>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+            <td style="text-align: center; font-size: 12px; color: #6b7280; padding: 20px; background: #f8fafc; border-top: 1px solid #e5e7eb;">
+                <p style="margin-bottom: 8px;">Best regards,<br><a href="{{ site_url }}" style="color: #008080; text-decoration: none; font-weight: 500;">The ECOMMERCE TEMPLATE Team</a></p>
+                <p style="margin-bottom: 8px;">Connect with us:</p>
+                <table align="center" cellpadding="0" cellspacing="0" style="margin-top: 10px;">
+                    <tr>
+                        <td style="padding: 0 10px;">
+                            <a href="https://www.facebook.com/yourbrand"><img src="https://cdn-icons-png.flaticon.com/512/5968/5968764.png" alt="Facebook" style="width: 24px; height: 24px; vertical-align: middle;"></a>
+                        </td>
+                        <td style="padding: 0 10px;">
+                            <a href="https://twitter.com/yourbrand"><img src="https://cdn-icons-png.flaticon.com/512/732/732250.png" alt="Twitter" style="width: 24px; height: 24px; vertical-align: middle;"></a>
+                        </td>
+                        <td style="padding: 0 10px;">
+                            <a href="https://www.instagram.com/yourbrand"><img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Instagram" style="width: 24px; height: 24px; vertical-align: middle;"></a>
+                        </td>
+                        <td style="padding: 0 10px;">
+                            <a href="https://www.linkedin.com/company/yourbrand"><img src="https://cdn-icons-png.flaticon.com/512/3536/3536505.png" alt="LinkedIn" style="width: 24px; height: 24px; vertical-align: middle;"></a>
+                        </td>
+                    </tr>
+                </table>
+                <p style="margin-top: 15px;">{{ current_year|escape }} ECOMMERCE TEMPLATE. All rights reserved.</p>
+                <p><a href="{{ site_url }}/privacy" style="color: #008080; text-decoration: none;">Privacy Policy</a> | <a href="{{ site_url }}/terms" style="color: #008080; text-decoration: none;">Terms of Service</a></p>
+            </td>
+        </tr>
+    </table>
+
+    <!-- Responsive Design -->
+    <style>
+        @media screen and (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            table[max-width="600px"] {
+                margin: 10px auto;
+            }
+            .header {
+                padding: 30px 15px;
+            }
+            .header img {
+                max-width: 100px;
+            }
+            .header h1 {
+                font-size: 24px;
+            }
+            .header p {
+                font-size: 14px;
+            }
+            .content {
+                padding: 20px;
+            }
+            .content h2 {
+                font-size: 20px;
+            }
+            .content p, .content .highlight td {
+                font-size: 14px;
+            }
+            a[style*="padding: 12px 30px"] {
+                padding: 10px 25px !important;
+                font-size: 14px !important;
+            }
+            .support h3 {
+                font-size: 16px;
+            }
+            .support p {
+                font-size: 13px;
+            }
+            .footer {
+                font-size: 11px;
+            }
+            .footer img {
+                width: 20px;
+                height: 20px;
+            }
+        }
+    </style>
 </body>
 </html>
