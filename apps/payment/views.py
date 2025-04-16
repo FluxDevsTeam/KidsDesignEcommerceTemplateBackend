@@ -1,15 +1,15 @@
 from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 
 from .delivery_fee import calculate_delivery_fee
-from ..cart.models import Cart, CartItem
+from ..cart.models import Cart
 from .serializers import PaymentCartSerializer
 from ..orders.models import Order, OrderItem
-from .payments import initiate_flutterwave_payment, initiate_paystack_payment, generate_confirm_token
+from .payments import initiate_flutterwave_payment, initiate_paystack_payment
 from django.utils.timezone import now
-from datetime import timedelta
 import requests
 from decimal import Decimal
 import logging
@@ -19,10 +19,10 @@ import hmac
 import hashlib
 import json
 from django.conf import settings
-from .tasks import send_order_confirmation_email, create_order_from_webhook
-from celery.exceptions import OperationalError
+from .tasks import send_order_confirmation_email, create_order_from_webhook, is_celery_healthy, send_email_synchronously
 from django.contrib.auth import get_user_model
 from .delivery_date import calculate_delivery_dates
+from .utils import generate_confirm_token, swagger_helper
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +32,7 @@ User = get_user_model()
 class PaymentSummaryViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
 
+    @swagger_helper("Payment", "Payment Summary")
     def list(self, request):
         try:
             cart = get_object_or_404(Cart, user=request.user)
@@ -58,6 +59,7 @@ class PaymentSummaryViewSet(viewsets.ViewSet):
 class PaymentInitiateViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
 
+    @swagger_helper("Payment", "Initiate payment")
     def create(self, request):
         try:
             cart = get_object_or_404(Cart, user=request.user)
@@ -85,24 +87,21 @@ class PaymentInitiateViewSet(viewsets.ViewSet):
                         "message": "Amount must be greater than zero."
                     }, status=400)
 
-            email = request.user.email or cart.email
-            phone_no = request.user.phone_number or cart.phone_number or ""
-            if not email:
-                return Response({"error": "Email address is required for payment"}, status=400)
+            token = generate_confirm_token(request.user, str(cart.id))
 
             if provider == "flutterwave":
-                response = initiate_flutterwave_payment(total_amount, email, request.user, redirect_url)
+                response = initiate_flutterwave_payment(token, total_amount, request.user, redirect_url)
             elif provider == "paystack":
-                response = initiate_paystack_payment(total_amount, email, request.user, redirect_url)
+                response = initiate_paystack_payment(token, total_amount, request.user, redirect_url)
             else:
                 return Response({"error": "Invalid payment provider"}, status=400)
 
-            if response.status_code == 200:
-                token = generate_confirm_token(request.user, str(cart.id))
-                response.data["confirm_token"] = token
-                return response
+            # if response.status_code == 200:
+            #     token = generate_confirm_token(request.user, str(cart.id))
+            #     response.data["confirm_token"] = token
+            #     return response
 
-            return Response({"error": "Payment initiation failed", "details": response.data}, status=response.status_code)
+            return Response({"data": response.data}, status=response.status_code)
 
         except Exception as e:
             logger.exception("Error initiating payment", extra={"user_id": request.user.id})
@@ -110,26 +109,23 @@ class PaymentInitiateViewSet(viewsets.ViewSet):
 
 
 class PaymentSuccessViewSet(viewsets.ViewSet):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
+    @swagger_helper("Payment", "Payment Successful")
     @transaction.atomic
-    def create(self, request):
+    @action(detail=False, methods=["GET"])
+    def confirm(self, request):
         try:
-            token = request.data.get("confirm_token")
-            if not token:
-                return Response({"error": "Confirmation token is required"}, status=400)
+            tx_ref = request.query_params.get("tx_ref")
+            amount = request.query_params.get("amount")
+            provider = request.query_params.get("provider")
+            token = request.query_params.get("confirm_token")
+            transaction_id = request.query_params.get("transaction_id")
+            amount_paid = request.query_params.get("amount")
 
-            tx_ref = request.data.get("tx_ref")
-            if not tx_ref:
-                return Response({"error": "Transaction reference is required"}, status=400)
-
-            provider = request.data.get("provider", "flutterwave").lower()
-            if provider not in ["flutterwave", "paystack"]:
-                return Response({"error": "Invalid payment provider"}, status=400)
-
-            amount_paid = float(request.data.get("amount", 0))
-            if amount_paid <= 0:
-                return Response({"error": "Invalid payment amount"}, status=400)
+            if not all([tx_ref, amount, provider, token, transaction_id, amount_paid]):
+                logger.error("Missing required query parameters", extra={"query_params": request.query_params})
+                return Response({"error": "Invalid request parameters."}, status=400)
 
             try:
                 decoded = AccessToken(token)
@@ -142,13 +138,14 @@ class PaymentSuccessViewSet(viewsets.ViewSet):
                 return Response({"error": "Invalid token."}, status=403)
 
             if not cart.cartitem_cart.exists():
-                logger.warning("Cart is empty during payment",
-                               extra={'user_id': request.user.id, 'cart_id': str(cart.id)})
+                logger.warning("Cart is empty during payment", extra={'user_id': request.user.id, 'cart_id': str(cart.id)})
                 return Response({"error": "Cart is empty"}, status=400)
 
             for item in cart.cartitem_cart.all():
                 product = item.product
-                if product.stock < item.quantity:
+                size = item.size
+
+                if size.quantity < item.quantity:
                     logger.warning("Insufficient stock", extra={'product_id': product.id, 'user_id': request.user.id})
                     return Response({"error": f"Insufficient stock for {product.name}"}, status=400)
                 if product.price != item.product.price:
@@ -160,11 +157,27 @@ class PaymentSuccessViewSet(viewsets.ViewSet):
                 return Response({"message": "Order already processed.", "transaction_id": tx_ref}, status=200)
 
             provider_config = settings.PAYMENT_PROVIDERS[provider]
-            url = provider_config["verify_url"].format(tx_ref)
-            headers = {"Authorization": f"Bearer {provider_config['secret_key']}"}
+
+            # Use transaction_id if available and provider is flutterwave, otherwise use tx_ref
+            if provider == "flutterwave" and transaction_id:
+                url = "https://api.flutterwave.com/v3/transactions/{}/verify".format(transaction_id)
+            else:
+                url = provider_config["verify_url"].format(tx_ref)
+
+            headers = {
+                "Authorization": f"Bearer {provider_config['secret_key']}",
+                "Content-Type": "application/json"
+            }
+
+            logger.debug(
+                f"Verification request: provider={provider}, url={url}, headers={headers}, tx_ref={tx_ref}, transaction_id={transaction_id}"
+            )
 
             try:
                 verification_response = requests.get(url, headers=headers)
+                logger.debug(
+                    f"Verification response: status={verification_response.status_code}, body={verification_response.text}"
+                )
                 verification_response.raise_for_status()
             except requests.exceptions.RequestException as err:
                 logger.error(f"{provider.capitalize()} verification failed",
@@ -172,31 +185,31 @@ class PaymentSuccessViewSet(viewsets.ViewSet):
                 return Response({"error": "Payment verification failed", "details": str(err)}, status=400)
 
             response_data = verification_response.json()
-
+            expected_currency = settings.PAYMENT_CURRENCY
             if provider == "flutterwave":
+
                 verification_success = (
-                    response_data.get("status") == "success" and
-                    float(response_data["data"]["amount"]) >= amount_paid and
-                    response_data["data"]["currency"] == settings.PAYMENT_CURRENCY
+                        response_data.get("status") == "success" and
+                        response_data["data"]["status"] == "successful" and
+                        float(response_data["data"]["amount"]) >= float(amount_paid) and
+                        response_data["data"]["currency"] == expected_currency and
+                        response_data["data"]["tx_ref"] == tx_ref
                 )
-            else:  # paystack
+            else:
                 verification_success = (
-                    response_data.get("status") and
-                    response_data["data"]["status"] == "success" and
-                    (response_data["data"]["amount"] / 100) >= amount_paid and
-                    response_data["data"]["currency"] == settings.PAYMENT_CURRENCY
+                        response_data.get("status") and
+                        response_data["data"]["status"] == "success" and
+                        (response_data["data"]["amount"] / 100) >= float(amount_paid) and
+                        response_data["data"]["currency"] == expected_currency
                 )
 
             if not verification_success:
                 if response_data.get("data", {}).get("currency") != settings.PAYMENT_CURRENCY:
-                    logger.error("Currency mismatch", extra={'provider': provider, 'tx_ref': tx_ref,
-                                                             'currency': response_data["data"]["currency"]})
+                    logger.error("Currency mismatch", extra={'provider': provider, 'tx_ref': tx_ref, 'currency': response_data["data"]["currency"]})
                     return Response({"error": "Currency not supported"}, status=400)
-                logger.error(f"{provider.capitalize()} payment verification failed",
-                             extra={'response': response_data, 'tx_ref': tx_ref})
+                logger.error(f"{provider.capitalize()} payment verification failed", extra={'response': response_data, 'tx_ref': tx_ref})
                 return Response(
-                    {"error": "Payment verification failed", "details": response_data.get("message", "Unknown error")},
-                    status=400)
+                    {"error": "Payment verification failed", "details": response_data.get("message", "Unknown error")}, status=400)
 
             serializer = PaymentCartSerializer(cart)
             server_total = serializer.data["total"]
@@ -205,7 +218,6 @@ class PaymentSuccessViewSet(viewsets.ViewSet):
                              extra={'server_total': server_total, 'amount_paid': amount_paid, 'tx_ref': tx_ref})
                 return Response({"error": "Payment amount mismatch",
                                  "message": "Reported amount does not match server calculation"}, status=400)
-
             order = Order.objects.create(
                 user=request.user,
                 status="Paid",
@@ -218,7 +230,6 @@ class PaymentSuccessViewSet(viewsets.ViewSet):
                 city=cart.city,
                 delivery_address=cart.delivery_address,
                 phone_number=cart.phone_number or request.user.phone_number,
-                delivery_date=now() + timedelta(days=4),  # Optionally sync with calculate_delivery_dates
                 transaction_id=tx_ref,
                 payment_provider=provider,
                 estimated_delivery=cart.estimated_delivery
@@ -226,7 +237,8 @@ class PaymentSuccessViewSet(viewsets.ViewSet):
 
             for item in cart.cartitem_cart.all():
                 product = item.product
-                product.stock -= item.quantity
+                size = item.size
+                size.quantity -= item.quantity
                 product.save()
                 OrderItem.objects.create(
                     order=order,
@@ -234,31 +246,36 @@ class PaymentSuccessViewSet(viewsets.ViewSet):
                     quantity=item.quantity,
                     name=product.name,
                     description=product.description,
-                    colour="N/A",
+                    colour=product.colour,
                     image1=product.image1,
                     price=product.price,
-                    size=item.size.name  # Save size from CartItem
+                    size=item.size.size
                 )
 
-            cart.cartitem_cart.all().delete()
-            logger.info(f"Order {order.id} created successfully",
-                        extra={'provider': provider, 'tx_ref': tx_ref, 'user_id': request.user.id})
+            # cart.cartitem_cart.all().delete()
+            if not is_celery_healthy():
+                logger.warning("Celery is not healthy. Sending email synchronously now.")
+                send_email_synchronously(
+                    order_id=str(order.id),
+                    user_email=order.email,
+                    first_name=order.first_name,
+                    total_amount=str(order.total_amount),
+                    order_date=now().date(),
+                    estimated_delivery=order.estimated_delivery
+                )
 
-            send_order_confirmation_email(
-                order_id=str(order.id),
-                user_email=order.email,
-                first_name=order.first_name,
-                total_amount=str(order.total_amount)
-            )
-
-            return Response(
-                {
-                    "message": f"{provider.capitalize()} payment successful, order created.",
-                    "order_id": str(order.id),
-                    "transaction_id": tx_ref
-                },
-                status=200
-            )
+            else:
+                send_order_confirmation_email.apply_async(
+                    kwargs={
+                        'order_id': str(order.id),
+                        'user_email': order.email,
+                        'first_name': order.first_name,
+                        'total_amount': str(order.total_amount),
+                        'order_date': now().date(),
+                        'estimated_delivery': order.estimated_delivery
+                    },
+                )
+            return redirect(f"{settings.ORDER_URL}{order.id}")
 
         except Exception as e:
             logger.exception("Error processing payment success", extra={'user_id': request.user.id, 'tx_ref': tx_ref})
@@ -267,6 +284,8 @@ class PaymentSuccessViewSet(viewsets.ViewSet):
 
 class PaymentWebhookViewSet(viewsets.ViewSet):
     permission_classes = []
+
+    @swagger_helper("Payment", "Payment Webhook")
 
     def create(self, request):
         try:
