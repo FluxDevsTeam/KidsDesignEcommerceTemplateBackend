@@ -56,7 +56,6 @@ class ApiOrder(viewsets.ModelViewSet):
 class ApiAdminOrder(viewsets.ModelViewSet):
     http_method_names = ["get", "patch", "head", "options"]
     pagination_class = CustomPagination
-    # serializer_class = OrderSerializer
     permission_classes = [IsAdminUser]
     filterset_class = OrderFilter
     ordering_fields = ['order_date', 'total_amount', 'delivery_date']
