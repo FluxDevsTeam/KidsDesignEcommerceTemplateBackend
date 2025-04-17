@@ -29,7 +29,7 @@ class ApiCart(viewsets.ModelViewSet):
 
     @swagger_helper("Cart", "cart")
     def list(self, request, *args, **kwargs):
-        cache_timeout = 300
+        cache_timeout = 600
         cache_params = dict(request.query_params)
         cache_key = f"cart_list:{request.user.id}:{json.dumps(cache_params, sort_keys=True)}"
         cached_response = cache.get(cache_key)
@@ -48,7 +48,7 @@ class ApiCart(viewsets.ModelViewSet):
 
     @swagger_helper("Cart", "cart")
     def retrieve(self, request, *args, **kwargs):
-        cache_timeout = 300
+        cache_timeout = 600
         cache_key = f"cart_detail:{request.user.id}:{kwargs['pk']}"
         cached_response = cache.get(cache_key)
         if cached_response:
@@ -96,7 +96,7 @@ class ApiCartItem(viewsets.ModelViewSet):
 
     @swagger_helper("CartItem", "cart item")
     def list(self, request, *args, **kwargs):
-        cache_timeout = 300
+        cache_timeout = 600
         cache_params = dict(request.query_params)
         cache_key = f"cart_item_list:{request.user.id}:{self.kwargs.get('cart_pk')}:{json.dumps(cache_params, sort_keys=True)}"
         cached_response = cache.get(cache_key)
@@ -140,7 +140,7 @@ class ApiCartItem(viewsets.ModelViewSet):
 
     @swagger_helper("CartItem", "cart item")
     def retrieve(self, request, *args, **kwargs):
-        cache_timeout = 300
+        cache_timeout = 600
         cache_key = f"cart_item_detail:{request.user.id}:{kwargs['pk']}"
         cached_response = cache.get(cache_key)
         if cached_response:
