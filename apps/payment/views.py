@@ -1,4 +1,4 @@
-from django.core.cache import cache
+# from django.core.cache import cache
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -253,33 +253,42 @@ class PaymentSuccessViewSet(viewsets.ViewSet):
                     size=item.size.size
                 )
 
-            # cart.cartitem_cart.all().delete()
-            cache.delete(f"cart_item_list:{request.user.id}:*")
-            cache.delete(f"cart_item_detail:{request.user.id}:{cart.id}")
-            cache.delete(f"cart_list:{request.user.id}:*")
+            cart.cartitem_cart.all().delete()
+            # cache.delete(f"cart_item_list:{request.user.id}:*")
+            # cache.delete(f"cart_item_detail:{request.user.id}:{cart.id}")
+            # cache.delete(f"cart_list:{request.user.id}:*")
 
-            if not is_celery_healthy():
-                logger.warning("Celery is not healthy. Sending email synchronously now.")
-                send_email_synchronously(
-                    order_id=str(order.id),
-                    user_email=order.email,
-                    first_name=order.first_name,
-                    total_amount=str(order.total_amount),
-                    order_date=now().date(),
-                    estimated_delivery=order.estimated_delivery
-                )
+            # if not is_celery_healthy():
+            #     logger.warning("Celery is not healthy. Sending email synchronously now.")
+            #     send_email_synchronously(
+            #         order_id=str(order.id),
+            #         user_email=order.email,
+            #         first_name=order.first_name,
+            #         total_amount=str(order.total_amount),
+            #         order_date=now().date(),
+            #         estimated_delivery=order.estimated_delivery
+            #     )
 
-            else:
-                send_order_confirmation_email.apply_async(
-                    kwargs={
-                        'order_id': str(order.id),
-                        'user_email': order.email,
-                        'first_name': order.first_name,
-                        'total_amount': str(order.total_amount),
-                        'order_date': now().date(),
-                        'estimated_delivery': order.estimated_delivery
-                    },
-                )
+            send_email_synchronously(
+                order_id=str(order.id),
+                user_email=order.email,
+                first_name=order.first_name,
+                total_amount=str(order.total_amount),
+                order_date=now().date(),
+                estimated_delivery=order.estimated_delivery
+            )
+
+            # else:
+                # send_order_confirmation_email.apply_async(
+                #     kwargs={
+                #         'order_id': str(order.id),
+                #         'user_email': order.email,
+                #         'first_name': order.first_name,
+                #         'total_amount': str(order.total_amount),
+                #         'order_date': now().date(),
+                #         'estimated_delivery': order.estimated_delivery
+                #     },
+                # )
             return redirect(f"{settings.ORDER_URL}{order.id}")
 
         except Exception as e:
