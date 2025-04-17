@@ -77,6 +77,7 @@ def generate_confirm_token(user, cart_id):
         logger.exception("Error generating confirmation token", extra={'user_id': user.id})
         raise
 
+
 def swagger_helper(tags, model):
     def decorators(func):
         descriptions = {

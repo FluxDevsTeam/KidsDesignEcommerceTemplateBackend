@@ -1,3 +1,4 @@
+from django.core.cache import cache
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -253,6 +254,10 @@ class PaymentSuccessViewSet(viewsets.ViewSet):
                 )
 
             # cart.cartitem_cart.all().delete()
+            cache.delete(f"cart_item_list:{request.user.id}:*")
+            cache.delete(f"cart_item_detail:{request.user.id}:{cart.id}")
+            cache.delete(f"cart_list:{request.user.id}:*")
+
             if not is_celery_healthy():
                 logger.warning("Celery is not healthy. Sending email synchronously now.")
                 send_email_synchronously(
