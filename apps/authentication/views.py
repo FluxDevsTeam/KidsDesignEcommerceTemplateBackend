@@ -4,15 +4,18 @@ from django.core.mail import send_mail
 import random
 import datetime
 from django.utils import timezone
-from rest_framework import viewsets, status, permissions
+from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from django.contrib.auth.hashers import make_password
 from rest_framework.exceptions import AuthenticationFailed
-from .serializers import (UserSignupSerializer, LoginSerializer, PasswordChangeRequestSerializer, \
-                          UserProfileSerializer, ForgotPasswordRequestSerializer, UserSignupSerializerResendOTP,
-                          UserSignupSerializerOTP, ViewUserProfileSerializer)
-from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
-from .utils import EmailThread
+from .serializers import (UserSignupSerializer, LoginSerializer, ViewUserProfileSerializer,
+                          ResendOtpPasswordSerializer, VerifyOtpPasswordSerializer, SetNewPasswordSerializer,
+                          RefreshTokenSerializer, EmailChangeSerializer,
+                          VerifyEmailChangeSerializer, ProfileChangeSerializer, VerifyProfileChangeSerializer,
+                          PasswordChangeSerializer, VerifyPasswordChangeSerializer, RequestForgotPasswordSerializer,
+                          UserSignupSerializerVerify, UserSignupResendOTPSerializer, LogoutSerializer)
+from rest_framework_simplejwt.tokens import RefreshToken
+from .utils import swagger_helper
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from .models import EmailChangeRequest, PasswordChangeRequest, ForgotPasswordRequest, NameChangeRequest
@@ -23,8 +26,18 @@ User = get_user_model()
 
 class ForgotPasswordViewSet(viewsets.ModelViewSet):
     queryset = ForgotPasswordRequest.objects.all()
-    serializer_class = ForgotPasswordRequestSerializer
 
+    def get_serializer_class(self):
+        if self.action == 'request_forgot_password':
+            return RequestForgotPasswordSerializer
+        if self.action == 'resend_otp':
+            return ResendOtpPasswordSerializer
+        if self.action == 'verify_otp':
+            return VerifyOtpPasswordSerializer
+        if self.action == 'set_new_password':
+            return SetNewPasswordSerializer
+
+    @swagger_helper("ForgotPassword", "")
     @action(detail=False, methods=['post'], url_path='request-forgot-password')
     def request_forgot_password(self, request):
         email = request.data.get('email')
@@ -46,6 +59,7 @@ class ForgotPasswordViewSet(viewsets.ModelViewSet):
 
         return Response({"message": "A password reset link has been sent to your email."}, status=status.HTTP_200_OK)
 
+    @swagger_helper("ForgotPassword", "")
     @action(detail=False, methods=['post'], url_path='set-new-password')
     def set_new_password(self, request):
         email = request.data.get('email')
@@ -85,6 +99,7 @@ class ForgotPasswordViewSet(viewsets.ModelViewSet):
 
         return Response({"message": "An OTP has been sent to your email."}, status=status.HTTP_200_OK)
 
+    @swagger_helper("ForgotPassword", "")
     @action(detail=False, methods=['post'], url_path='verify-otp')
     def verify_otp(self, request):
         email = request.data.get('email')
@@ -124,6 +139,7 @@ class ForgotPasswordViewSet(viewsets.ModelViewSet):
             'refresh_token': str(refresh),
         }, status=status.HTTP_201_CREATED)
 
+    @swagger_helper("ForgotPassword", "")
     @action(detail=False, methods=['post'], url_path='resend-otp')
     def resend_otp(self, request):
         email = request.data.get('email')
@@ -139,17 +155,13 @@ class ForgotPasswordViewSet(viewsets.ModelViewSet):
         if not forgot_password_request:
             return Response({"error": "No pending forgot password request found."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Generate a new OTP
         otp = random.randint(100000, 999999)
         forgot_password_request.otp = otp
 
-        # Extend the expiration time by 5 minutes from now
-        forgot_password_request.created_at = timezone.now()  # Reset the creation time to current time
+        forgot_password_request.created_at = timezone.now()
 
-        # Save the updated OTP and expiration time
         forgot_password_request.save()
 
-        # Send the new OTP to the user
         send_mail(
             subject='Forgot Password OTP - Resent',
             message=f"Your new OTP for password reset is: {otp}. It will expire in 5 minutes.",
@@ -161,25 +173,30 @@ class ForgotPasswordViewSet(viewsets.ModelViewSet):
 
 
 class UserProfileViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet for retrieving and updating the user's profile.
-    """
-    serializer_class = UserProfileSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_serializer_class(self):
+        if self.action == 'request_email_change':
+            return EmailChangeSerializer
+        if self.action == 'verify_email_change':
+            return VerifyEmailChangeSerializer
+        if self.action == 'request_profile_change':
+            return ProfileChangeSerializer
+        if self.action == 'verify_profile_change':
+            return VerifyProfileChangeSerializer
+        if self.action == 'retrieve':
+            return ViewUserProfileSerializer
+
+    @swagger_helper("UserProfile", "profile", "view user profile. requires authentication (JWT)")
     def retrieve(self, request, *args, **kwargs):
-        """
-        Returns the profile of the currently authenticated user along with their orders.
-        """
         user = request.user
-        serializer = ViewUserProfileSerializer(user, context={'request': request})
+        serializer = self.get_serializer(user, context={'request': request})
         return Response(serializer.data)
 
+    @swagger_helper("UserProfile", "")
     @action(detail=False, methods=['post'], url_path='request-email-change')
     def request_email_change(self, request):
-        """
-        Request email change with OTP sent to the new email.
-        """
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -193,7 +210,6 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         if User.objects.filter(email=new_email).exists():
             return Response({"error": "This email is already in use."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Optional: Check if there is an existing pending request and reuse it
         existing_request = EmailChangeRequest.objects.filter(user=user).first()
         if existing_request:
             otp = random.randint(100000, 999999)
@@ -214,18 +230,15 @@ class UserProfileViewSet(viewsets.ModelViewSet):
 
         return Response({"message": "OTP sent to the new email address."}, status=status.HTTP_200_OK)
 
+    @swagger_helper("UserProfile", "", "Resend OTP. requires authentication (JWT)")
     @action(detail=False, methods=['post'], url_path='resend-email-change-otp')
     def resend_email_change_otp(self, request):
-        """
-        Resend OTP for email change.
-        """
         user = request.user
         email_change_request = EmailChangeRequest.objects.filter(user=user).first()
 
         if not email_change_request:
             return Response({"error": "No pending email change request found."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Rate limiting: Allow resending OTP only after 1 minute
         time_since_last_otp = (timezone.now() - email_change_request.created_at).total_seconds()
         if time_since_last_otp < 60:
             return Response({"error": "Please wait before requesting a new OTP."}, status=status.HTTP_400_BAD_REQUEST)
@@ -244,11 +257,9 @@ class UserProfileViewSet(viewsets.ModelViewSet):
 
         return Response({"message": "New OTP sent to the new email address."}, status=status.HTTP_200_OK)
 
+    @swagger_helper("UserProfile", "", )
     @action(detail=False, methods=['post'], url_path='verify-email-change')
     def verify_email_change(self, request):
-        """
-        Verify OTP and update the user's email.
-        """
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -282,11 +293,10 @@ class UserProfileViewSet(viewsets.ModelViewSet):
 
         return Response({"message": "Email updated successfully."}, status=status.HTTP_200_OK)
 
+    @swagger_helper("UserProfile", "", )
     @action(detail=False, methods=['post'], url_path='request-profile-change')
     def request_profile_change(self, request):
-        """
-        Request name change , just submitting the request with new name details.
-        """
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -312,11 +322,9 @@ class UserProfileViewSet(viewsets.ModelViewSet):
 
         return Response({"message": "Name change request submitted successfully."}, status=status.HTTP_200_OK)
 
+    @swagger_helper("UserProfile", "")
     @action(detail=False, methods=['post'], url_path='verify-profile-change')
     def verify_profile_change(self, request):
-        """
-        Verify password and update the user's name.
-        """
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -354,50 +362,44 @@ class UserProfileViewSet(viewsets.ModelViewSet):
 
 
 class PasswordChangeRequestViewSet(viewsets.ModelViewSet):
-    """
-    Handles password change requests with OTP verification.
-    """
     permission_classes = [IsAuthenticated]
     queryset = PasswordChangeRequest.objects.all()
-    serializer_class = PasswordChangeRequestSerializer
 
+    def get_serializer_class(self):
+        if self.action == 'request_password_change':
+            return PasswordChangeSerializer
+        if self.action == 'verify_password_change':
+            return VerifyPasswordChangeSerializer
+
+    @swagger_helper("ChangePassword", "")
     @action(detail=False, methods=['post'], url_path='request-password-change')
     def request_password_change(self, request):
-        """
-        Request a password change with OTP verification sent to email.
-        """
         user = request.user
         old_password = request.data.get('old_password')
         new_password = request.data.get('new_password')
         confirm_password = request.data.get('confirm_password')
 
-        # Check if old password is provided and matches
         if not old_password:
             return Response({"error": "Old password is required."}, status=status.HTTP_400_BAD_REQUEST)
 
         if not user.check_password(old_password):
             return Response({"error": "Old password is incorrect."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Ensure old and new passwords are not the same
         if old_password == new_password:
-            return Response({"error": "New password cannot be the same as the old password."},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "New password cannot be the same as the old password."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Validate new password and confirmation
         if not new_password or not confirm_password:
-            return Response({"error": "Both new_password and confirm_password are required."},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Both new_password and confirm_password are required."}, status=status.HTTP_400_BAD_REQUEST)
 
         if new_password != confirm_password:
             return Response({"error": "Passwords do not match."}, status=status.HTTP_400_BAD_REQUEST)
 
         if len(new_password) < 8:
-            return Response({"error": "Password must be at least 8 characters long."},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Password must be at least 8 characters long."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Clear previous requests and create a new one
         PasswordChangeRequest.objects.filter(user=user).delete()
         otp = random.randint(100000, 999999)
+        hashed_new_password = make_password(new_password)
 
         send_mail(
             subject='Password Change OTP',
@@ -405,17 +407,14 @@ class PasswordChangeRequestViewSet(viewsets.ModelViewSet):
             recipient_list=[user.email],
             from_email=settings.EMAIL_HOST_USER,
         )
-        PasswordChangeRequest.objects.create(user=user, otp=otp, new_password=new_password)
+        PasswordChangeRequest.objects.create(user=user, otp=otp, new_password=hashed_new_password)
 
         return Response({"message": "An OTP has been sent to your email."}, status=status.HTTP_200_OK)
 
+    @swagger_helper("ChangePassword", "", "Resend OTP. requires authentication (JWT)")
     @action(detail=False, methods=['post'], url_path='resend-otp')
     def resend_otp(self, request):
-        """
-        Request a new OTP if the previous one has expired or was invalid.
-        """
         user = request.user
-
         password_change_request = PasswordChangeRequest.objects.filter(user=user).first()
 
         if not password_change_request:
@@ -434,11 +433,10 @@ class PasswordChangeRequestViewSet(viewsets.ModelViewSet):
         )
         return Response({"message": "A new OTP has been sent to your email."}, status=status.HTTP_200_OK)
 
+    @swagger_helper("ChangePassword", "")
     @action(detail=False, methods=['post'], url_path='verify-password-change')
     def verify_password_change(self, request):
-        """
-        Step 2: Verify OTP and change password.
-        """
+
         otp = request.data.get('otp')
 
         if not otp:
@@ -457,13 +455,11 @@ class PasswordChangeRequestViewSet(viewsets.ModelViewSet):
         if otp_age > 300:
             return Response({"error": "OTP has expired. Please request a new one."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Change the user's password
         user.password = make_password(password_change_request.new_password)
         user.save()
 
         password_change_request.delete()
 
-        # Log out the user by invalidating the refresh token
         refresh_token = request.data.get('refresh_token')
         if refresh_token:
             try:
@@ -481,23 +477,24 @@ class PasswordChangeRequestViewSet(viewsets.ModelViewSet):
                         status=status.HTTP_200_OK)
 
 
-class UserSignupViewSet(viewsets.ViewSet):
-    """
-    Viewset for handling user signup and OTP verification.
-    """
+class UserSignupViewSet(viewsets.ModelViewSet):
+    def get_serializer_class(self):
+        if self.action == 'verify':
+            return UserSignupSerializerVerify
+        if self.action == 'resend_otp':
+            return UserSignupResendOTPSerializer
+        if self.action == 'create':
+            return UserSignupSerializer
 
+    @swagger_helper("Signup", "")
     def create(self, request, *args, **kwargs):
-        """
-        Handles user signup.
-        """
-        serializer = UserSignupSerializer(data=request.data)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         email = serializer.validated_data['email']
         password = serializer.validated_data['password']
         phone_number = serializer.validated_data['phone_number']
 
-        # Check if the user already exists
         user = User.objects.filter(email=email).first()
 
         if user:
@@ -519,7 +516,6 @@ class UserSignupViewSet(viewsets.ViewSet):
             else:
                 return Response({"error": "User already exists and is verified."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Create new user
         otp = random.randint(100000, 999999)
         User.objects.create(
             first_name=serializer.validated_data['first_name'],
@@ -540,12 +536,10 @@ class UserSignupViewSet(viewsets.ViewSet):
 
         return Response({"message": f"Signup successful. OTP sent to your email "}, status=status.HTTP_201_CREATED)
 
+    @swagger_helper("Signup", "")
     @action(detail=False, methods=['post'], url_path='verify-otp')
-    def verify_otp(self, request):
-        """
-        Verifies the OTP sent to the user's email.
-        """
-        serializer = UserSignupSerializerOTP(data=request.data)
+    def verify(self, request):
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         email = serializer.validated_data['email']
         otp = serializer.validated_data['otp']
@@ -583,12 +577,10 @@ class UserSignupViewSet(viewsets.ViewSet):
             'refresh_token': str(refresh),
         }, status=status.HTTP_200_OK)
 
+    @swagger_helper("Signup", "")
     @action(detail=False, methods=['post'], url_path='resend-otp')
     def resend_otp(self, request):
-        """
-        Resends the OTP to the user's email.
-        """
-        serializer = UserSignupSerializerResendOTP(data=request.data)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         email = serializer.validated_data['email']
 
@@ -614,22 +606,22 @@ class UserSignupViewSet(viewsets.ViewSet):
         return Response({"message": f"OTP resent to your email."}, status=status.HTTP_200_OK)
 
 
-class UserLoginViewSet(viewsets.ViewSet):
-    """
-    Handles user login and token generation.
-    """
+class UserLoginViewSet(viewsets.ModelViewSet):
 
-    serializer_class = LoginSerializer
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return LoginSerializer
+        if self.action == 'refresh_token':
+            return RefreshTokenSerializer
 
+    @swagger_helper("Login", "")
     def create(self, request, *args, **kwargs):
         if request.method != 'POST':
             return Response({'message': 'Method not allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
-
         data = request.data
         email = data.get('email')
         password = data.get('password')
 
-        # Check if user exists
         user = User.objects.filter(email=email).first()
         if not user:
             return Response({'message': 'User does not exist'}, status=status.HTTP_400_BAD_REQUEST)
@@ -659,14 +651,32 @@ class UserLoginViewSet(viewsets.ViewSet):
             'refresh_token': str(refresh),
         }, status=status.HTTP_200_OK)
 
+    @swagger_helper("Login", "")
+    @action(detail=False, methods=['post'], url_path='refresh-token')
+    def refresh_token(self, request):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            refresh_token = serializer.validated_data['refresh_token']
+            try:
+                refresh = RefreshToken(refresh_token)
+                access_token = str(refresh.access_token)
+                return Response({
+                    'message': 'Access token generated successfully.',
+                    'access_token': access_token,
+                }, status=status.HTTP_200_OK)
+            except Exception as e:
+                return Response({'message': 'Invalid or expired refresh token'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class LogoutViewSet(viewsets.ViewSet):
-    """
-    Handles user logout by invalidating refresh token.
-    """
 
+class LogoutViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
+    def get_serializer_class(self):
+        if self.action == "logout":
+            return LogoutSerializer
+
+    @swagger_helper("Logout", "", "Authentication required for logout. just pass auth key (JWT)")
     @action(detail=False, methods=['post'])
     def logout(self, request):
         try:
@@ -674,11 +684,9 @@ class LogoutViewSet(viewsets.ViewSet):
             if not refresh_token:
                 return Response({"detail": "Refresh token is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Invalidate the refresh token
             token = RefreshToken(refresh_token)
             token.blacklist()
 
             return Response({"detail": "Logout successful."}, status=status.HTTP_200_OK)
         except Exception as e:
-            # Handle specific exceptions if necessary
             return Response({"detail": "Error during logout.", "error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
