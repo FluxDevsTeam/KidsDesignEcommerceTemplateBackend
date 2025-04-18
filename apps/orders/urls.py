@@ -6,7 +6,7 @@ from .views import ApiOrder, ApiAdminOrder
 
 router = DefaultRouter()
 router.register("admin", ApiAdminOrder, basename="admin_order_page")
-router.register("items", ApiOrder, basename="order")
+router.register("item", ApiOrder, basename="order-item")
 # order_router = NestedDefaultRouter(router, "", lookup='order')
 # order_router.register("items", ApiOrderItem, basename="order_item")
 
