@@ -39,20 +39,18 @@ SIZE_CATEGORIES = {
 }
 
 
-def get_weight_fee(weight_category, quantity):
+def get_weight_fee(weight, quantity):
 
-    if weight_category not in WEIGHT_CATEGORIES:
+    if weight not in WEIGHT_CATEGORIES:
         return 0
-    weight_range = WEIGHT_CATEGORIES[weight_category]
-    weight_fee = WEIGHT_FEE * (weight_range[1] - weight_range[0]) * quantity
+    weight_fee = WEIGHT_FEE * WEIGHT_CATEGORIES[weight] * quantity
     return weight_fee
 
 
-def get_size_fee(size_category, quantity):
-    if size_category not in SIZE_CATEGORIES:
+def get_size_fee(size, quantity):
+    if size not in SIZE_CATEGORIES:
         return 0
-    size_range = SIZE_CATEGORIES[size_category]
-    size_fee = SIZE_FEE * (size_range[1] - size_range[0]) * quantity
+    size_fee = SIZE_FEE * SIZE_CATEGORIES[size] * quantity
     return size_fee
 
 
