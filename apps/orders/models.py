@@ -8,7 +8,7 @@ class Order(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="order_user")
     status = models.CharField(max_length=50)
-    delivery_fee = models.DecimalField(max_digits=100, decimal_places=2)
+    delivery_fee = models.DecimalField(max_digits=10, decimal_places=2)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
     first_name = models.CharField(max_length=50,)
     last_name = models.CharField(max_length=50)
