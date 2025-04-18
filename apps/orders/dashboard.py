@@ -12,9 +12,10 @@ from datetime import date, timedelta
 
 User = get_user_model()
 
+
 class OrderDashboard(viewsets.ModelViewSet):
     queryset = Order.objects.all()
-    # permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser]
 
     @swagger_auto_schema(operation_id="order --admin only", operation_description="monthly order data", tags=["Order admin page"])
     def retrieve(self, *args, **kwargs):
