@@ -32,6 +32,7 @@ DEBUG = os.getenv("DEBUG")
 # Application definition
 
 INSTALLED_APPS = [
+    'corsheaders',
     'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -169,12 +170,14 @@ JAZZMIN_UI_TWEAKS = {
 # celery
 CELERY_BROKER_URL = 'redis://localhost:6379/0'
 CELERY_RESULT_BACKEND = 'redis://localhost:6379/2'
+BASE_ROUTE = os.getenv("BASE_ROUTE")
+PAYMENT_IMAGE_URL = os.getenv("PAYMENT_IMAGE_URL")
 
 # Time & retry settings
 CELERY_TIMEZONE = 'UTC'
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60
-CELERY_TASK_SOFT_TIME_LIMIT = 15 * 60  # Optional
+CELERY_TASK_SOFT_TIME_LIMIT = 15 * 60
 CELERY_TASK_DEFAULT_RETRY_DELAY = 60
 CELERY_TASK_MAX_RETRIES = 3
 
@@ -222,3 +225,7 @@ CACHES = {
         }
     }
 }
+
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_HEADERS = ['Authorization', 'Content-Type', 'Accept',]
+CORS_ALLOW_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
