@@ -1,4 +1,4 @@
-# from django.core.cache import cache
+from django.core.cache import cache
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -7,7 +7,7 @@ from django.shortcuts import get_object_or_404, redirect
 
 from .delivery_fee import calculate_delivery_fee
 from ..cart.models import Cart
-from .serializers import PaymentCartSerializer
+from .serializers import PaymentCartSerializer, InitiateSerializer
 from ..orders.models import Order, OrderItem
 from .payments import initiate_flutterwave_payment, initiate_paystack_payment
 from django.utils.timezone import now
@@ -57,8 +57,12 @@ class PaymentSummaryViewSet(viewsets.ViewSet):
             return Response({"error": f"Could not generate payment summary. Please try again."}, status=500)
 
 
-class PaymentInitiateViewSet(viewsets.ViewSet):
+class PaymentInitiateViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
+
+    def get_serializer_class(self):
+        if self.action == "create":
+            return InitiateSerializer
 
     @swagger_helper("Payment", "Initiate payment")
     def create(self, request):
@@ -254,41 +258,32 @@ class PaymentSuccessViewSet(viewsets.ViewSet):
                 )
 
             cart.cartitem_cart.all().delete()
-            # cache.delete(f"cart_item_list:{request.user.id}:*")
-            # cache.delete(f"cart_item_detail:{request.user.id}:{cart.id}")
-            # cache.delete(f"cart_list:{request.user.id}:*")
+            cache.delete(f"cart_item_list:{request.user.id}:*")
+            cache.delete(f"cart_item_detail:{request.user.id}:{cart.id}")
+            cache.delete(f"cart_list:{request.user.id}:*")
 
-            # if not is_celery_healthy():
-            #     logger.warning("Celery is not healthy. Sending email synchronously now.")
-            #     send_email_synchronously(
-            #         order_id=str(order.id),
-            #         user_email=order.email,
-            #         first_name=order.first_name,
-            #         total_amount=str(order.total_amount),
-            #         order_date=now().date(),
-            #         estimated_delivery=order.estimated_delivery
-            #     )
+            if not is_celery_healthy():
+                logger.warning("Celery is not healthy. Sending email synchronously now.")
+                send_email_synchronously(
+                    order_id=str(order.id),
+                    user_email=order.email,
+                    first_name=order.first_name,
+                    total_amount=str(order.total_amount),
+                    order_date=now().date(),
+                    estimated_delivery=order.estimated_delivery
+                )
 
-            send_email_synchronously(
-                order_id=str(order.id),
-                user_email=order.email,
-                first_name=order.first_name,
-                total_amount=str(order.total_amount),
-                order_date=now().date(),
-                estimated_delivery=order.estimated_delivery
-            )
-
-            # else:
-                # send_order_confirmation_email.apply_async(
-                #     kwargs={
-                #         'order_id': str(order.id),
-                #         'user_email': order.email,
-                #         'first_name': order.first_name,
-                #         'total_amount': str(order.total_amount),
-                #         'order_date': now().date(),
-                #         'estimated_delivery': order.estimated_delivery
-                #     },
-                # )
+            else:
+                send_order_confirmation_email.apply_async(
+                    kwargs={
+                        'order_id': str(order.id),
+                        'user_email': order.email,
+                        'first_name': order.first_name,
+                        'total_amount': str(order.total_amount),
+                        'order_date': now().date(),
+                        'estimated_delivery': order.estimated_delivery
+                    },
+                )
             return redirect(f"{settings.ORDER_URL}{order.id}")
 
         except Exception as e:
@@ -300,7 +295,6 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
     permission_classes = []
 
     @swagger_helper("Payment", "Payment Webhook")
-
     def create(self, request):
         try:
             if "HTTP_X_FLUTTERWAVE_SIGNATURE" in request.META:

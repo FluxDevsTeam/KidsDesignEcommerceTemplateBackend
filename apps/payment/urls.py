@@ -1,14 +1,9 @@
 from django.urls import path, include
-from rest_framework.routers import DefaultRouter
 from .views import PaymentSummaryViewSet, PaymentInitiateViewSet, PaymentSuccessViewSet, PaymentWebhookViewSet
 
-router = DefaultRouter()
-router.register("summary", PaymentSummaryViewSet, basename="payment-summary")
-router.register("initiate", PaymentInitiateViewSet, basename="payment-initiate")
-# router.register("success", PaymentSuccessViewSet, basename="payment-success")
-router.register("webhook", PaymentWebhookViewSet, basename="payment-webhook")
 
 urlpatterns = [
-    path("", include(router.urls)),
+    path('summary/', PaymentSummaryViewSet.as_view({'get': 'list'}), name='payment-summary'),
+    path('initiate/', PaymentInitiateViewSet.as_view({'post': 'create'}), name='payment-initiate'),
     path('success/', PaymentSuccessViewSet.as_view({'get': 'confirm'}), name='payment-success'),
 ]
