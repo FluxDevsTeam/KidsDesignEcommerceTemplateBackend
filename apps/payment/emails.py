@@ -60,4 +60,3 @@ def order_confirmation_email(order_id, user_email, first_name, total_amount, ord
     except Exception as e:
         logger.exception("Failed to send HTML order confirmation email",
                          extra={'order_id': order_id, 'user_email': user_email, 'error': str(e)})
-        raise

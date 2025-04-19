@@ -1,7 +1,5 @@
 from rest_framework import serializers
 from ..cart.models import Cart, CartItem
-from django.conf import settings
-from decimal import Decimal
 
 
 class PaymentCartItemSerializer(serializers.ModelSerializer):
@@ -29,3 +27,7 @@ class PaymentCartSerializer(serializers.ModelSerializer):
         subtotal = self.get_subtotal(obj)
         delivery_fee = obj.delivery_fee if obj.delivery_fee is not None else 0
         return subtotal + delivery_fee
+
+
+class InitiateSerializer(serializers.Serializer):
+    provider = serializers.ChoiceField(choices=[("flutterwave", "Flutterwave"), ("paystack", "Paystack")], default="flutterwave", write_only=True)

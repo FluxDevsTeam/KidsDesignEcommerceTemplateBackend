@@ -8,6 +8,9 @@ from apps.payment.utils import generate_confirm_token
 
 logger = logging.getLogger(__name__)
 
+base_url = settings.BASE_ROUTE
+image_url = settings.PAYMENT_IMAGE_URL
+
 
 def initiate_flutterwave_payment(confirm_token, amount, user, redirect_url):
     try:
@@ -24,7 +27,7 @@ def initiate_flutterwave_payment(confirm_token, amount, user, redirect_url):
             "tx_ref": reference,
             "amount": str(amount),
             "currency": settings.PAYMENT_CURRENCY,
-            "redirect_url": f"http:/127.0.0.1:8000/api/v1/payment/success/?tx_ref={reference}&confirm_token={confirm_token}&provider=flutterwave&amount={int(amount)}&transaction_id={{transaction_id}}",
+            "redirect_url": f"{base_url}/api/v1/payment/success/?tx_ref={reference}&confirm_token={confirm_token}&provider=flutterwave&amount={int(amount)}&transaction_id={{transaction_id}}",
             "meta": {"consumer_id": user.id},
             "customer": {
                 "email": user.email,
@@ -33,7 +36,7 @@ def initiate_flutterwave_payment(confirm_token, amount, user, redirect_url):
             },
             "customizations": {
                 "title": "Ecommerce Template",
-                "logo": "https://th.bing.com/th/id/OIP.YUyvxZV46V46TKoPLtcyjwHaIj?w=183&h=211&c=7&r=0&o=5&pid=1.7"
+                "logo": image_url
             }
         }
 
@@ -74,8 +77,11 @@ def initiate_paystack_payment(confirm_token, amount, user, redirect_url):
             "email": user.email,
             "currency": settings.PAYMENT_CURRENCY,
             "reference": reference,
-            "callback_url": f"http://127.0.0.1:8000/api/v1/payment/success/?tx_ref={reference}&confirm_token={confirm_token}&provider=paystack&amount={int(amount)}&transaction_id={{transaction_id}}",
-            "metadata": {"consumer_id": user.id}
+            "callback_url": f"{base_url}/api/v1/payment/success/?tx_ref={reference}&confirm_token={confirm_token}&provider=paystack&amount={int(amount)}&transaction_id={{transaction_id}}",
+            "metadata": {
+                "consumer_id": user.id,
+                "image_url": image_url
+            }
         }
         response = requests.post(url, headers=headers, json=data)
 
