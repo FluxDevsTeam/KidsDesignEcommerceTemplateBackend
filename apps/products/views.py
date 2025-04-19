@@ -1,7 +1,7 @@
 import json
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-# from django.core.cache import cache
+from django.core.cache import cache
 from .filters import ProductFilter
 from .pagination import CustomPagination
 from .permissions import IsAdminOrReadOnly
@@ -32,63 +32,63 @@ class ApiProductCategory(viewsets.ModelViewSet):
 
     @swagger_helper(tags="ProductCategory", model="Product category")
     def list(self, request, *args, **kwargs):
-        # cache_timeout = 300
-        # cache_params = dict(request.query_params)
-        # cache_key = f"category_list:{json.dumps(cache_params, sort_keys=True)}"
-        # cached_response = cache.get(cache_key)
-        # if cached_response:
-            # return Response(cached_response)
+        cache_timeout = 300
+        cache_params = dict(request.query_params)
+        cache_key = f"category_list:{json.dumps(cache_params, sort_keys=True)}"
+        cached_response = cache.get(cache_key)
+        if cached_response:
+            return Response(cached_response)
 
         response = super().list(request, *args, **kwargs)
-        # cache.set(cache_key, response.data, cache_timeout)
+        cache.set(cache_key, response.data, cache_timeout)
         return response
 
     @swagger_helper(tags="ProductCategory", model="Product category")
     def retrieve(self, request, *args, **kwargs):
-        # cache_timeout = 300
-        # cache_key = f"category_detail:{kwargs['pk']}"
-        # cached_response = cache.get(cache_key)
-        # if cached_response:
-        #     return Response(cached_response)
+        cache_timeout = 300
+        cache_key = f"category_detail:{kwargs['pk']}"
+        cached_response = cache.get(cache_key)
+        if cached_response:
+            return Response(cached_response)
 
         response = super().retrieve(request, *args, **kwargs)
-        # cache.set(cache_key, response.data, cache_timeout)
+        cache.set(cache_key, response.data, cache_timeout)
         return response
 
     @swagger_helper(tags="ProductCategory", model="Product category")
     def create(self, *args, **kwargs):
         response = super().create(*args, **kwargs)
-        # cache.delete("category_list:*")
-        # cache.delete("category_detail:*")
-        # cache.delete("subcategory_list:*")
-        # cache.delete("subcategory_detail:*")
-        # cache.delete("product_list:*")
-        # cache.delete("search:*")
-        # cache.delete("search_suggestions:*")
+        cache.delete_pattern("category_list:*")
+        cache.delete_pattern("category_detail:*")
+        cache.delete_pattern("subcategory_list:*")
+        cache.delete_pattern("subcategory_detail:*")
+        cache.delete_pattern("product_list:*")
+        cache.delete_pattern("search:*")
+        cache.delete_pattern("search_suggestions:*")
         return response
 
     @swagger_helper(tags="ProductCategory", model="Product category")
     def partial_update(self, *args, **kwargs):
         response = super().partial_update(*args, **kwargs)
-        # cache.delete("category_list:*")
-        # cache.delete(f"category_detail:{kwargs['pk']}")
-        # cache.delete("subcategory_list:*")
-        # cache.delete("subcategory_detail:*")
-        # cache.delete("product_list:*")
-        # cache.delete("search:*")
-        # cache.delete("search_suggestions:*")
+        cache.delete_pattern("category_list:*")
+        cache.delete_pattern(f"category_detail:{kwargs['pk']}")
+        cache.delete_pattern("subcategory_list:*")
+        cache.delete_pattern("subcategory_detail:*")
+        cache.delete_pattern("product_list:*")
+        cache.delete_pattern("search:*")
+        cache.delete_pattern("search_suggestions:*")
         return response
 
     @swagger_helper(tags="ProductCategory", model="Product category")
     def destroy(self, *args, **kwargs):
         response = super().destroy(*args, **kwargs)
-        # cache.delete("category_list:*")
-        # cache.delete(f"category_detail:{kwargs['pk']}")
-        # cache.delete("subcategory_list:*")
-        # cache.delete("subcategory_detail:*")
-        # cache.delete("product_list:*")
-        # cache.delete("search:*")
-        # cache.delete("search_suggestions:*")
+        cache.delete_pattern("category_list:*")
+        cache.delete_pattern(f"category_detail:{kwargs['pk']}")
+        cache.delete_pattern("subcategory_list:*")
+        cache.delete_pattern("subcategory_detail:*")
+        cache.delete_pattern("product_list:*")
+        cache.delete_pattern("search:*")
+        cache.delete_pattern("search_suggestions:*")
         return response
 
 
@@ -107,57 +107,57 @@ class ApiProductSubCategory(viewsets.ModelViewSet):
 
     @swagger_helper(tags="ProductSubCategory", model="Product sub category")
     def list(self, request, *args, **kwargs):
-        # cache_timeout = 300
-        # cache_params = dict(request.query_params)
-        # cache_key = f"subcategory_list:{json.dumps(cache_params, sort_keys=True)}"
-        # cached_response = cache.get(cache_key)
-        # if cached_response:
-        #     return Response(cached_response)
+        cache_timeout = 300
+        cache_params = dict(request.query_params)
+        cache_key = f"subcategory_list:{json.dumps(cache_params, sort_keys=True)}"
+        cached_response = cache.get(cache_key)
+        if cached_response:
+            return Response(cached_response)
 
         response = super().list(request, *args, **kwargs)
-        # cache.set(cache_key, response.data, cache_timeout)
+        cache.set(cache_key, response.data, cache_timeout)
         return response
 
     @swagger_helper(tags="ProductSubCategory", model="Product sub category")
     def retrieve(self, request, *args, **kwargs):
-        # cache_timeout = 300
-        # cache_key = f"subcategory_detail:{kwargs['pk']}"
-        # cached_response = cache.get(cache_key)
-        # if cached_response:
-        #     return Response(cached_response)
+        cache_timeout = 300
+        cache_key = f"subcategory_detail:{kwargs['pk']}"
+        cached_response = cache.get(cache_key)
+        if cached_response:
+            return Response(cached_response)
 
         response = super().retrieve(request, *args, **kwargs)
-        # cache.set(cache_key, response.data, cache_timeout)
+        cache.set(cache_key, response.data, cache_timeout)
         return response
 
     @swagger_helper(tags="ProductSubCategory", model="Product sub category")
     def create(self, *args, **kwargs):
         response = super().create(*args, **kwargs)
-        # cache.delete("subcategory_list:*")
-        # cache.delete("subcategory_detail:*")
-        # cache.delete("product_list:*")
-        # cache.delete("search:*")
-        # cache.delete("search_suggestions:*")
+        cache.delete_pattern("subcategory_list:*")
+        cache.delete_pattern("subcategory_detail:*")
+        cache.delete_pattern("product_list:*")
+        cache.delete_pattern("search:*")
+        cache.delete_pattern("search_suggestions:*")
         return response
 
     @swagger_helper(tags="ProductSubCategory", model="Product sub category")
     def partial_update(self, *args, **kwargs):
         response = super().partial_update(*args, **kwargs)
-        # cache.delete("subcategory_list:*")
-        # cache.delete(f"subcategory_detail:{kwargs['pk']}")
-        # cache.delete("product_list:*")
-        # cache.delete("search:*")
-        # cache.delete("search_suggestions:*")
+        cache.delete_pattern("subcategory_list:*")
+        cache.delete_pattern(f"subcategory_detail:{kwargs['pk']}")
+        cache.delete_pattern("product_list:*")
+        cache.delete_pattern("search:*")
+        cache.delete_pattern("search_suggestions:*")
         return response
 
     @swagger_helper(tags="ProductSubCategory", model="Product sub category")
     def destroy(self, *args, **kwargs):
         response = super().destroy(*args, **kwargs)
-        # cache.delete("subcategory_list:*")
-        # cache.delete(f"subcategory_detail:{kwargs['pk']}")
-        # cache.delete("product_list:*")
-        # cache.delete("search:*")
-        # cache.delete("search_suggestions:*")
+        cache.delete_pattern("subcategory_list:*")
+        cache.delete_pattern(f"subcategory_detail:{kwargs['pk']}")
+        cache.delete_pattern("product_list:*")
+        cache.delete_pattern("search:*")
+        cache.delete_pattern("search_suggestions:*")
         return response
 
 
@@ -177,38 +177,38 @@ class ApiProduct(viewsets.ModelViewSet):
 
     @swagger_helper(tags="Product", model="Product")
     def list(self, request, *args, **kwargs):
-        # cache_timeout = 300
-        # cache_params = dict(request.query_params)
-        # cache_key = f"product_list:{json.dumps(cache_params, sort_keys=True)}"
-        # cached_response = cache.get(cache_key)
-        # if cached_response:
-        #     return Response(cached_response)
+        cache_timeout = 300
+        cache_params = dict(request.query_params)
+        cache_key = f"product_list:{json.dumps(cache_params, sort_keys=True)}"
+        cached_response = cache.get(cache_key)
+        if cached_response:
+            return Response(cached_response)
 
         response = super().list(request, *args, **kwargs)
-        # cache.set(cache_key, response.data, cache_timeout)
+        cache.set(cache_key, response.data, cache_timeout)
         return response
 
     @swagger_helper(tags="Product", model="Product")
     def retrieve(self, request, *args, **kwargs):
-        # cache_timeout = 300
-        # cache_key = f"product_detail:{kwargs['pk']}"
-        # cached_response = cache.get(cache_key)
-        # if cached_response:
-        #     return Response(cached_response)
+        cache_timeout = 300
+        cache_key = f"product_detail:{kwargs['pk']}"
+        cached_response = cache.get(cache_key)
+        if cached_response:
+            return Response(cached_response)
 
         response = super().retrieve(request, *args, **kwargs)
-        # cache.set(cache_key, response.data, cache_timeout)
+        cache.set(cache_key, response.data, cache_timeout)
         return response
 
     @swagger_helper(tags="Product", model="Product")
     def create(self, *args, **kwargs):
         response = super().create(*args, **kwargs)
-        # cache.delete("product_list:*")
-        # cache.delete("search:*")
-        # cache.delete("search_suggestions:*")
-        # cache.delete("cart_list:*")
-        # cache.delete("cart_item_list:*")
-        # cache.delete("wishlist_list:*")
+        cache.delete_pattern("product_list:*")
+        cache.delete_pattern("search:*")
+        cache.delete_pattern("search_suggestions:*")
+        cache.delete_pattern("cart_list:*")
+        cache.delete_pattern("cart_item_list:*")
+        cache.delete_pattern("wishlist_list:*")
         return response
 
     @swagger_helper(tags="Product", model="Product")
@@ -256,13 +256,13 @@ class ApiProduct(viewsets.ModelViewSet):
                     )
                 serializer.save()
 
-            # cache.delete("product_list:*")
-            # cache.delete(f"product_detail:{kwargs['pk']}")
-            # cache.delete("search:*")
-            # cache.delete("search_suggestions:*")
-            # cache.delete("cart_list:*")
-            # cache.delete("cart_item_list:*")
-            # cache.delete("wishlist_list:*")
+            cache.delete_pattern("product_list:*")
+            cache.delete_pattern(f"product_detail:{kwargs['pk']}")
+            cache.delete_pattern("search:*")
+            cache.delete_pattern("search_suggestions:*")
+            cache.delete_pattern("cart_list:*")
+            cache.delete_pattern("cart_item_list:*")
+            cache.delete_pattern("wishlist_list:*")
 
             return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -271,24 +271,24 @@ class ApiProduct(viewsets.ModelViewSet):
     @swagger_helper(tags="Product", model="Product")
     def destroy(self, *args, **kwargs):
         response = super().destroy(*args, **kwargs)
-        # cache.delete("product_list:*")
-        # cache.delete(f"product_detail:{kwargs['pk']}")
-        # cache.delete("search:*")
-        # cache.delete("search_suggestions:*")
-        # cache.delete("cart_list:*")
-        # cache.delete("cart_item_list:*")
-        # cache.delete("wishlist_list:*")
+        cache.delete_pattern("product_list:*")
+        cache.delete_pattern(f"product_detail:{kwargs['pk']}")
+        cache.delete_pattern("search:*")
+        cache.delete_pattern("search_suggestions:*")
+        cache.delete_pattern("cart_list:*")
+        cache.delete_pattern("cart_item_list:*")
+        cache.delete_pattern("wishlist_list:*")
         return response
 
     @swagger_helper(tags="Product", model="Product")
     @action(methods=['GET'], detail=False)
     def homepage(self, request):
-        # cache_timeout = 300
-        # cache_params = dict(request.query_params)
-        # cache_key = f"product_homepage:{json.dumps(cache_params, sort_keys=True)}"
-        # cached_response = cache.get(cache_key)
-        # if cached_response:
-            # return Response(cached_response)
+        cache_timeout = 300
+        cache_params = dict(request.query_params)
+        cache_key = f"product_homepage:{json.dumps(cache_params, sort_keys=True)}"
+        cached_response = cache.get(cache_key)
+        if cached_response:
+            return Response(cached_response)
 
         products = Product.objects.select_related('sub_category__category')
         latest_prioritized = products.filter(Q(latest_item=True) & Q(latest_item_position__isnull=False)).order_by('latest_item_position')
@@ -321,12 +321,12 @@ class ApiProduct(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], url_path='search')
     def search(self, request, *args, **kwargs):
         query = request.query_params.get("search", "").strip()
-        # cache_timeout = 300
-        # cache_params = dict(request.query_params)
-        # cache_key = f"product_search:{json.dumps(cache_params, sort_keys=True)}"
-        # cached_response = cache.get(cache_key)
-        # if cached_response:
-        #     return Response(cached_response)
+        cache_timeout = 300
+        cache_params = dict(request.query_params)
+        cache_key = f"product_search:{json.dumps(cache_params, sort_keys=True)}"
+        cached_response = cache.get(cache_key)
+        if cached_response:
+            return Response(cached_response)
 
         if not query:
             return Response({"count": 0, "next": None, "previous": None, "results": []})
@@ -347,7 +347,7 @@ class ApiProduct(viewsets.ModelViewSet):
             serializer = self.get_serializer(search_data, many=True)
             response_data = serializer.data
 
-        # cache.set(cache_key, response_data, cache_timeout)
+        cache.set(cache_key, response_data, cache_timeout)
         return Response(response_data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(manual_parameters=[openapi.Parameter('query', openapi.IN_QUERY, description="autocomplete for search", type=openapi.TYPE_STRING), openapi.Parameter('page', openapi.IN_QUERY, description="Page number", type=openapi.TYPE_INTEGER), openapi.Parameter('page_size', openapi.IN_QUERY, description="Items per page (max: 100)", type=openapi.TYPE_INTEGER)], operation_id="Auocomplete Products", operation_description="Search products for autocomplete", tags=["Product"])
@@ -357,11 +357,11 @@ class ApiProduct(viewsets.ModelViewSet):
         if not query:
             return Response([])
 
-        # cache_timeout = 300
-        # cache_key = f"search_suggestions:{query}"
-        # cached_response = cache.get(cache_key)
-        # if cached_response:
-        #     return Response(cached_response)
+        cache_timeout = 300
+        cache_key = f"search_suggestions:{query}"
+        cached_response = cache.get(cache_key)
+        if cached_response:
+            return Response(cached_response)
 
         products = self.get_queryset().filter(
             Q(name__istartswith=query) |
@@ -388,7 +388,7 @@ class ApiProduct(viewsets.ModelViewSet):
                 break
 
         suggestions = (sorted(starts_with) + sorted(contains))[:20]
-        # cache.set(cache_key, suggestions, cache_timeout)
+        cache.set(cache_key, suggestions, cache_timeout)
         return Response(suggestions)
 
 
@@ -408,58 +408,58 @@ class ApiProductSize(viewsets.ModelViewSet):
 
     @swagger_helper(tags="ProductSize", model="Product size")
     def list(self, request, *args, **kwargs):
-        # cache_timeout = 300
-        # cache_params = dict(request.query_params)
-        # cache_key = f"product_size_list:{json.dumps(cache_params, sort_keys=True)}"
-        # cached_response = cache.get(cache_key)
-        # if cached_response:
-        #     return Response(cached_response)
+        cache_timeout = 300
+        cache_params = dict(request.query_params)
+        cache_key = f"product_size_list:{json.dumps(cache_params, sort_keys=True)}"
+        cached_response = cache.get(cache_key)
+        if cached_response:
+            return Response(cached_response)
 
         response = super().list(request, *args, **kwargs)
-        # cache.set(cache_key, response.data, cache_timeout)
+        cache.set(cache_key, response.data, cache_timeout)
         return response
 
     @swagger_helper(tags="ProductSize", model="Product size")
     def retrieve(self, request, *args, **kwargs):
-        # cache_timeout = 300
-        # cache_key = f"product_size_detail:{kwargs['pk']}"
-        # cached_response = cache.get(cache_key)
-        # if cached_response:
-        #     return Response(cached_response)
+        cache_timeout = 300
+        cache_key = f"product_size_detail:{kwargs['pk']}"
+        cached_response = cache.get(cache_key)
+        if cached_response:
+            return Response(cached_response)
 
         response = super().retrieve(request, *args, **kwargs)
-        # cache.set(cache_key, response.data, cache_timeout)
+        cache.set(cache_key, response.data, cache_timeout)
         return response
 
     @swagger_helper(tags="ProductSize", model="Product size")
     def create(self, *args, **kwargs):
         response = super().create(*args, **kwargs)
-        # cache.delete("product_size_list:*")
-        # cache.delete("product_size_detail:*")
-        # cache.delete("product_list:*")
-        # cache.delete("product_detail:*")
-        # cache.delete("search:*")
-        # cache.delete("search_suggestions:*")
+        cache.delete_pattern("product_size_list:*")
+        cache.delete_pattern("product_size_detail:*")
+        cache.delete_pattern("product_list:*")
+        cache.delete_pattern("product_detail:*")
+        cache.delete_pattern("search:*")
+        cache.delete_pattern("search_suggestions:*")
         return response
 
     @swagger_helper(tags="ProductSize", model="Product size")
     def partial_update(self, *args, **kwargs):
         response = super().partial_update(*args, **kwargs)
-        # cache.delete("product_size_list:*")
-        # cache.delete(f"product_size_detail:{kwargs['pk']}")
-        # cache.delete("product_list:*")
-        # cache.delete("product_detail:*")
-        # cache.delete("search:*")
-        # cache.delete("search_suggestions:*")
+        cache.delete_pattern("product_size_list:*")
+        cache.delete_pattern(f"product_size_detail:{kwargs['pk']}")
+        cache.delete_pattern("product_list:*")
+        cache.delete_pattern("product_detail:*")
+        cache.delete_pattern("search:*")
+        cache.delete_pattern("search_suggestions:*")
         return response
 
     @swagger_helper(tags="ProductSize", model="Product size")
     def destroy(self, *args, **kwargs):
         response = super().destroy(*args, **kwargs)
-        # cache.delete("product_size_list:*")
-        # cache.delete(f"product_size_detail:{kwargs['pk']}")
-        # cache.delete("product_list:*")
-        # cache.delete("product_detail:*")
-        # cache.delete("search:*")
-        # cache.delete("search_suggestions:*")
+        cache.delete_pattern("product_size_list:*")
+        cache.delete_pattern(f"product_size_detail:{kwargs['pk']}")
+        cache.delete_pattern("product_list:*")
+        cache.delete_pattern("product_detail:*")
+        cache.delete_pattern("search:*")
+        cache.delete_pattern("search_suggestions:*")
         return response
