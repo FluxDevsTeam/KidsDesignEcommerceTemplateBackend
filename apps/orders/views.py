@@ -12,7 +12,6 @@ from .filters import OrderFilter
 
 
 class ApiOrder(viewsets.ModelViewSet):
-    # http_method_names = ["get", "post", "patch", "delete", "head", "options"]
     http_method_names = ["get", "head", "options"]
     pagination_class = CustomPagination
     serializer_class = OrderSerializer
