@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>{{ subject }} - Shop.co</title>
+</head>
+<body style="margin: 0; padding: 20px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica', 'Arial', sans-serif; line-height: 1.6; color: #333333; background-color: #f4f4f4;">
+    <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);">
+        <!-- Header -->
+        <tr>
+            <td style="background: linear-gradient(135deg, #008080 0%, #00a3a3 100%); color: #ffffff; padding: 40px 20px; text-align: center;">
+                <img src="https://tse4.mm.bing.net/th/id/OIP.rcKRRDLHGEu5lWcn6vbKcAHaHa?rs=1&pid=ImgDetMain" alt="Shop.co Logo" style="max-width: 120px; margin-bottom: 15px; display: block; margin-left: auto; margin-right: auto;">
+                <h1 style="font-size: 28px; font-weight: 700; letter-spacing: 0.5px; margin: 0;">{{ subject }}</h1>
+                <p style="font-size: 16px; margin: 10px 0 0; opacity: 0.9;">Your Shop.co Account</p>
+            </td>
+        </tr>
+
+        <!-- Content -->
+        <tr>
+            <td style="padding: 30px;">
+                <h2 style="font-size: 22px; font-weight: 600; color: #008080; margin-bottom: 15px;">{{ action|capfirst }}</h2>
+                <p style="font-size: 16px; color: #555555; margin-bottom: 15px;">
+                    {{ message|safe }}
+                </p>
+                {% if otp %}
+                <p style="font-size: 16px; color: #555555; margin-bottom: 15px;">
+                    Your OTP is: <strong style="color: #008080;">{{ otp }}</strong>. It expires in 5 minutes.
+                </p>
+                {% endif %}
+                {% if link %}
+                <p style="font-size: 16px; color: #555555; margin-bottom: 15px;">
+                    Click the link below to proceed:
+                </p>
+                <a href="{{ link }}" style="display: inline-block; padding: 12px 30px; background: #008080; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px; border-radius: 50px; text-align: center;">
+                    {{ link_text|default:"Take Action" }}
+                </a>
+                {% endif %}
+
+                <!-- Customer Support -->
+                <table cellpadding="0" cellspacing="0" width="100%" style="background: #f8fafc; padding: 20px; border-radius: 8px; text-align: center; margin-top: 20px;">
+                    <tr>
+                        <td>
+                            <h3 style="font-size: 18px; font-weight: 600; color: #008080; margin-bottom: 10px;">We Are Here to Help</h3>
+                            <p style="font-size: 14px; color: #555555; margin-bottom: 10px;">Have questions? Our support team is available anytime.</p>
+                            <p style="font-size: 14px; color: #555555; margin-bottom: 10px;">
+                                <a href="mailto:support@shop.co" style="color: #008080; text-decoration: none; font-weight: 500;">support@shop.co</a> |
+                                <a href="tel:+1234567890" style="color: #008080; text-decoration: none; font-weight: 500;">+1 (234) 567-890</a>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+            <td style="text-align: center; font-size: 12px; color: #6b7280; padding: 20px; background: #f8fafc; border-top: 1px solid #e5e7eb;">
+                <p style="margin-bottom: 8px;">Best regards,<br><a href="{{ site_url }}" style="color: #008080; text-decoration: none; font-weight: 500;">The Shop.co Team</a></p>
+                <p style="margin-bottom: 8px;">Connect with us:</p>
+                <table align="center" cellpadding="0" cellspacing="0" style="margin-top: 10px;">
+                    <tr>
+                        <td style="padding: 0 10px;">
+                            <a href="https://www.facebook.com/shopco"><img src="https://cdn-icons-png.flaticon.com/512/5968/5968764.png" alt="Facebook" style="width: 24px; height: 24px; vertical-align: middle;"></a>
+                        </td>
+                        <td style="padding: 0 10px;">
+                            <a href="https://twitter.com/shopco"><img src="https://cdn-icons-png.flaticon.com/512/732/732250.png" alt="Twitter" style="width: 24px; height: 24px; vertical-align: middle;"></a>
+                        </td>
+                        <td style="padding: 0 10px;">
+                            <a href="https://www.instagram.com/shopco"><img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Instagram" style="width: 24px; height: 24px; vertical-align: middle;"></a>
+                        </td>
+                        <td style="padding: 0 10px;">
+                            <a href="https://www.linkedin.com/company/shopco"><img src="https://cdn-icons-png.flaticon.com/512/3536/3536505.png" alt="LinkedIn" style="width: 24px; height: 24px; vertical-align: middle;"></a>
+                        </td>
+                    </tr>
+                </table>
+                <p style="margin-top: 15px;">{{ current_year|escape }} Shop.co. All rights reserved.</p>
+                <p><a href="{{ site_url }}/privacy" style="color: #008080; text-decoration: none;">Privacy Policy</a> | <a href="{{ site_url }}/terms" style="color: #008080; text-decoration: none;">Terms of Service</a></p>
+            </td>
+        </tr>
+    </table>
+
+    <!-- Responsive Design -->
+    <style>
+        @media screen and (max-width: 600px) {
+            body { padding: 10px; }
+            table[max-width="600px"] { margin: 10px auto; }
+            td[style*="padding: 40px 20px"] { padding: 30px 15px !important; }
+            img[alt="Shop.co Logo"] { max-width: 100px; }
+            h1 { font-size: 24px; }
+            p[style*="font-size: 16px; margin: 10px"] { font-size: 14px; }
+            td[style*="padding: 30px"] { padding: 20px !important; }
+            h2 { font-size: 20px; }
+            p, td[style*="font-size: 16px; color: #555555"] { font-size: 14px; }
+            a[style*="padding: 12px 30px"] { padding: 10px 25px !important; font-size: 14px !important; }
+            h3 { font-size: 16px; }
+            p[style*="font-size: 14px; color: #555555"] { font-size: 13px; }
+            td[style*="padding: 20px; background: #f8fafc"] { font-size: 11px; }
+            img[style*="width: 24px"] { width: 20px !important; height: 20px !important; }
+        }
+    </style>
+</body>
+</html>
