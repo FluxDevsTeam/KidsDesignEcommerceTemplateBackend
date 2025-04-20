@@ -187,7 +187,7 @@ class PaymentSuccessViewSet(viewsets.ViewSet):
             except requests.exceptions.RequestException as err:
                 logger.error(f"{provider.capitalize()} verification failed",
                              extra={'error': str(err), 'tx_ref': tx_ref, 'user_id': request.user.id})
-                return Response({"error": "Payment verification failed", "details": str(err)}, status=400)
+                return redirect(f"http://127.0.0.1:8000/api/v1/cart/{cart_id_from_token}")
 
             response_data = verification_response.json()
             expected_currency = settings.PAYMENT_CURRENCY
@@ -213,8 +213,7 @@ class PaymentSuccessViewSet(viewsets.ViewSet):
                     logger.error("Currency mismatch", extra={'provider': provider, 'tx_ref': tx_ref, 'currency': response_data["data"]["currency"]})
                     return Response({"error": "Currency not supported"}, status=400)
                 logger.error(f"{provider.capitalize()} payment verification failed", extra={'response': response_data, 'tx_ref': tx_ref})
-                return Response(
-                    {"error": "Payment verification failed", "details": response_data.get("message", "Unknown error")}, status=400)
+                return redirect(f"{settings.ORDER_URL}/cart/")
 
             serializer = PaymentCartSerializer(cart)
             server_total = serializer.data["total"]
