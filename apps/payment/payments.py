@@ -37,7 +37,11 @@ def initiate_flutterwave_payment(confirm_token, amount, user, redirect_url):
             "customizations": {
                 "title": "Ecommerce Template",
                 "logo": image_url
-            }
+            },
+            "configurations": {
+                "session_duration": 1,  #in minutes
+                "max_retry_attempt": 5
+            },
         }
 
         response = requests.post(url, headers=headers, json=data)
