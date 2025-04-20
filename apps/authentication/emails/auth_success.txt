@@ -1,0 +1,35 @@
+Welcome to Shop.co!
+
+Thank you for {{ action|default:"logging in to" }} your Shop.co account! Your {{ action|default:"login" }} was successful.
+{% if action == "signup" %}
+We’re excited to have you join our community. Start exploring our wide range of products now!
+{% else %}
+Welcome back! Enjoy a seamless shopping experience with your account.
+{% endif %}
+
+{% if action == "signup" %}
+Browse our latest collections or update your profile to get started.
+{% else %}
+Check your account details or dive into our newest arrivals.
+{% endif %}
+
+Action: {{ action|capfirst }}
+Status: Successful
+
+{% if action == "signup" %}
+Ready to shop? Discover our latest products today.
+{% else %}
+Jump into your account to explore or shop now.
+{% endif %}
+
+Visit: {{ site_url }}
+
+We Are Here to Help
+Have questions? Our support team is available anytime.
+support@shop.co | +1 (234) 567-890
+
+Best regards,
+The Shop.co Team
+Connect with us: https://www.facebook.com/shopco | https://twitter.com/shopco | https://www.instagram.com/shopco | https://www.linkedin.com/company/shopco
+{{ current_year }} Shop.co. All rights reserved.
+Privacy Policy: {{ site_url }}/privacy | Terms of Service: {{ site_url }}/terms
