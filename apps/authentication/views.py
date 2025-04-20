@@ -1,6 +1,5 @@
 from django.contrib.auth import get_user_model
 from django.conf import settings
-from django.core.mail import send_mail
 import random
 import datetime
 from django.utils import timezone
@@ -8,20 +7,25 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from django.contrib.auth.hashers import make_password
 from rest_framework.exceptions import AuthenticationFailed
-from .serializers import (UserSignupSerializer, LoginSerializer, ViewUserProfileSerializer,
-                          ResendOtpPasswordSerializer, VerifyOtpPasswordSerializer, SetNewPasswordSerializer,
-                          RefreshTokenSerializer, EmailChangeSerializer,
-                          VerifyEmailChangeSerializer, ProfileChangeSerializer, VerifyProfileChangeSerializer,
-                          PasswordChangeSerializer, VerifyPasswordChangeSerializer, RequestForgotPasswordSerializer,
-                          UserSignupSerializerVerify, UserSignupResendOTPSerializer, LogoutSerializer)
+from .serializers import (
+    UserSignupSerializer, LoginSerializer, ViewUserProfileSerializer,
+    ResendOtpPasswordSerializer, VerifyOtpPasswordSerializer, SetNewPasswordSerializer,
+    RefreshTokenSerializer, EmailChangeSerializer,
+    VerifyEmailChangeSerializer, ProfileChangeSerializer, VerifyProfileChangeSerializer,
+    PasswordChangeSerializer, VerifyPasswordChangeSerializer, RequestForgotPasswordSerializer,
+    UserSignupSerializerVerify, UserSignupResendOTPSerializer, LogoutSerializer
+)
 from rest_framework_simplejwt.tokens import RefreshToken
 from .utils import swagger_helper
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from .models import EmailChangeRequest, PasswordChangeRequest, ForgotPasswordRequest, NameChangeRequest
 from django.utils.timezone import now
+from .tasks import is_celery_healthy, send_auth_success_email, send_email_synchronously, send_generic_email_task
+import logging
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 
 class ForgotPasswordViewSet(viewsets.ModelViewSet):
@@ -50,12 +54,30 @@ class ForgotPasswordViewSet(viewsets.ModelViewSet):
 
         reset_url = f"https://asluxeryoriginals.pythonanywhere.com/auth/forgot-password/set-new-password/?email={email}"
         ForgotPasswordRequest.objects.create(user=user)
-        send_mail(
-            subject='Password Reset Request',
-            message=f"Click the following link to reset your password: {reset_url}. This link will expire in 10 minutes.",
-            recipient_list=[email],
-            from_email=settings.EMAIL_HOST_USER,
-        )
+
+        if not is_celery_healthy():
+            logger.warning("Celery is not healthy. Sending reset link email synchronously.")
+            send_email_synchronously(
+                user_email=email,
+                email_type="reset_link",
+                subject="Password Reset Request",
+                action="Password Reset",
+                message="Click the link below to reset your password. This link will expire in 10 minutes.",
+                link=reset_url,
+                link_text="Reset Password"
+            )
+        else:
+            send_generic_email_task.apply_async(
+                kwargs={
+                    'user_email': email,
+                    'email_type': "reset_link",
+                    'subject': "Password Reset Request",
+                    'action': "Password Reset",
+                    'message': "Click the link below to reset your password. This link will expire in 10 minutes.",
+                    'link': reset_url,
+                    'link_text': "Reset Password"
+                }
+            )
 
         return Response({"message": "A password reset link has been sent to your email."}, status=status.HTTP_200_OK)
 
@@ -88,12 +110,27 @@ class ForgotPasswordViewSet(viewsets.ModelViewSet):
         ForgotPasswordRequest.objects.filter(user=user).delete()
         otp = random.randint(100000, 999999)
 
-        send_mail(
-            subject='Forgot Password OTP',
-            message=f"Your OTP for password reset is: {otp}. It will expire in 5 minutes.",
-            recipient_list=[email],
-            from_email=settings.EMAIL_HOST_USER,
-        )
+        if not is_celery_healthy():
+            logger.warning("Celery is not healthy. Sending OTP email synchronously.")
+            send_email_synchronously(
+                user_email=email,
+                email_type="otp",
+                subject="Forgot Password OTP",
+                action="Password Reset",
+                message="Use the OTP below to reset your password.",
+                otp=otp
+            )
+        else:
+            send_generic_email_task.apply_async(
+                kwargs={
+                    'user_email': email,
+                    'email_type': "otp",
+                    'subject': "Forgot Password OTP",
+                    'action': "Password Reset",
+                    'message': "Use the OTP below to reset your password.",
+                    'otp': otp
+                }
+            )
 
         ForgotPasswordRequest.objects.create(user=user, otp=otp, new_password=new_password)
 
@@ -157,18 +194,30 @@ class ForgotPasswordViewSet(viewsets.ModelViewSet):
 
         otp = random.randint(100000, 999999)
         forgot_password_request.otp = otp
-
         forgot_password_request.created_at = timezone.now()
-
         forgot_password_request.save()
 
-        send_mail(
-            subject='Forgot Password OTP - Resent',
-            message=f"Your new OTP for password reset is: {otp}. It will expire in 5 minutes.",
-            recipient_list=[email],
-            from_email=settings.EMAIL_HOST_USER,
-        )
-
+        if not is_celery_healthy():
+            logger.warning("Celery is not healthy. Sending OTP email synchronously.")
+            send_email_synchronously(
+                user_email=email,
+                email_type="otp",
+                subject="Forgot Password OTP - Resent",
+                action="Password Reset",
+                message="Use the OTP below to reset your password.",
+                otp=otp
+            )
+        else:
+            send_generic_email_task.apply_async(
+                kwargs={
+                    'user_email': email,
+                    'email_type': "otp",
+                    'subject': "Forgot Password OTP - Resent",
+                    'action': "Password Reset",
+                    'message': "Use the OTP below to reset your password.",
+                    'otp': otp
+                }
+            )
         return Response({"message": "A new OTP has been sent to your email and the expiration time has been extended."}, status=status.HTTP_200_OK)
 
 
@@ -196,7 +245,6 @@ class UserProfileViewSet(viewsets.ModelViewSet):
     @swagger_helper("UserProfile", "")
     @action(detail=False, methods=['post'], url_path='request-email-change')
     def request_email_change(self, request):
-
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -221,12 +269,27 @@ class UserProfileViewSet(viewsets.ModelViewSet):
             otp = random.randint(100000, 999999)
             EmailChangeRequest.objects.create(user=user, new_email=new_email, otp=otp)
 
-        send_mail(
-            subject='Email Change OTP',
-            message=f"Your OTP is: {otp}",
-            recipient_list=[new_email],
-            from_email=settings.EMAIL_HOST_USER,
-        )
+        if not is_celery_healthy():
+            logger.warning("Celery is not healthy. Sending OTP email synchronously.")
+            send_email_synchronously(
+                user_email=new_email,
+                email_type="otp",
+                subject="Email Change OTP",
+                action="Email Change",
+                message="Use the OTP below to verify your new email address.",
+                otp=otp
+            )
+        else:
+            send_generic_email_task.apply_async(
+                kwargs={
+                    'user_email': new_email,
+                    'email_type': "otp",
+                    'subject': "Email Change OTP",
+                    'action': "Email Change",
+                    'message': "Use the OTP below to verify your new email address.",
+                    'otp': otp
+                }
+            )
 
         return Response({"message": "OTP sent to the new email address."}, status=status.HTTP_200_OK)
 
@@ -248,16 +311,31 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         email_change_request.created_at = timezone.now()
         email_change_request.save()
 
-        send_mail(
-            subject='Resend Email Change OTP',
-            message=f"Your new OTP is: {otp}",
-            recipient_list=[email_change_request.new_email],
-            from_email=settings.EMAIL_HOST_USER,
-        )
+        if not is_celery_healthy():
+            logger.warning("Celery is not healthy. Sending OTP email synchronously.")
+            send_email_synchronously(
+                user_email=email_change_request.new_email,
+                email_type="otp",
+                subject="Resend Email Change OTP",
+                action="Email Change",
+                message="Use the OTP below to verify your new email address.",
+                otp=otp
+            )
+        else:
+            send_generic_email_task.apply_async(
+                kwargs={
+                    'user_email': email_change_request.new_email,
+                    'email_type': "otp",
+                    'subject': "Resend Email Change OTP",
+                    'action': "Email Change",
+                    'message': "Use the OTP below to verify your new email address.",
+                    'otp': otp
+                }
+            )
 
         return Response({"message": "New OTP sent to the new email address."}, status=status.HTTP_200_OK)
 
-    @swagger_helper("UserProfile", "", )
+    @swagger_helper("UserProfile", "")
     @action(detail=False, methods=['post'], url_path='verify-email-change')
     def verify_email_change(self, request):
         serializer = self.get_serializer(data=request.data)
@@ -270,11 +348,9 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         if not email_change_request:
             return Response({"error": "No pending email change request found."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Check if OTP matches
         if str(email_change_request.otp) != str(otp):
             return Response({"error": "Invalid OTP."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Check if OTP has expired (5 minutes validity)
         otp_age = (timezone.now() - email_change_request.created_at).total_seconds()
         if otp_age > 300:
             return Response({"error": "OTP has expired. Please request a new one."}, status=status.HTTP_400_BAD_REQUEST)
@@ -283,20 +359,31 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         user.save()
         email_change_request.delete()
 
-        # Send confirmation email
-        send_mail(
-            subject='Email Change Confirmation',
-            message="Your email address has been successfully changed.",
-            recipient_list=[user.email],
-            from_email=settings.EMAIL_HOST_USER,
-        )
+        if not is_celery_healthy():
+            logger.warning("Celery is not healthy. Sending confirmation email synchronously.")
+            send_email_synchronously(
+                user_email=user.email,
+                email_type="confirmation",
+                subject="Email Change Confirmation",
+                action="Email Change",
+                message="Your email address has been successfully changed."
+            )
+        else:
+            send_generic_email_task.apply_async(
+                kwargs={
+                    'user_email': user.email,
+                    'email_type': "confirmation",
+                    'subject': "Email Change Confirmation",
+                    'action': "Email Change",
+                    'message': "Your email address has been successfully changed."
+                }
+            )
 
         return Response({"message": "Email updated successfully."}, status=status.HTTP_200_OK)
 
-    @swagger_helper("UserProfile", "", )
+    @swagger_helper("UserProfile", "")
     @action(detail=False, methods=['post'], url_path='request-profile-change')
     def request_profile_change(self, request):
-
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -309,10 +396,7 @@ class UserProfileViewSet(viewsets.ModelViewSet):
             return Response({"error": "At least one of new_first_name or new_last_name or new_phone_number is required."},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        # Clear any existing pending name change requests
         NameChangeRequest.objects.filter(user=user).delete()
-
-        # Create a new name change request
         NameChangeRequest.objects.create(
             user=user,
             new_first_name=new_first_name,
@@ -331,16 +415,13 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         user = request.user
         password = serializer.validated_data.get('password')
 
-        # Verify the password provided by the user
         if not user.check_password(password):
             return Response({"error": "Incorrect password."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Fetch the latest name change request
         name_change_request = NameChangeRequest.objects.filter(user=user).first()
         if not name_change_request:
             return Response({"error": "No pending name change request found."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Update the user's name if the request exists
         if name_change_request.new_first_name:
             user.first_name = name_change_request.new_first_name
         if name_change_request.new_last_name:
@@ -351,12 +432,25 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         user.save()
         name_change_request.delete()
 
-        send_mail(
-            subject='Profile Change Confirmation',
-            message="Your profile has been successfully updated.",
-            recipient_list=[user.email],
-            from_email=settings.EMAIL_HOST_USER,
-        )
+        if not is_celery_healthy():
+            logger.warning("Celery is not healthy. Sending confirmation email synchronously.")
+            send_email_synchronously(
+                user_email=user.email,
+                email_type="confirmation",
+                subject="Profile Change Confirmation",
+                action="Profile Change",
+                message="Your profile has been successfully updated."
+            )
+        else:
+            send_generic_email_task.apply_async(
+                kwargs={
+                    'user_email': user.email,
+                    'email_type': "confirmation",
+                    'subject': "Profile Change Confirmation",
+                    'action': "Profile Change",
+                    'message': "Your profile has been successfully updated."
+                }
+            )
 
         return Response({"message": "Name updated successfully."}, status=status.HTTP_200_OK)
 
@@ -401,17 +495,33 @@ class PasswordChangeRequestViewSet(viewsets.ModelViewSet):
         otp = random.randint(100000, 999999)
         hashed_new_password = make_password(new_password)
 
-        send_mail(
-            subject='Password Change OTP',
-            message=f"Your OTP for password change is: {otp}",
-            recipient_list=[user.email],
-            from_email=settings.EMAIL_HOST_USER,
-        )
+        if not is_celery_healthy():
+            logger.warning("Celery is not healthy. Sending OTP email synchronously.")
+            send_email_synchronously(
+                user_email=user.email,
+                email_type="otp",
+                subject="Password Change OTP",
+                action="Password Change",
+                message="Use the OTP below to change your password.",
+                otp=otp
+            )
+        else:
+            send_generic_email_task.apply_async(
+                kwargs={
+                    'user_email': user.email,
+                    'email_type': "otp",
+                    'subject': "Password Change OTP",
+                    'action': "Password Change",
+                    'message': "Use the OTP below to change your password.",
+                    'otp': otp
+                }
+            )
+
         PasswordChangeRequest.objects.create(user=user, otp=otp, new_password=hashed_new_password)
 
         return Response({"message": "An OTP has been sent to your email."}, status=status.HTTP_200_OK)
 
-    @swagger_helper("ChangePassword", "", "Resend OTP. requires authentication (JWT)")
+    @swagger_helper("ChangePassword", "")
     @action(detail=False, methods=['post'], url_path='resend-otp')
     def resend_otp(self, request):
         user = request.user
@@ -425,18 +535,32 @@ class PasswordChangeRequestViewSet(viewsets.ModelViewSet):
         password_change_request.created_at = timezone.now()
         password_change_request.save()
 
-        send_mail(
-            subject='Password Change OTP - Resent',
-            message=f"Your new OTP for password change is: {otp}",
-            recipient_list=[user.email],
-            from_email=settings.EMAIL_HOST_USER,
-        )
+        if not is_celery_healthy():
+            logger.warning("Celery is not healthy. Sending OTP email synchronously.")
+            send_email_synchronously(
+                user_email=user.email,
+                email_type="otp",
+                subject="Password Change OTP - Resent",
+                action="Password Change",
+                message="Use the OTP below to change your password.",
+                otp=otp
+            )
+        else:
+            send_generic_email_task.apply_async(
+                kwargs={
+                    'user_email': user.email,
+                    'email_type': "otp",
+                    'subject': "Password Change OTP - Resent",
+                    'action': "Password Change",
+                    'message': "Use the OTP below to change your password.",
+                    'otp': otp
+                }
+            )
         return Response({"message": "A new OTP has been sent to your email."}, status=status.HTTP_200_OK)
 
     @swagger_helper("ChangePassword", "")
     @action(detail=False, methods=['post'], url_path='verify-password-change')
     def verify_password_change(self, request):
-
         otp = request.data.get('otp')
 
         if not otp:
@@ -467,12 +591,27 @@ class PasswordChangeRequestViewSet(viewsets.ModelViewSet):
                 token.blacklist()
             except Exception as e:
                 raise AuthenticationFailed('Refresh token is invalid or expired.')
-        send_mail(
-            subject='Password changed successfully',
-            message=f'Password changed successfully and  you have been logged out. \n Login with your new password',
-            recipient_list=[request.user.email],
-            from_email=settings.EMAIL_HOST_USER,
-        )
+
+        if not is_celery_healthy():
+            logger.warning("Celery is not healthy. Sending confirmation email synchronously.")
+            send_email_synchronously(
+                user_email=user.email,
+                email_type="confirmation",
+                subject="Password Changed Successfully",
+                action="Password Change",
+                message="Your password has been successfully changed. You have been logged out. Please log in with your new password."
+            )
+        else:
+            send_generic_email_task.apply_async(
+                kwargs={
+                    'user_email': user.email,
+                    'email_type': "confirmation",
+                    'subject': "Password Changed Successfully",
+                    'action': "Password Change",
+                    'message': "Your password has been successfully changed. You have been logged out. Please log in with your new password."
+                }
+            )
+
         return Response({"message": "Password changed successfully. You have been logged out."},
                         status=status.HTTP_200_OK)
 
@@ -504,12 +643,27 @@ class UserSignupViewSet(viewsets.ModelViewSet):
                 user.otp_created_at = now()
                 user.save()
 
-                send_mail(
-                    subject='Verify your email',
-                    message=f'Your OTP is: {otp}',
-                    recipient_list=[email],
-                    from_email=settings.EMAIL_HOST_USER,
-                )
+                if not is_celery_healthy():
+                    logger.warning("Celery is not healthy. Sending OTP email synchronously.")
+                    send_email_synchronously(
+                        user_email=email,
+                        email_type="otp",
+                        subject="Verify Your Email",
+                        action="Email Verification",
+                        message="Use the OTP below to verify your email address.",
+                        otp=otp
+                    )
+                else:
+                    send_generic_email_task.apply_async(
+                        kwargs={
+                            'user_email': email,
+                            'email_type': "otp",
+                            'subject': "Verify Your Email",
+                            'action': "Email Verification",
+                            'message': "Use the OTP below to verify your email address.",
+                            'otp': otp
+                        }
+                    )
 
                 return Response({"message": f"User already exists but is not verified. OTP resent."},
                                 status=status.HTTP_200_OK)
@@ -527,13 +681,37 @@ class UserSignupViewSet(viewsets.ModelViewSet):
             otp_created_at=now()
         )
 
-        send_mail(
-            subject='Verify your email',
-            message=f'Your OTP is: {otp}',
-            recipient_list=[email],
-            from_email=settings.EMAIL_HOST_USER,
-        )
-
+        if not is_celery_healthy():
+            logger.warning("Celery is not healthy. Sending emails synchronously.")
+            send_email_synchronously(
+                user_email=email,
+                email_type="otp",
+                subject="Verify Your Email",
+                action="Email Verification",
+                message="Use the OTP below to verify your email address.",
+                otp=otp
+            )
+            send_email_synchronously(
+                user_email=email,
+                action="signup"
+            )
+        else:
+            send_generic_email_task.apply_async(
+                kwargs={
+                    'user_email': email,
+                    'email_type': "otp",
+                    'subject': "Verify Your Email",
+                    'action': "Email Verification",
+                    'message': "Use the OTP below to verify your email address.",
+                    'otp': otp
+                }
+            )
+            send_auth_success_email.apply_async(
+                kwargs={
+                    'user_email': email,
+                    'action': "signup"
+                }
+            )
         return Response({"message": f"Signup successful. OTP sent to your email "}, status=status.HTTP_201_CREATED)
 
     @swagger_helper("Signup", "")
@@ -561,12 +739,25 @@ class UserSignupViewSet(viewsets.ModelViewSet):
         user.otp = None
         user.save()
 
-        send_mail(
-            subject='Signup successful',
-            message=f'You have finished the signup verification for ASLuxeryOriginals.com. Welcome!',
-            recipient_list=[email],
-            from_email=settings.EMAIL_HOST_USER,
-        )
+        if not is_celery_healthy():
+            logger.warning("Celery is not healthy. Sending confirmation email synchronously.")
+            send_email_synchronously(
+                user_email=email,
+                email_type="confirmation",
+                subject="Signup Successful",
+                action="Signup",
+                message="You have finished the signup verification for ASLuxeryOriginals.com. Welcome!"
+            )
+        else:
+            send_generic_email_task.apply_async(
+                kwargs={
+                    'user_email': email,
+                    'email_type': "confirmation",
+                    'subject': "Signup Successful",
+                    'action': "Signup",
+                    'message': "You have finished the signup verification for ASLuxeryOriginals.com. Welcome!"
+                }
+            )
 
         refresh = RefreshToken.for_user(user)
         access_token = str(refresh.access_token)
@@ -596,13 +787,27 @@ class UserSignupViewSet(viewsets.ModelViewSet):
         user.otp_created_at = now()
         user.save()
 
-        send_mail(
-            subject='Resend OTP',
-            message=f'Your OTP is: {otp}',
-            recipient_list=[email],
-            from_email=settings.EMAIL_HOST_USER,
-        )
-
+        if not is_celery_healthy():
+            logger.warning("Celery is not healthy. Sending OTP email synchronously.")
+            send_email_synchronously(
+                user_email=email,
+                email_type="otp",
+                subject="Resend OTP",
+                action="Email Verification",
+                message="Use the OTP below to verify your email address.",
+                otp=otp
+            )
+        else:
+            send_generic_email_task.apply_async(
+                kwargs={
+                    'user_email': email,
+                    'email_type': "otp",
+                    'subject': "Resend OTP",
+                    'action': "Email Verification",
+                    'message': "Use the OTP below to verify your email address.",
+                    'otp': otp
+                }
+            )
         return Response({"message": f"OTP resent to your email."}, status=status.HTTP_200_OK)
 
 
@@ -632,19 +837,23 @@ class UserLoginViewSet(viewsets.ModelViewSet):
         if not user.check_password(password):
             return Response({'message': 'Invalid password'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Generate tokens
         refresh = RefreshToken.for_user(user)
         access_token = str(refresh.access_token)
 
-        try:
-            send_mail(
-                subject='Login Successful',
-                message=f'Your login to ASLuxeryOriginals.com was successful.',
-                recipient_list=[email],
-                from_email=settings.EMAIL_HOST_USER,
+        if not is_celery_healthy():
+            logger.warning("Celery is not healthy. Sending auth success email synchronously.")
+            send_email_synchronously(
+                user_email=email,
+                action="login"
             )
-        except:
-            pass
+        else:
+            send_auth_success_email.apply_async(
+                kwargs={
+                    'user_email': email,
+                    'action': "login"
+                }
+            )
+
         return Response({
             'message': 'Login successful.',
             'access_token': access_token,
