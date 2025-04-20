@@ -367,17 +367,29 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
                 logger.error(f"No cart found for user {user.email}", extra={'tx_ref': tx_ref, 'user_id': user.id})
                 return Response({"error": "Cart not found"}, status=400)
 
-            # Queue order creation as a Celery task
-            create_order_from_webhook.delay(
-                user_id=user.id,
-                cart_id=str(cart.id),
-                tx_ref=tx_ref,
-                provider=provider,
-                amount=amount,
-                email=email
-            )
-            logger.info(f"Order creation queued for {tx_ref}", extra={'provider': provider, 'user_id': user.id})
+            if not is_celery_healthy():
+                logger.warning("Celery is not healthy. Sending email synchronously now.")
+                create_order_from_webhook(
+                    user_id=user.id,
+                    cart_id=str(cart.id),
+                    tx_ref=tx_ref,
+                    provider=provider,
+                    amount=amount,
+                    email=email
+                )
 
+            else:
+                create_order_from_webhook.apply_async(
+                    kwargs={
+                        "user_id": user.id,
+                        "cart_id": str(cart.id),
+                        "tx_ref": tx_ref,
+                        "provider": provider,
+                        "amount": amount,
+                        "email": email
+                    },
+                )
+            logger.info(f"Order creation queued for {tx_ref}", extra={'provider': provider, 'user_id': user.id})
             return Response({"message": "Webhook received and processing started"}, status=200)
 
         except Exception as e:
