@@ -38,9 +38,11 @@ class PaymentSummaryViewSet(viewsets.ViewSet):
         try:
             cart = get_object_or_404(Cart, user=request.user)
             cart.delivery_fee = calculate_delivery_fee(cart)
-            # cart.delivery_fee = 200
             serializer = PaymentCartSerializer(cart)
             data = serializer.data
+
+            if not cart.cartitem_cart.exists():
+                return Response({"error": "Cart Is Empty"}, status=400)
 
             if not cart.state:
                 return Response({"error": "State is required to calculate delivery date"}, status=400)
@@ -52,6 +54,7 @@ class PaymentSummaryViewSet(viewsets.ViewSet):
             data["estimated_delivery"] = estimated_delivery
             data["num_items"] = cart.cartitem_cart.count()
             return Response(data)
+        
         except Exception as e:
             logger.exception("Error in payment summary", extra={'user_id': request.user.id})
             return Response({"error": f"Could not generate payment summary. Please try again."}, status=500)
@@ -100,11 +103,6 @@ class PaymentInitiateViewSet(viewsets.ModelViewSet):
                 response = initiate_paystack_payment(token, total_amount, request.user, redirect_url)
             else:
                 return Response({"error": "Invalid payment provider"}, status=400)
-
-            # if response.status_code == 200:
-            #     token = generate_confirm_token(request.user, str(cart.id))
-            #     response.data["confirm_token"] = token
-            #     return response
 
             return Response({"data": response.data}, status=response.status_code)
 
