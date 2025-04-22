@@ -1,6 +1,6 @@
 from django_filters import ModelChoiceFilter
 from django_filters.rest_framework import FilterSet, NumberFilter, BooleanFilter
-from .models import Product
+from .models import Product, ProductCategory
 from django.db import models
 
 
@@ -8,7 +8,7 @@ class ProductFilter(FilterSet):
     min_price = NumberFilter(field_name="price", lookup_expr='gte')
     max_price = NumberFilter(field_name="price", lookup_expr='lte')
     discount = BooleanFilter(method='filter_discount')
-    category = ModelChoiceFilter(field_name='sub_category__category', queryset=Category.objects.all())
+    category = ModelChoiceFilter(field_name='sub_category__category', queryset=ProductCategory.objects.all())
 
     class Meta:
         model = Product
