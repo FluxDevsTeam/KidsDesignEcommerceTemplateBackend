@@ -23,9 +23,12 @@ from .models import EmailChangeRequest, PasswordChangeRequest, ForgotPasswordReq
 from django.utils.timezone import now
 from .tasks import is_celery_healthy, send_auth_success_email, send_email_synchronously, send_generic_email_task
 import logging
+from django.conf import settings
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
+
+frontend_url = settings.SITE_URL
 
 
 class ForgotPasswordViewSet(viewsets.ModelViewSet):
@@ -52,7 +55,7 @@ class ForgotPasswordViewSet(viewsets.ModelViewSet):
         if not user:
             return Response({"error": "No user found with this email."}, status=status.HTTP_400_BAD_REQUEST)
 
-        reset_url = f"https://asluxeryoriginals.pythonanywhere.com/auth/forgot-password/set-new-password/?email={email}"
+        reset_url = f"{frontend_url}?email={email}"
         ForgotPasswordRequest.objects.create(user=user)
 
         if not is_celery_healthy():
