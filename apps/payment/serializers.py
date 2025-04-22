@@ -11,7 +11,6 @@ class PaymentCartItemSerializer(serializers.ModelSerializer):
 
 
 class PaymentCartSerializer(serializers.ModelSerializer):
-    # cart_items = PaymentCartItemSerializer(many=True, read_only=True, source="cartitem_cart")
     subtotal = serializers.SerializerMethodField()
     total = serializers.SerializerMethodField()
     provider = serializers.ChoiceField(choices=[("flutterwave", "Flutterwave"), ("paystack", "Paystack")], default="flutterwave", write_only=True)
