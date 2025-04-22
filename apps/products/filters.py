@@ -1,3 +1,4 @@
+from django_filters import ModelChoiceFilter
 from django_filters.rest_framework import FilterSet, NumberFilter, BooleanFilter
 from .models import Product
 from django.db import models

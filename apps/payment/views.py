@@ -138,7 +138,7 @@ class PaymentSuccessViewSet(viewsets.ViewSet):
                 cart = get_object_or_404(Cart, user=request.user)
                 if str(cart.id) != cart_id_from_token:
                     return Response({"error": "Token-cart mismatch."}, status=403)
-                
+
             except Exception as e:
                 logger.exception("Invalid token", extra={'user_id': request.user.id})
                 return Response({"error": "Invalid token."}, status=403)
