@@ -1,4 +1,5 @@
 from django.core.cache import cache
+from django.db.models import F, Sum
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -46,6 +47,7 @@ class PaymentSummaryViewSet(viewsets.ViewSet):
 
             if not cart.state:
                 return Response({"error": "State is required to calculate delivery date"}, status=400)
+
             estimated_delivery = calculate_delivery_dates(cart.state)
 
             cart.estimated_delivery = estimated_delivery
@@ -54,7 +56,7 @@ class PaymentSummaryViewSet(viewsets.ViewSet):
             data["estimated_delivery"] = estimated_delivery
             data["num_items"] = cart.cartitem_cart.count()
             return Response(data)
-        
+
         except Exception as e:
             logger.exception("Error in payment summary", extra={'user_id': request.user.id})
             return Response({"error": f"Could not generate payment summary. Please try again."}, status=500)
@@ -136,6 +138,7 @@ class PaymentSuccessViewSet(viewsets.ViewSet):
                 cart = get_object_or_404(Cart, user=request.user)
                 if str(cart.id) != cart_id_from_token:
                     return Response({"error": "Token-cart mismatch."}, status=403)
+                
             except Exception as e:
                 logger.exception("Invalid token", extra={'user_id': request.user.id})
                 return Response({"error": "Invalid token."}, status=403)
