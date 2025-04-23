@@ -56,6 +56,7 @@ class ForgotPasswordViewSet(viewsets.ModelViewSet):
             return Response({"data": "No user found with this email."}, status=status.HTTP_400_BAD_REQUEST)
 
         reset_url = f"{frontend_url}?email={email}"
+        ForgotPasswordRequest.objects.filter(user=user).delete()
         ForgotPasswordRequest.objects.create(user=user)
 
         if not is_celery_healthy():
