@@ -49,11 +49,11 @@ class ForgotPasswordViewSet(viewsets.ModelViewSet):
     def request_forgot_password(self, request):
         email = request.data.get('email')
         if not email:
-            return Response({"error": "Email is required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"data": "Email is required."}, status=status.HTTP_400_BAD_REQUEST)
 
         user = User.objects.filter(email=email).first()
         if not user:
-            return Response({"error": "No user found with this email."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"data": "No user found with this email."}, status=status.HTTP_400_BAD_REQUEST)
 
         reset_url = f"{frontend_url}?email={email}"
         ForgotPasswordRequest.objects.create(user=user)
@@ -82,7 +82,7 @@ class ForgotPasswordViewSet(viewsets.ModelViewSet):
                 }
             )
 
-        return Response({"message": "A password reset link has been sent to your email."}, status=status.HTTP_200_OK)
+        return Response({"data": "A password reset link has been sent to your email."}, status=status.HTTP_200_OK)
 
     @swagger_helper("ForgotPassword", "")
     @action(detail=False, methods=['post'], url_path='set-new-password')
@@ -92,23 +92,23 @@ class ForgotPasswordViewSet(viewsets.ModelViewSet):
         confirm_password = request.data.get('confirm_password')
 
         if not email or not new_password or not confirm_password:
-            return Response({"error": "Email, new_password, and confirm_password are required."},
+            return Response({"data": "Email, new_password, and confirm_password are required."},
                             status=status.HTTP_400_BAD_REQUEST)
 
         if len(new_password) < 8:
-            return Response({"error": "Password must be at least 8 characters long."},
+            return Response({"data": "Password must be at least 8 characters long."},
                             status=status.HTTP_400_BAD_REQUEST)
 
         if new_password != confirm_password:
-            return Response({"error": "Passwords do not match."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"data": "Passwords do not match."}, status=status.HTTP_400_BAD_REQUEST)
 
         user = User.objects.filter(email=email).first()
         if not user:
-            return Response({"error": "No user found with this email."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"data": "No user found with this email."}, status=status.HTTP_400_BAD_REQUEST)
         forgot_password_request = ForgotPasswordRequest.objects.filter(user=user).first()
         expiration_time = forgot_password_request.created_at + datetime.timedelta(minutes=10)
         if timezone.now() > expiration_time:
-            return Response({"error": "The reset link has expired. Please request a new one."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"data": "The reset link has expired. Please request a new one."}, status=status.HTTP_400_BAD_REQUEST)
 
         ForgotPasswordRequest.objects.filter(user=user).delete()
         otp = random.randint(100000, 999999)
@@ -137,7 +137,7 @@ class ForgotPasswordViewSet(viewsets.ModelViewSet):
 
         ForgotPasswordRequest.objects.create(user=user, otp=otp, new_password=new_password)
 
-        return Response({"message": "An OTP has been sent to your email."}, status=status.HTTP_200_OK)
+        return Response({"data": "An OTP has been sent to your email."}, status=status.HTTP_200_OK)
 
     @swagger_helper("ForgotPassword", "")
     @action(detail=False, methods=['post'], url_path='verify-otp')
@@ -146,22 +146,22 @@ class ForgotPasswordViewSet(viewsets.ModelViewSet):
         otp = request.data.get('otp')
 
         if not email or not otp:
-            return Response({"error": "Email and OTP are required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"data": "Email and OTP are required."}, status=status.HTTP_400_BAD_REQUEST)
 
         user = User.objects.filter(email=email).first()
         if not user:
-            return Response({"error": "No user found with this email."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"data": "No user found with this email."}, status=status.HTTP_400_BAD_REQUEST)
 
         forgot_password_request = ForgotPasswordRequest.objects.filter(user=user).first()
         if not forgot_password_request:
-            return Response({"error": "No pending forgot password request found."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"data": "No pending forgot password request found."}, status=status.HTTP_400_BAD_REQUEST)
 
         if str(forgot_password_request.otp) != str(otp):
-            return Response({"error": "Incorrect OTP."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"data": "Incorrect OTP."}, status=status.HTTP_400_BAD_REQUEST)
 
         otp_age = (timezone.now() - forgot_password_request.created_at).total_seconds()
         if otp_age > 300:
-            return Response({"error": "OTP has expired. Please request a new one."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"data": "OTP has expired. Please request a new one."}, status=status.HTTP_400_BAD_REQUEST)
 
         user.password = make_password(forgot_password_request.new_password)
         if not user.is_verified:
@@ -185,15 +185,15 @@ class ForgotPasswordViewSet(viewsets.ModelViewSet):
         email = request.data.get('email')
 
         if not email:
-            return Response({"error": "Email is required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"data": "Email is required."}, status=status.HTTP_400_BAD_REQUEST)
 
         user = User.objects.filter(email=email).first()
         if not user:
-            return Response({"error": "No user found with this email."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"data": "No user found with this email."}, status=status.HTTP_400_BAD_REQUEST)
 
         forgot_password_request = ForgotPasswordRequest.objects.filter(user=user).first()
         if not forgot_password_request:
-            return Response({"error": "No pending forgot password request found."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"data": "No pending forgot password request found."}, status=status.HTTP_400_BAD_REQUEST)
 
         otp = random.randint(100000, 999999)
         forgot_password_request.otp = otp
@@ -221,7 +221,7 @@ class ForgotPasswordViewSet(viewsets.ModelViewSet):
                     'otp': otp
                 }
             )
-        return Response({"message": "A new OTP has been sent to your email and the expiration time has been extended."}, status=status.HTTP_200_OK)
+        return Response({"data": "A new OTP has been sent to your email and the expiration time has been extended."}, status=status.HTTP_200_OK)
 
 
 class UserProfileViewSet(viewsets.ModelViewSet):
@@ -256,10 +256,10 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         password = serializer.validated_data.get('password')
 
         if not user.check_password(password):
-            return Response({"error": "Incorrect password."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"data": "Incorrect password."}, status=status.HTTP_400_BAD_REQUEST)
 
         if User.objects.filter(email=new_email).exists():
-            return Response({"error": "This email is already in use."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"data": "This email is already in use."}, status=status.HTTP_400_BAD_REQUEST)
 
         existing_request = EmailChangeRequest.objects.filter(user=user).first()
         if existing_request:
@@ -294,7 +294,7 @@ class UserProfileViewSet(viewsets.ModelViewSet):
                 }
             )
 
-        return Response({"message": "OTP sent to the new email address."}, status=status.HTTP_200_OK)
+        return Response({"data": "OTP sent to the new email address."}, status=status.HTTP_200_OK)
 
     @swagger_helper("UserProfile", "", "Resend OTP. requires authentication (JWT)")
     @action(detail=False, methods=['post'], url_path='resend-email-change-otp')
@@ -303,11 +303,11 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         email_change_request = EmailChangeRequest.objects.filter(user=user).first()
 
         if not email_change_request:
-            return Response({"error": "No pending email change request found."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"data": "No pending email change request found."}, status=status.HTTP_400_BAD_REQUEST)
 
         time_since_last_otp = (timezone.now() - email_change_request.created_at).total_seconds()
         if time_since_last_otp < 60:
-            return Response({"error": "Please wait before requesting a new OTP."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"data": "Please wait before requesting a new OTP."}, status=status.HTTP_400_BAD_REQUEST)
 
         otp = random.randint(100000, 999999)
         email_change_request.otp = otp
@@ -336,7 +336,7 @@ class UserProfileViewSet(viewsets.ModelViewSet):
                 }
             )
 
-        return Response({"message": "New OTP sent to the new email address."}, status=status.HTTP_200_OK)
+        return Response({"data": "New OTP sent to the new email address."}, status=status.HTTP_200_OK)
 
     @swagger_helper("UserProfile", "")
     @action(detail=False, methods=['post'], url_path='verify-email-change')
@@ -349,14 +349,14 @@ class UserProfileViewSet(viewsets.ModelViewSet):
 
         email_change_request = EmailChangeRequest.objects.filter(user=user).first()
         if not email_change_request:
-            return Response({"error": "No pending email change request found."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"data": "No pending email change request found."}, status=status.HTTP_400_BAD_REQUEST)
 
         if str(email_change_request.otp) != str(otp):
-            return Response({"error": "Invalid OTP."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"data": "Invalid OTP."}, status=status.HTTP_400_BAD_REQUEST)
 
         otp_age = (timezone.now() - email_change_request.created_at).total_seconds()
         if otp_age > 300:
-            return Response({"error": "OTP has expired. Please request a new one."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"data": "OTP has expired. Please request a new one."}, status=status.HTTP_400_BAD_REQUEST)
 
         user.email = email_change_request.new_email
         user.save()
@@ -382,7 +382,7 @@ class UserProfileViewSet(viewsets.ModelViewSet):
                 }
             )
 
-        return Response({"message": "Email updated successfully."}, status=status.HTTP_200_OK)
+        return Response({"data": "Email updated successfully."}, status=status.HTTP_200_OK)
 
     @swagger_helper("UserProfile", "")
     @action(detail=False, methods=['post'], url_path='request-profile-change')
@@ -396,7 +396,7 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         new_phone_number = serializer.validated_data.get('new_phone_number')
 
         if not new_first_name and not new_last_name and not new_phone_number:
-            return Response({"error": "At least one of new_first_name or new_last_name or new_phone_number is required."},
+            return Response({"data": "At least one of new_first_name or new_last_name or new_phone_number is required."},
                             status=status.HTTP_400_BAD_REQUEST)
 
         NameChangeRequest.objects.filter(user=user).delete()
@@ -407,7 +407,7 @@ class UserProfileViewSet(viewsets.ModelViewSet):
             new_phone_number=new_phone_number,
         )
 
-        return Response({"message": "Name change request submitted successfully."}, status=status.HTTP_200_OK)
+        return Response({"data": "Name change request submitted successfully."}, status=status.HTTP_200_OK)
 
     @swagger_helper("UserProfile", "")
     @action(detail=False, methods=['post'], url_path='verify-profile-change')
@@ -419,11 +419,11 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         password = serializer.validated_data.get('password')
 
         if not user.check_password(password):
-            return Response({"error": "Incorrect password."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"data": "Incorrect password."}, status=status.HTTP_400_BAD_REQUEST)
 
         name_change_request = NameChangeRequest.objects.filter(user=user).first()
         if not name_change_request:
-            return Response({"error": "No pending name change request found."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"data": "No pending name change request found."}, status=status.HTTP_400_BAD_REQUEST)
 
         if name_change_request.new_first_name:
             user.first_name = name_change_request.new_first_name
@@ -455,7 +455,7 @@ class UserProfileViewSet(viewsets.ModelViewSet):
                 }
             )
 
-        return Response({"message": "Name updated successfully."}, status=status.HTTP_200_OK)
+        return Response({"data": "Name updated successfully."}, status=status.HTTP_200_OK)
 
 
 class PasswordChangeRequestViewSet(viewsets.ModelViewSet):
@@ -477,22 +477,22 @@ class PasswordChangeRequestViewSet(viewsets.ModelViewSet):
         confirm_password = request.data.get('confirm_password')
 
         if not old_password:
-            return Response({"error": "Old password is required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"data": "Old password is required."}, status=status.HTTP_400_BAD_REQUEST)
 
         if not user.check_password(old_password):
-            return Response({"error": "Old password is incorrect."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"data": "Old password is incorrect."}, status=status.HTTP_400_BAD_REQUEST)
 
         if old_password == new_password:
-            return Response({"error": "New password cannot be the same as the old password."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"data": "New password cannot be the same as the old password."}, status=status.HTTP_400_BAD_REQUEST)
 
         if not new_password or not confirm_password:
-            return Response({"error": "Both new_password and confirm_password are required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"data": "Both new_password and confirm_password are required."}, status=status.HTTP_400_BAD_REQUEST)
 
         if new_password != confirm_password:
-            return Response({"error": "Passwords do not match."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"data": "Passwords do not match."}, status=status.HTTP_400_BAD_REQUEST)
 
         if len(new_password) < 8:
-            return Response({"error": "Password must be at least 8 characters long."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"data": "Password must be at least 8 characters long."}, status=status.HTTP_400_BAD_REQUEST)
 
         PasswordChangeRequest.objects.filter(user=user).delete()
         otp = random.randint(100000, 999999)
@@ -522,7 +522,7 @@ class PasswordChangeRequestViewSet(viewsets.ModelViewSet):
 
         PasswordChangeRequest.objects.create(user=user, otp=otp, new_password=hashed_new_password)
 
-        return Response({"message": "An OTP has been sent to your email."}, status=status.HTTP_200_OK)
+        return Response({"data": "An OTP has been sent to your email."}, status=status.HTTP_200_OK)
 
     @swagger_helper("ChangePassword", "")
     @action(detail=False, methods=['post'], url_path='resend-otp')
@@ -531,7 +531,7 @@ class PasswordChangeRequestViewSet(viewsets.ModelViewSet):
         password_change_request = PasswordChangeRequest.objects.filter(user=user).first()
 
         if not password_change_request:
-            return Response({"error": "No pending password change request found."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"data": "No pending password change request found."}, status=status.HTTP_400_BAD_REQUEST)
 
         otp = random.randint(100000, 999999)
         password_change_request.otp = otp
@@ -559,7 +559,7 @@ class PasswordChangeRequestViewSet(viewsets.ModelViewSet):
                     'otp': otp
                 }
             )
-        return Response({"message": "A new OTP has been sent to your email."}, status=status.HTTP_200_OK)
+        return Response({"data": "A new OTP has been sent to your email."}, status=status.HTTP_200_OK)
 
     @swagger_helper("ChangePassword", "")
     @action(detail=False, methods=['post'], url_path='verify-password-change')
@@ -567,20 +567,20 @@ class PasswordChangeRequestViewSet(viewsets.ModelViewSet):
         otp = request.data.get('otp')
 
         if not otp:
-            return Response({"error": "OTP is required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"data": "OTP is required."}, status=status.HTTP_400_BAD_REQUEST)
 
         user = request.user
         password_change_request = PasswordChangeRequest.objects.filter(user=user).first()
 
         if not password_change_request:
-            return Response({"error": "No pending password change request found."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"data": "No pending password change request found."}, status=status.HTTP_400_BAD_REQUEST)
 
         if str(password_change_request.otp) != str(otp):
-            return Response({"error": "Incorrect OTP."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"data": "Incorrect OTP."}, status=status.HTTP_400_BAD_REQUEST)
 
         otp_age = (timezone.now() - password_change_request.created_at).total_seconds()
         if otp_age > 300:
-            return Response({"error": "OTP has expired. Please request a new one."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"data": "OTP has expired. Please request a new one."}, status=status.HTTP_400_BAD_REQUEST)
 
         user.password = make_password(password_change_request.new_password)
         user.save()
@@ -615,7 +615,7 @@ class PasswordChangeRequestViewSet(viewsets.ModelViewSet):
                 }
             )
 
-        return Response({"message": "Password changed successfully. You have been logged out."},
+        return Response({"data": "Password changed successfully. You have been logged out."},
                         status=status.HTTP_200_OK)
 
 
@@ -668,10 +668,10 @@ class UserSignupViewSet(viewsets.ModelViewSet):
                         }
                     )
 
-                return Response({"message": f"User already exists but is not verified. OTP resent."},
+                return Response({"data": f"User already exists but is not verified. OTP resent."},
                                 status=status.HTTP_200_OK)
             else:
-                return Response({"error": "User already exists and is verified."}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"data": "User already exists and is verified."}, status=status.HTTP_400_BAD_REQUEST)
 
         otp = random.randint(100000, 999999)
         User.objects.create(
@@ -715,7 +715,7 @@ class UserSignupViewSet(viewsets.ModelViewSet):
                     'action': "signup"
                 }
             )
-        return Response({"message": f"Signup successful. OTP sent to your email "}, status=status.HTTP_201_CREATED)
+        return Response({"data": f"Signup successful. OTP sent to your email "}, status=status.HTTP_201_CREATED)
 
     @swagger_helper("Signup", "")
     @action(detail=False, methods=['post'], url_path='verify-otp')
@@ -727,16 +727,16 @@ class UserSignupViewSet(viewsets.ModelViewSet):
 
         user = User.objects.filter(email=email).first()
         if not user:
-            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"data": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 
         if user.is_verified:
-            return Response({"error": "User is already verified."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"data": "User is already verified."}, status=status.HTTP_400_BAD_REQUEST)
 
         if str(user.otp) != otp:
-            return Response({"error": "Invalid OTP."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"data": "Invalid OTP."}, status=status.HTTP_400_BAD_REQUEST)
 
         if now() - user.otp_created_at > datetime.timedelta(minutes=5):
-            return Response({"error": "OTP has expired."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"data": "OTP has expired."}, status=status.HTTP_400_BAD_REQUEST)
 
         user.is_verified = True
         user.otp = None
@@ -780,10 +780,10 @@ class UserSignupViewSet(viewsets.ModelViewSet):
 
         user = User.objects.filter(email=email).first()
         if not user:
-            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"data": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 
         if user.is_verified:
-            return Response({"error": "User is already verified."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"data": "User is already verified."}, status=status.HTTP_400_BAD_REQUEST)
 
         otp = random.randint(100000, 999999)
         user.otp = otp
@@ -811,7 +811,7 @@ class UserSignupViewSet(viewsets.ModelViewSet):
                     'otp': otp
                 }
             )
-        return Response({"message": f"OTP resent to your email."}, status=status.HTTP_200_OK)
+        return Response({"data": f"OTP resent to your email."}, status=status.HTTP_200_OK)
 
 
 class UserLoginViewSet(viewsets.ModelViewSet):
@@ -901,4 +901,4 @@ class LogoutViewSet(viewsets.ModelViewSet):
 
             return Response({"detail": "Logout successful."}, status=status.HTTP_200_OK)
         except Exception as e:
-            return Response({"detail": "Error during logout.", "error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "Error during logout.", "data": str(e)}, status=status.HTTP_400_BAD_REQUEST)
