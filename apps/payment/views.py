@@ -133,7 +133,7 @@ class PaymentInitiateViewSet(viewsets.ModelViewSet):
             return Response({"error": "Payment initiation failed. Please try again."}, status=500)
 
 
-class PaymentSuccessViewSet(viewsets.ViewSet):
+class PaymentVerifyViewSet(viewsets.ViewSet):
     permission_classes = [AllowAny]
 
     @swagger_helper("Payment", "Payment Successful")
