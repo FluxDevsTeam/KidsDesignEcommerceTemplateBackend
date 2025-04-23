@@ -28,7 +28,7 @@ from django.conf import settings
 User = get_user_model()
 logger = logging.getLogger(__name__)
 
-frontend_url = settings.SITE_URL
+frontend_url = f"{settings.SITE_URL}/change-password"
 
 
 class ForgotPasswordViewSet(viewsets.ModelViewSet):
