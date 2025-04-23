@@ -174,11 +174,29 @@ class ForgotPasswordViewSet(viewsets.ModelViewSet):
         refresh = RefreshToken.for_user(user)
         access_token = str(refresh.access_token)
 
+        if not is_celery_healthy():
+            logger.warning("Celery is not healthy. Sending confirmation email synchronously.")
+            send_email_synchronously(
+                user_email=user.email,
+                email_type="confirmation",
+                subject="Password Changed Successfully",
+                action="Password Change",
+                message="Your password has been successfully updated, and you are now securely logged into your account."
+            )
+        else:
+            send_generic_email_task.apply_async(
+                kwargs={
+                    'user_email': user.email,
+                    'email_type': "confirmation",
+                    'subject': "Password Changed Successfully",
+                    'action': "Password Change",
+                    'message': "Your password has been successfully updated, and you are now securely logged into your account."
+                }
+            )
+
         return Response({
             'message': 'Password reset successful.',
-            'access_token': access_token,
-            'refresh_token': str(refresh),
-        }, status=status.HTTP_201_CREATED)
+            'access_token': access_token, 'refresh_token': str(refresh)}, status=status.HTTP_201_CREATED)
 
     @swagger_helper("ForgotPassword", "")
     @action(detail=False, methods=['post'], url_path='resend-otp')
