@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
 from math import radians, sin, cos, sqrt, atan2
 from datetime import timedelta
@@ -93,3 +94,13 @@ def swagger_helper(tags, model):
         return swagger_auto_schema(operation_id=f"{action_type} {model}", operation_description=f"{get_description}. you dont need to pass in any data. just be authenticated (pass in JWT key) and the backend would process everything", tags=[tags])(func)
 
     return decorators
+
+
+# item was removed on payment initiation. so on any failure this function adds the stock back
+def reverse_stock_addition(cart, product_size_model):
+    for item in cart.cartitem_cart.all():
+        product_size_item = item.size
+        quantity = item.quantity
+        product_size = get_object_or_404(product_size_model, id=product_size_item.id)
+        product_size.quantity += quantity
+        product_size.save()
