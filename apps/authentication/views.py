@@ -135,8 +135,8 @@ class ForgotPasswordViewSet(viewsets.ModelViewSet):
                     'otp': otp
                 }
             )
-
-        ForgotPasswordRequest.objects.create(user=user, otp=otp, new_password=new_password)
+        hashed_new_password = make_password(new_password)
+        ForgotPasswordRequest.objects.create(user=user, otp=otp, new_password=hashed_new_password)
 
         return Response({"data": "An OTP has been sent to your email."}, status=status.HTTP_200_OK)
 
@@ -164,7 +164,7 @@ class ForgotPasswordViewSet(viewsets.ModelViewSet):
         if otp_age > 300:
             return Response({"data": "OTP has expired. Please request a new one."}, status=status.HTTP_400_BAD_REQUEST)
 
-        user.password = make_password(forgot_password_request.new_password)
+        user.password = forgot_password_request.new_password
         if not user.is_verified:
             user.is_verified = True
         user.save()
