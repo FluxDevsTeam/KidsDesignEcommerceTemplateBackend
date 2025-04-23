@@ -12,7 +12,7 @@ base_url = settings.BASE_ROUTE
 image_url = settings.PAYMENT_IMAGE_URL
 
 
-def initiate_flutterwave_payment(confirm_token, amount, user, redirect_url):
+def initiate_flutterwave_payment(confirm_token, amount, user):
     try:
         flutterwave_key = settings.PAYMENT_PROVIDERS["flutterwave"]["secret_key"]
         url = "https://api.flutterwave.com/v3/payments"
@@ -39,7 +39,7 @@ def initiate_flutterwave_payment(confirm_token, amount, user, redirect_url):
                 "logo": image_url
             },
             "configurations": {
-                "session_duration": 1,  #in minutes
+                "session_duration": 1,  #minutes
                 "max_retry_attempt": 5
             },
         }
@@ -67,7 +67,7 @@ def initiate_flutterwave_payment(confirm_token, amount, user, redirect_url):
         return Response({"error": "Payment processing failed. Please try again."}, status=500)
 
 
-def initiate_paystack_payment(confirm_token, amount, user, redirect_url):
+def initiate_paystack_payment(confirm_token, amount, user):
     try:
         url = "https://api.paystack.co/transaction/initialize"
         paystack_key = settings.PAYMENT_PROVIDERS['paystack']['secret_key']
