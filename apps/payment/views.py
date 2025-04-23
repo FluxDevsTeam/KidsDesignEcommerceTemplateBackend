@@ -5,7 +5,6 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404, redirect
-
 from .delivery_fee import calculate_delivery_fee
 from ..cart.models import Cart
 from .serializers import PaymentCartSerializer, InitiateSerializer
@@ -24,7 +23,8 @@ from django.conf import settings
 from .tasks import send_order_confirmation_email, create_order_from_webhook, is_celery_healthy, send_email_synchronously
 from django.contrib.auth import get_user_model
 from .delivery_date import calculate_delivery_dates
-from .utils import generate_confirm_token, swagger_helper
+from .utils import generate_confirm_token, swagger_helper, reverse_stock_addition
+from ..products.models import Product, ProductSize
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +47,11 @@ class PaymentSummaryViewSet(viewsets.ViewSet):
 
             if not cart.state:
                 return Response({"error": "State is required to calculate delivery date"}, status=400)
+
+            # check for stock left
+            for item in cart.cartitem_cart.all():
+                if item.size.quantity < item.quantity:
+                    return Response({"error": f"Insufficient stock for {item.product.name}"}, status=400)
 
             estimated_delivery = calculate_delivery_dates(cart.state)
 
@@ -73,6 +78,8 @@ class PaymentInitiateViewSet(viewsets.ModelViewSet):
     def create(self, request):
         try:
             cart = get_object_or_404(Cart, user=request.user)
+            if not cart.cartitem_cart.exists():
+                return Response({"error": "Cart Is Empty"}, status=400)
 
             input_serializer = PaymentCartSerializer(cart, data=request.data, partial=True)
             if not input_serializer.is_valid():
@@ -81,30 +88,43 @@ class PaymentInitiateViewSet(viewsets.ModelViewSet):
                     status=400
                 )
 
-            if cart.delivery_fee is None:
+            with transaction.atomic():
+                # this lock ProductSize rows for update. this prevents concurrent issues where there are limited stock
+                cart_items = cart.cartitem_cart.select_related('size', 'product').all()
+                product_sizes = ProductSize.objects.filter(id__in=[item.size.id for item in cart_items]).select_for_update()
+
+                # Check stock availability
+                for item in cart_items:
+                    product_size = next(ps for ps in product_sizes if ps.id == item.size.id)
+                    if product_size.quantity < item.quantity:
+                        return Response({"error": f"Insufficient stock for {item.product.name}"}, status=400)
+
                 cart.delivery_fee = calculate_delivery_fee(cart)
                 cart.save()
 
-            provider = input_serializer.validated_data.get("provider")
-            redirect_url = settings.PAYMENT_SUCCESS_URL
+                provider = input_serializer.validated_data.get("provider")
+                redirect_url = settings.PAYMENT_SUCCESS_URL
 
-            output_serializer = PaymentCartSerializer(cart)
-            total_amount = output_serializer.data.get("total")
-            if total_amount is None or total_amount <= 0:
-                return Response(
-                    {
-                        "error": "Invalid payment amount",
-                        "message": "Amount must be greater than zero."
-                    }, status=400)
+                output_serializer = PaymentCartSerializer(cart)
+                total_amount = output_serializer.data.get("total")
+                if total_amount is None or total_amount <= 0:
+                    return Response({"error": "Invalid payment amount", "message": "Amount must be greater than zero."}, status=400)
 
-            token = generate_confirm_token(request.user, str(cart.id))
+                token = generate_confirm_token(request.user, str(cart.id))
 
-            if provider == "flutterwave":
-                response = initiate_flutterwave_payment(token, total_amount, request.user, redirect_url)
-            elif provider == "paystack":
-                response = initiate_paystack_payment(token, total_amount, request.user, redirect_url)
-            else:
-                return Response({"error": "Invalid payment provider"}, status=400)
+                # Initiate payment
+                if provider == "flutterwave":
+                    response = initiate_flutterwave_payment(token, total_amount, request.user)
+                elif provider == "paystack":
+                    response = initiate_paystack_payment(token, total_amount, request.user)
+                else:
+                    return Response({"error": "Invalid payment provider"}, status=400)
+
+                # Deduct stock after payment initiation
+                for item in cart_items:
+                    product_size = next(ps for ps in product_sizes if ps.id == item.size.id)
+                    product_size.quantity -= item.quantity
+                    product_size.save()
 
             return Response({"data": response.data}, status=response.status_code)
 
@@ -143,23 +163,8 @@ class PaymentSuccessViewSet(viewsets.ViewSet):
                 logger.exception("Invalid token", extra={'user_id': request.user.id})
                 return Response({"error": "Invalid token."}, status=403)
 
-            if not cart.cartitem_cart.exists():
-                logger.warning("Cart is empty during payment", extra={'user_id': request.user.id, 'cart_id': str(cart.id)})
-                return Response({"error": "Cart is empty"}, status=400)
-
-            for item in cart.cartitem_cart.all():
-                product = item.product
-                size = item.size
-
-                if size.quantity < item.quantity:
-                    logger.warning("Insufficient stock", extra={'product_id': product.id, 'user_id': request.user.id})
-                    return Response({"error": f"Insufficient stock for {product.name}"}, status=400)
-                if product.price != item.product.price:
-                    logger.warning("Price changed", extra={'product_id': product.id, 'user_id': request.user.id})
-                    return Response({"error": "Product prices have changed. Please refresh your cart."}, status=400)
-
             if Order.objects.filter(transaction_id=tx_ref).exists():
-                logger.info(f"Duplicate transaction attempt: {tx_ref}", extra={'user_id': request.user.id})
+
                 return Response({"message": "Order already processed.", "transaction_id": tx_ref}, status=200)
 
             provider_config = settings.PAYMENT_PROVIDERS[provider]
@@ -214,15 +219,16 @@ class PaymentSuccessViewSet(viewsets.ViewSet):
                     logger.error("Currency mismatch", extra={'provider': provider, 'tx_ref': tx_ref, 'currency': response_data["data"]["currency"]})
                     return Response({"error": "Currency not supported"}, status=400)
                 logger.error(f"{provider.capitalize()} payment verification failed", extra={'response': response_data, 'tx_ref': tx_ref})
+
+                # item was removed on payment initiation. so on any failure this function adds the stock back
+                # reverse_stock_addition(cart, Product)
                 return redirect(f"{settings.ORDER_URL}/cart/")
 
             serializer = PaymentCartSerializer(cart)
             server_total = serializer.data["total"]
             if abs(Decimal(str(server_total)) - Decimal(str(amount_paid))) > Decimal("0.01"):
-                logger.error("Amount mismatch",
-                             extra={'server_total': server_total, 'amount_paid': amount_paid, 'tx_ref': tx_ref})
-                return Response({"error": "Payment amount mismatch",
-                                 "message": "Reported amount does not match server calculation"}, status=400)
+                return Response({"error": "Payment amount mismatch", "message": "Reported amount does not match server calculation"}, status=400)
+
             order = Order.objects.create(
                 user=request.user,
                 status="Paid",
@@ -287,6 +293,11 @@ class PaymentSuccessViewSet(viewsets.ViewSet):
             return redirect(f"{settings.ORDER_URL}{order.id}")
 
         except Exception as e:
+            # try:
+                # item was removed on payment initiation. so on any failure this function adds the stock back
+                # reverse_stock_addition(cart, Product)
+            # except:
+            #     pass
             logger.exception("Error processing payment success", extra={'user_id': request.user.id, 'tx_ref': tx_ref})
             return Response({"error": "Order processing failed", "message": "Please contact support."}, status=500)
 
