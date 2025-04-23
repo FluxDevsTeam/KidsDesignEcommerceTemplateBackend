@@ -99,21 +99,12 @@ def swagger_helper(tags, model):
     return decorators
 
 
-# item was removed on payment initiation. so on any failure this function adds the stock back
-def reverse_stock_addition(cart, product_size_model):
-    for item in cart.cartitem_cart.all():
-        product_size_item = item.size
-        quantity = item.quantity
-        product_size = get_object_or_404(product_size_model, id=product_size_item.id)
-        product_size.quantity += quantity
-        product_size.save()
-
-def initiate_refund(payment_session, provider):
+def initiate_refund(tx_ref, provider, amount, transaction_id=None):
     try:
         if provider == "paystack":
-            payload = {"transaction": payment_session.token}
+            payload = {"transaction": tx_ref}
             headers = {
-                "Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}",
+                "Authorization": f"Bearer {settings.PAYMENT_PROVIDERS['paystack']['secret_key']}",
                 "Content-Type": "application/json"
             }
             response = requests.post(
@@ -122,26 +113,37 @@ def initiate_refund(payment_session, provider):
                 headers=headers
             )
             response.raise_for_status()
-            logger.info(f"Refund initiated for session {payment_session.id}, tx_ref {payment_session.token}")
+            logger.info(f"Paystack refund initiated for tx_ref {tx_ref}")
             return True
         elif provider == "flutterwave":
-            payload = {"id": payment_session.token}
+            if not transaction_id:
+                logger.error(f"Missing transaction_id for Flutterwave refund", extra={'tx_ref': tx_ref})
+                return False
+            url = f"https://api.flutterwave.com/v3/transactions/{transaction_id}/refund"
             headers = {
-                "Authorization": f"Bearer {settings.FLUTTERWAVE_SECRET_KEY}",
+                "Authorization": f"Bearer {settings.PAYMENT_PROVIDERS['flutterwave']['secret_key']}",
                 "Content-Type": "application/json"
             }
-            response = requests.post(
-                "https://api.flutterwave.com/v3/transactions/{}/refund".format(payment_session.token),
-                json=payload,
-                headers=headers
-            )
+            payload = {}  # Full refund by default
+            response = requests.post(url, json=payload, headers=headers)
             response.raise_for_status()
-            logger.info(f"Refund initiated for session {payment_session.id}, tx_ref {payment_session.token}")
+            logger.info(f"Flutterwave refund initiated for transaction_id {transaction_id}", extra={'tx_ref': tx_ref})
             return True
     except requests.exceptions.RequestException as e:
-        logger.exception(f"Refund failed for session {payment_session.id}, tx_ref {payment_session.token}", extra={'error': str(e)})
-        notify_admin_for_manual_refund(payment_session)
+        logger.exception(f"Refund failed for tx_ref {tx_ref}", extra={'error': str(e)})
+        notify_admin_for_manual_refund(tx_ref, provider, amount)
         return False
+
+
+def notify_admin_for_manual_refund(tx_ref, provider, amount):
+    send_mail(
+        subject="Manual Refund Required",
+        message=f"Refund failed for tx_ref {tx_ref}, provider {provider}, amount {amount}. Please process manually.",
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=["admin@ecommercetemplate.com"],
+        fail_silently=True
+    )
+
 
 def notify_admin_for_manual_refund(payment_session):
     send_mail(
@@ -152,14 +154,3 @@ def notify_admin_for_manual_refund(payment_session):
         fail_silently=True
     )
 
-def reverse_stock_addition(cart, product_size_model):
-    for item in cart.cartitem_cart.select_related('size').all():
-        product_size = product_size_model.objects.filter(id=item.size.id).select_for_update().get()
-        product_size.quantity += item.quantity
-        product_size.save()
-
-def generate_confirm_token(user, cart_id):
-    from rest_framework_simplejwt.tokens import AccessToken
-    token = AccessToken.for_user(user)
-    token['cart_id'] = cart_id
-    return str(token)

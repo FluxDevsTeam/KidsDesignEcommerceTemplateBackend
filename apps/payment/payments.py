@@ -27,7 +27,7 @@ def initiate_flutterwave_payment(confirm_token, amount, user):
             "tx_ref": reference,
             "amount": str(amount),
             "currency": settings.PAYMENT_CURRENCY,
-            "redirect_url": f"{base_url}/api/v1/payment/success/?tx_ref={reference}&confirm_token={confirm_token}&provider=flutterwave&amount={int(amount)}&transaction_id={{transaction_id}}",
+            "redirect_url": f"{base_url}/api/v1/payment/verify/?tx_ref={reference}&confirm_token={confirm_token}&provider=flutterwave&amount={int(amount)}&transaction_id={{transaction_id}}",
             "meta": {"consumer_id": user.id},
             "customer": {
                 "email": user.email,
@@ -55,7 +55,6 @@ def initiate_flutterwave_payment(confirm_token, amount, user):
         return Response({
             "message": "Flutterwave payment initiated successfully.",
             "payment_link": payment_link,
-            "tx_ref": data["tx_ref"]
         }, status=200)
 
     except requests.exceptions.RequestException as err:
@@ -81,7 +80,7 @@ def initiate_paystack_payment(confirm_token, amount, user):
             "email": user.email,
             "currency": settings.PAYMENT_CURRENCY,
             "reference": reference,
-            "callback_url": f"{base_url}/api/v1/payment/success/?tx_ref={reference}&confirm_token={confirm_token}&provider=paystack&amount={int(amount)}&transaction_id={{transaction_id}}",
+            "callback_url": f"{base_url}/api/v1/payment/verify/?tx_ref={reference}&confirm_token={confirm_token}&provider=paystack&amount={int(amount)}&transaction_id={{transaction_id}}",
             "metadata": {
                 "consumer_id": user.id,
                 "image_url": image_url
@@ -105,7 +104,6 @@ def initiate_paystack_payment(confirm_token, amount, user):
         return Response({
             "message": "Paystack payment initiated successfully.",
             "payment_link": payment_link,
-            "tx_ref": data["reference"]
         }, status=200)
 
     except requests.exceptions.RequestException as err:
