@@ -5,8 +5,11 @@ from datetime import timedelta
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils.timezone import now
 import logging
-logger = logging.getLogger(__name__)
+import requests
+from django.conf import settings
+from django.core.mail import send_mail
 
+logger = logging.getLogger(__name__)
 
 AVAILABLE_STATES = ["Lagos", "Ogun", "Abuja", "Kaduna", "Anambra", "Cross River"]
 WAREHOUSE_CITY = "Lagos"
@@ -104,3 +107,59 @@ def reverse_stock_addition(cart, product_size_model):
         product_size = get_object_or_404(product_size_model, id=product_size_item.id)
         product_size.quantity += quantity
         product_size.save()
+
+def initiate_refund(payment_session, provider):
+    try:
+        if provider == "paystack":
+            payload = {"transaction": payment_session.token}
+            headers = {
+                "Authorization": f"Bearer {settings.PAYSTACK_SECRET_KEY}",
+                "Content-Type": "application/json"
+            }
+            response = requests.post(
+                "https://api.paystack.co/refund",
+                json=payload,
+                headers=headers
+            )
+            response.raise_for_status()
+            logger.info(f"Refund initiated for session {payment_session.id}, tx_ref {payment_session.token}")
+            return True
+        elif provider == "flutterwave":
+            payload = {"id": payment_session.token}
+            headers = {
+                "Authorization": f"Bearer {settings.FLUTTERWAVE_SECRET_KEY}",
+                "Content-Type": "application/json"
+            }
+            response = requests.post(
+                "https://api.flutterwave.com/v3/transactions/{}/refund".format(payment_session.token),
+                json=payload,
+                headers=headers
+            )
+            response.raise_for_status()
+            logger.info(f"Refund initiated for session {payment_session.id}, tx_ref {payment_session.token}")
+            return True
+    except requests.exceptions.RequestException as e:
+        logger.exception(f"Refund failed for session {payment_session.id}, tx_ref {payment_session.token}", extra={'error': str(e)})
+        notify_admin_for_manual_refund(payment_session)
+        return False
+
+def notify_admin_for_manual_refund(payment_session):
+    send_mail(
+        subject="Manual Refund Required",
+        message=f"Refund failed for session {payment_session.id}, user {payment_session.user.email}, tx_ref {payment_session.token}",
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=["admin@ecommercetemplate.com"],
+        fail_silently=True
+    )
+
+def reverse_stock_addition(cart, product_size_model):
+    for item in cart.cartitem_cart.select_related('size').all():
+        product_size = product_size_model.objects.filter(id=item.size.id).select_for_update().get()
+        product_size.quantity += item.quantity
+        product_size.save()
+
+def generate_confirm_token(user, cart_id):
+    from rest_framework_simplejwt.tokens import AccessToken
+    token = AccessToken.for_user(user)
+    token['cart_id'] = cart_id
+    return str(token)

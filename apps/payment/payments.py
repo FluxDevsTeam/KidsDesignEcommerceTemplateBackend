@@ -39,7 +39,7 @@ def initiate_flutterwave_payment(confirm_token, amount, user):
                 "logo": image_url
             },
             "configurations": {
-                "session_duration": 1,  #minutes
+                "session_duration": 10,  #minutes
                 "max_retry_attempt": 5
             },
         }
