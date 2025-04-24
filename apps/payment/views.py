@@ -131,9 +131,8 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
             token = request.query_params.get("confirm_token")
             transaction_id = request.query_params.get("transaction_id")
 
-            if not all([tx_ref, amount, provider, token, transaction_id]):
-                logger.error("Missing required query parameters", extra={"query_params": request.query_params})
-                return Response({"error": "Invalid request parameters."}, status=400)
+            if not all([tx_ref, amount, provider, token]):
+                return redirect(f"{settings.SITE_URL}/cart/error/?data=Invalid-request-parameters")
 
             try:
                 decoded = AccessToken(token)
@@ -141,20 +140,13 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
                 cart = get_object_or_404(Cart.objects.select_for_update(), id=cart_id_from_token)
                 user = cart.user
             except Exception as e:
-                logger.exception("Invalid token or cart", extra={'tx_ref': tx_ref})
-                return Response({"error": "Invalid token or cart."}, status=403)
+                return redirect(f"{settings.SITE_URL}/cart/error/?data=Invalid-token-or-cart")
 
             if Order.objects.filter(transaction_id=tx_ref).exists():
-                return Response({"message": "Order already processed.", "transaction_id": tx_ref}, status=200)
+                return redirect(f"{settings.SITE_URL}/cart/error/?data=Order-already-processed")
 
             provider_config = settings.PAYMENT_PROVIDERS[provider]
-
-            # Use transaction_id if available and provider is flutterwave, otherwise use tx_ref
-            if provider == "flutterwave" and transaction_id:
-                url = "https://api.flutterwave.com/v3/transactions/{}/verify".format(transaction_id)
-            else:
-                url = provider_config["verify_url"].format(tx_ref)
-
+            url = provider_config["verify_url"].format(transaction_id if provider == "flutterwave" and transaction_id else tx_ref)
             headers = {
                 "Authorization": f"Bearer {provider_config['secret_key']}",
                 "Content-Type": "application/json"
@@ -164,9 +156,7 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
                 verification_response = requests.get(url, headers=headers)
                 verification_response.raise_for_status()
             except requests.exceptions.RequestException as err:
-                logger.error(f"{provider.capitalize()} verification failed",
-                             extra={'error': str(err), 'tx_ref': tx_ref, 'user_id': user.id})
-                return redirect(f"{settings.SITE_URL}/cart/error/?data=Payment verification failed")
+                return redirect(f"{settings.SITE_URL}/cart/error/?data=Payment-verification-failed")
 
             response_data = verification_response.json()
             expected_currency = settings.PAYMENT_CURRENCY
@@ -187,15 +177,12 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
                 )
 
             if not verification_success:
-                logger.error(f"{provider.capitalize()} payment verification failed",
-                             extra={'response': response_data, 'tx_ref': tx_ref, 'user_id': user.id})
-                return redirect(f"{settings.SITE_URL}/cart/error/?error=Payment verification failed")
+                return redirect(f"{settings.SITE_URL}/cart/error/?data=Payment-verification-failed")
 
             serializer = PaymentCartSerializer(cart)
             server_total = serializer.data["total"]
             if abs(Decimal(str(server_total)) - Decimal(str(amount))) > Decimal("0.01"):
-                logger.error("Payment amount mismatch", extra={'tx_ref': tx_ref, 'user_id': user.id})
-                return Response({"error": "Payment amount mismatch"}, status=400)
+                return redirect(f"{settings.SITE_URL}/cart/error/?data=Payment-amount-mismatch")
 
             # Check and deduct stock with lock
             cart_items = cart.cartitem_cart.select_related('size', 'product').all()
@@ -204,16 +191,11 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
 
             for item in cart_items:
                 product_size = next(ps for ps in product_sizes if ps.id == item.size.id)
-                # Initiate refund due to insufficient stock
-
                 if product_size.quantity < item.quantity:
                     if initiate_refund(tx_ref, provider, amount, transaction_id=transaction_id):
-                        logger.info(f"Refund initiated for {tx_ref} due to insufficient stock",
-                                    extra={'user_id': user.id})
-                        return redirect(f"{settings.ORDER_URL}/cart/?error=Insufficient stock. Refund initiated.")
+                        return redirect(f"{settings.ORDER_URL}/cart/?error=Insufficient-stock-Refund-initiated")
                     else:
-                        logger.error(f"Refund failed for {tx_ref}", extra={'user_id': user.id})
-                        return redirect(f"{settings.SITE_URL}/cart/error/?error=Insufficient stock. Refund failed, please contact support.")
+                        return redirect(f"{settings.SITE_URL}/cart/error/?data=Insufficient-stock-Refund-failed-please-contact-support")
 
             # Deduct stock
             for item in cart_items:
@@ -282,8 +264,7 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
             return redirect(f"{settings.ORDER_URL}{order.id}")
 
         except Exception as e:
-            logger.exception(f"{e}Error processing payment success", extra={'user_id': user.id, 'tx_ref': tx_ref})
-            return Response({"error": "Order processing failed", "message": "Please contact support."}, status=500)
+            return redirect(f"{settings.SITE_URL}/cart/error/?data=Order-processing-failed-Please-contact-support")
 
 
 class PaymentWebhookViewSet(viewsets.ViewSet):

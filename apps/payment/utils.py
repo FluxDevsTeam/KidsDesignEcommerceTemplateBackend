@@ -113,36 +113,22 @@ def initiate_refund(tx_ref, provider, amount, transaction_id=None):
                 headers=headers
             )
             response.raise_for_status()
-            logger.info(f"Paystack refund initiated for tx_ref {tx_ref}")
             return True
         elif provider == "flutterwave":
             if not transaction_id:
-                logger.error(f"Missing transaction_id for Flutterwave refund", extra={'tx_ref': tx_ref})
                 return False
             url = f"https://api.flutterwave.com/v3/transactions/{transaction_id}/refund"
             headers = {
                 "Authorization": f"Bearer {settings.PAYMENT_PROVIDERS['flutterwave']['secret_key']}",
                 "Content-Type": "application/json"
             }
-            payload = {}  # Full refund by default
+            payload = {}
             response = requests.post(url, json=payload, headers=headers)
             response.raise_for_status()
-            logger.info(f"Flutterwave refund initiated for transaction_id {transaction_id}", extra={'tx_ref': tx_ref})
             return True
     except requests.exceptions.RequestException as e:
-        logger.exception(f"Refund failed for tx_ref {tx_ref}", extra={'error': str(e)})
         notify_admin_for_manual_refund(tx_ref, provider, amount)
         return False
-
-
-def notify_admin_for_manual_refund(tx_ref, provider, amount):
-    send_mail(
-        subject="Manual Refund Required",
-        message=f"Refund failed for tx_ref {tx_ref}, provider {provider}, amount {amount}. Please process manually.",
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=["admin@ecommercetemplate.com"],
-        fail_silently=True
-    )
 
 
 def notify_admin_for_manual_refund(payment_session):
@@ -153,4 +139,3 @@ def notify_admin_for_manual_refund(payment_session):
         recipient_list=["admin@ecommercetemplate.com"],
         fail_silently=True
     )
-
