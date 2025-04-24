@@ -1,3 +1,4 @@
+from django.db.models import Sum, F, Count, Case, When, IntegerField, Q
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 
@@ -71,7 +72,57 @@ class ApiAdminOrder(viewsets.ModelViewSet):
 
     @swagger_helper("Order admin page", "order")
     def list(self, *args, **kwargs):
-        return super().list(*args, **kwargs)
+        # Get filtered queryset
+        queryset = self.filter_queryset(self.get_queryset())
+
+        # Apply pagination
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            paginated_data = self.get_paginated_response(serializer.data).data
+        else:
+            serializer = self.get_serializer(queryset, many=True)
+            paginated_data = {
+                "count": queryset.count(),
+                "next": None,
+                "previous": None,
+                "results": serializer.data
+            }
+
+        # Optimize status counts with a single query
+        status_counts = queryset.aggregate(
+            total_orders=Count('id'),
+            delivered_orders=Count(Case(When(status="DELIVERED", then=1), output_field=IntegerField())),
+            returned_orders=Count(Case(When(status="REFUNDED", then=1), output_field=IntegerField())),
+            # Using REFUNDED instead of RETURNED
+            pending_orders=Count(
+                Case(When(~Q(status__in=["DELIVERED", "REFUNDED", "CANCELLED"]), then=1), output_field=IntegerField()))
+        )
+
+        # Compute payment aggregates
+        delivered_orders = queryset.filter(status="DELIVERED")
+        refunded_orders = queryset.filter(status="REFUNDED")
+
+        aggregate_data = {
+            "total_orders": status_counts["total_orders"],
+            "delivered_orders": status_counts["delivered_orders"],
+            "pending_orders": status_counts["pending_orders"],
+            "returned_orders": status_counts["returned_orders"],
+            "refunded_payment": refunded_orders.aggregate(total=Sum("total_amount"))["total"] or 0,
+            "successful_payment": delivered_orders.aggregate(total=Sum("total_amount"))["total"] or 0,
+            "total_payment": queryset.aggregate(total=Sum("total_amount"))["total"] or 0
+        }
+
+        # Structure response
+        response_data = {
+            "count": paginated_data["count"],
+            "next": paginated_data["next"],
+            "previous": paginated_data["previous"],
+            "aggregate": aggregate_data,
+            "results": paginated_data["results"]
+        }
+
+        return Response(response_data)
 
     @swagger_helper("Order admin page", "order")
     def retrieve(self, *args, **kwargs):

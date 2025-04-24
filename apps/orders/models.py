@@ -3,14 +3,23 @@ from django.conf import settings
 from ..products.models import Product
 import uuid
 
+# Status choices
+STATUS_CHOICES = (
+    ('PAID', 'Paid'),
+    ('SHIPPED', 'Shipped'),
+    ('DELIVERED', 'Delivered'),
+    ('CANCELLED', 'Cancelled'),
+    ('REFUNDED', 'Refunded'),
+)
+
 
 class Order(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="order_user")
-    status = models.CharField(max_length=50)
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='PENDING')
     delivery_fee = models.DecimalField(max_digits=10, decimal_places=2)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
-    first_name = models.CharField(max_length=50,)
+    first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
     email = models.EmailField(null=True)
     state = models.CharField(max_length=50)

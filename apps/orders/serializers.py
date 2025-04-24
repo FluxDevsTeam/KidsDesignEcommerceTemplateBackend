@@ -1,9 +1,9 @@
-from rest_framework.serializers import ModelSerializer
+from rest_framework import serializers
 from .models import Order, OrderItem
 from ..products.serializers import ProductSimpleViewSerializer
 
 
-class OrderItemSerializerView(ModelSerializer):
+class OrderItemSerializerView(serializers.ModelSerializer):
     product = ProductSimpleViewSerializer()
 
     class Meta:
@@ -12,7 +12,7 @@ class OrderItemSerializerView(ModelSerializer):
         read_only_fields = ["id"]
 
 
-class OrderSerializer(ModelSerializer):
+class OrderSerializer(serializers.ModelSerializer):
     order_items = OrderItemSerializerView(many=True, read_only=True, source='orderitem_order')
 
     class Meta:
@@ -21,7 +21,7 @@ class OrderSerializer(ModelSerializer):
         read_only_fields = ["id", "user", "order_date"]
 
 
-class PatchOrderSerializer(ModelSerializer):
+class PatchOrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
