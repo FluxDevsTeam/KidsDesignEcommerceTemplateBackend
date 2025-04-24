@@ -426,7 +426,7 @@ class UserProfileViewSet(viewsets.ModelViewSet):
             new_phone_number=new_phone_number,
         )
 
-        return Response({"data": "Name change request submitted successfully."}, status=status.HTTP_200_OK)
+        return Response({"data": "Profile change request submitted successfully. Verify password to continue"}, status=status.HTTP_200_OK)
 
     @swagger_helper("UserProfile", "")
     @action(detail=False, methods=['post'], url_path='verify-profile-change')
