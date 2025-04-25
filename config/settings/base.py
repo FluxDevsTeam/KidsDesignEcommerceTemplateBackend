@@ -156,10 +156,10 @@ SWAGGER_SETTINGS = {
     }
 }
 JAZZMIN_SETTINGS = {
-    "site_title": "EcommerceTemplate",
-    "site_header": "Ecommerce API Template",
+    "site_title": "Shop.co",
+    "site_header": "Shop.co API Template",
     "site_brand": "",
-    "site_copyright": "ecommercetemplate.com",
+    "site_copyright": "Shop.co",
     "show_ui_builder": True
 }
 
