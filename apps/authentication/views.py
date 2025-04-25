@@ -601,7 +601,7 @@ class PasswordChangeRequestViewSet(viewsets.ModelViewSet):
         if otp_age > 300:
             return Response({"data": "OTP has expired. Please request a new one."}, status=status.HTTP_400_BAD_REQUEST)
 
-        user.password = make_password(password_change_request.new_password)
+        user.password = password_change_request.new_password
         user.save()
 
         password_change_request.delete()
