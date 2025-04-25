@@ -66,7 +66,7 @@ class ForgotPasswordViewSet(viewsets.ModelViewSet):
                 email_type="reset_link",
                 subject="Password Reset Request",
                 action="Password Reset",
-                message="Click the link below to reset your password. This link will expire in 10 minutes.",
+                message="You have requested to reset your password. Click the link below to proceed. This link will expire in 10 minutes. If you did not make this request, please contact support immediately.",
                 link=reset_url,
                 link_text="Reset Password"
             )
@@ -77,7 +77,7 @@ class ForgotPasswordViewSet(viewsets.ModelViewSet):
                     'email_type': "reset_link",
                     'subject': "Password Reset Request",
                     'action': "Password Reset",
-                    'message': "Click the link below to reset your password. This link will expire in 10 minutes.",
+                    'message': "You have requested to reset your password. Click the link below to proceed. This link will expire in 10 minutes. If you did not make this request, please contact support immediately.",
                     'link': reset_url,
                     'link_text': "Reset Password"
                 }
@@ -179,18 +179,18 @@ class ForgotPasswordViewSet(viewsets.ModelViewSet):
             send_email_synchronously(
                 user_email=user.email,
                 email_type="confirmation",
-                subject="Password Changed Successfully",
-                action="Password Change",
-                message="Your password has been successfully updated, and you are now securely logged into your account."
+                subject="Password Reset Successful",
+                action="Password Reset",
+                message="Your password has been successfully reset. You are now securely logged into your account. If you did not authorize this change, please contact support immediately."
             )
         else:
             send_generic_email_task.apply_async(
                 kwargs={
                     'user_email': user.email,
                     'email_type': "confirmation",
-                    'subject': "Password Changed Successfully",
-                    'action': "Password Change",
-                    'message': "Your password has been successfully updated, and you are now securely logged into your account."
+                    'subject': "Password Reset Successful",
+                    'action': "Password Reset",
+                    'message': "Your password has been successfully reset. You are now securely logged into your account. If you did not authorize this change, please contact support immediately."
                 }
             )
 
@@ -298,7 +298,7 @@ class UserProfileViewSet(viewsets.ModelViewSet):
                 email_type="otp",
                 subject="Email Change OTP",
                 action="Email Change",
-                message="Use the OTP below to verify your new email address.",
+                message="You have requested to change your email address. Use the OTP below to verify your new email address. If you did not make this request, please contact support immediately.",
                 otp=otp
             )
         else:
@@ -308,7 +308,7 @@ class UserProfileViewSet(viewsets.ModelViewSet):
                     'email_type': "otp",
                     'subject': "Email Change OTP",
                     'action': "Email Change",
-                    'message': "Use the OTP below to verify your new email address.",
+                    'message': "You have requested to change your email address. Use the OTP below to verify your new email address. If you did not make this request, please contact support immediately.",
                     'otp': otp
                 }
             )
@@ -340,7 +340,7 @@ class UserProfileViewSet(viewsets.ModelViewSet):
                 email_type="otp",
                 subject="Resend Email Change OTP",
                 action="Email Change",
-                message="Use the OTP below to verify your new email address.",
+                message="You have requested a new OTP to verify your email address. Use the OTP below to complete the verification process. If you did not make this request, please contact support immediately.",
                 otp=otp
             )
         else:
@@ -350,7 +350,7 @@ class UserProfileViewSet(viewsets.ModelViewSet):
                     'email_type': "otp",
                     'subject': "Resend Email Change OTP",
                     'action': "Email Change",
-                    'message': "Use the OTP below to verify your new email address.",
+                    'message': "You have requested a new OTP to verify your email address. Use the OTP below to complete the verification process. If you did not make this request, please contact support immediately.",
                     'otp': otp
                 }
             )
@@ -388,7 +388,7 @@ class UserProfileViewSet(viewsets.ModelViewSet):
                 email_type="confirmation",
                 subject="Email Change Confirmation",
                 action="Email Change",
-                message="Your email address has been successfully changed."
+                message="Your email address has been successfully updated. If you did not authorize this change, please contact support immediately to secure your account."
             )
         else:
             send_generic_email_task.apply_async(
@@ -397,7 +397,7 @@ class UserProfileViewSet(viewsets.ModelViewSet):
                     'email_type': "confirmation",
                     'subject': "Email Change Confirmation",
                     'action': "Email Change",
-                    'message': "Your email address has been successfully changed."
+                    'message': "Your email address has been successfully updated. If you did not authorize this change, please contact support immediately to secure your account."
                 }
             )
 
@@ -461,7 +461,7 @@ class UserProfileViewSet(viewsets.ModelViewSet):
                 email_type="confirmation",
                 subject="Profile Change Confirmation",
                 action="Profile Change",
-                message="Your profile has been successfully updated."
+                message="Your profile has been successfully updated. If you did not authorize this change, please contact support immediately to secure your account."
             )
         else:
             send_generic_email_task.apply_async(
@@ -470,7 +470,7 @@ class UserProfileViewSet(viewsets.ModelViewSet):
                     'email_type': "confirmation",
                     'subject': "Profile Change Confirmation",
                     'action': "Profile Change",
-                    'message': "Your profile has been successfully updated."
+                    'message': "Your profile has been successfully updated. If you did not authorize this change, please contact support immediately to secure your account."
                 }
             )
 
@@ -524,7 +524,7 @@ class PasswordChangeRequestViewSet(viewsets.ModelViewSet):
                 email_type="otp",
                 subject="Password Change OTP",
                 action="Password Change",
-                message="Use the OTP below to change your password.",
+                message="You have requested to change your password. Use the OTP below to proceed. If you did not make this request, please contact support immediately.",
                 otp=otp
             )
         else:
@@ -534,7 +534,7 @@ class PasswordChangeRequestViewSet(viewsets.ModelViewSet):
                     'email_type': "otp",
                     'subject': "Password Change OTP",
                     'action': "Password Change",
-                    'message': "Use the OTP below to change your password.",
+                    'message': "You have requested to change your password. Use the OTP below to proceed. If you did not make this request, please contact support immediately.",
                     'otp': otp
                 }
             )
@@ -621,7 +621,7 @@ class PasswordChangeRequestViewSet(viewsets.ModelViewSet):
                 email_type="confirmation",
                 subject="Password Changed Successfully",
                 action="Password Change",
-                message="Your password has been successfully changed. You have been logged out. Please log in with your new password."
+                message="Your password has been successfully changed. If you did not authorize this change, please contact support immediately."
             )
         else:
             send_generic_email_task.apply_async(
@@ -630,7 +630,7 @@ class PasswordChangeRequestViewSet(viewsets.ModelViewSet):
                     'email_type': "confirmation",
                     'subject': "Password Changed Successfully",
                     'action': "Password Change",
-                    'message': "Your password has been successfully changed. You have been logged out. Please log in with your new password."
+                    'message': "Your password has been successfully changed. If you did not authorize this change, please contact support immediately."
                 }
             )
 
@@ -713,10 +713,7 @@ class UserSignupViewSet(viewsets.ModelViewSet):
                 message="Use the OTP below to verify your email address.",
                 otp=otp
             )
-            send_email_synchronously(
-                user_email=email,
-                action="signup"
-            )
+
         else:
             send_generic_email_task.apply_async(
                 kwargs={
@@ -728,12 +725,7 @@ class UserSignupViewSet(viewsets.ModelViewSet):
                     'otp': otp
                 }
             )
-            send_auth_success_email.apply_async(
-                kwargs={
-                    'user_email': email,
-                    'action': "signup"
-                }
-            )
+
         return Response({"data": f"Signup successful. OTP sent to your email "}, status=status.HTTP_201_CREATED)
 
     @swagger_helper("Signup", "")
@@ -768,7 +760,7 @@ class UserSignupViewSet(viewsets.ModelViewSet):
                 email_type="confirmation",
                 subject="Signup Successful",
                 action="Signup",
-                message="You have finished the signup verification for ASLuxeryOriginals.com. Welcome!"
+                message="You have finished the signup verification for Shop.co. Welcome!"
             )
         else:
             send_generic_email_task.apply_async(
@@ -777,7 +769,7 @@ class UserSignupViewSet(viewsets.ModelViewSet):
                     'email_type': "confirmation",
                     'subject': "Signup Successful",
                     'action': "Signup",
-                    'message': "You have finished the signup verification for ASLuxeryOriginals.com. Welcome!"
+                    'message': "You have finished the signup verification for Shop.co. Welcome!"
                 }
             )
 
@@ -863,16 +855,22 @@ class UserLoginViewSet(viewsets.ModelViewSet):
         access_token = str(refresh.access_token)
 
         if not is_celery_healthy():
-            logger.warning("Celery is not healthy. Sending auth success email synchronously.")
+            logger.warning("Celery is not healthy. Sending confirmation email synchronously.")
             send_email_synchronously(
                 user_email=email,
-                action="login"
+                email_type="confirmation",
+                subject="Login Successful",
+                action="Login",
+                message="You have successfully logged in to Shop.co. Welcome!"
             )
         else:
-            send_auth_success_email.apply_async(
+            send_generic_email_task.apply_async(
                 kwargs={
                     'user_email': email,
-                    'action': "login"
+                    'email_type': "confirmation",
+                    'subject': "Login Successful",
+                    'action': "Login",
+                    'message': "You have successfully logged in to Shop.co. Welcome!"
                 }
             )
 

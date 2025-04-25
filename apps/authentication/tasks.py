@@ -18,27 +18,19 @@ def is_celery_healthy():
 def send_email_synchronously(user_email, action=None, email_type=None, subject=None, message=None, otp=None, link=None,
                              link_text=None):
     try:
-        if action in ["login", "signup"]:
-            auth_success_email(
-                user_email=user_email,
-                action=action
-            )
-            logger.info(f"Synchronously sent {action} success email to {user_email}")
-            return {"status": "success", "action": action, "email": user_email}
-        else:
-            send_generic_email(
-                user_email=user_email,
-                email_type=email_type,
-                subject=subject,
-                action=action,
-                message=message,
-                otp=otp,
-                link=link,
-                link_text=link_text
-            )
-            logger.info(f"Synchronously sent generic email to {user_email}",
-                        extra={'email_type': email_type, 'subject': subject})
-            return {"status": "success", "email_type": email_type, "email": user_email}
+        send_generic_email(
+            user_email=user_email,
+            email_type=email_type,
+            subject=subject,
+            action=action,
+            message=message,
+            otp=otp,
+            link=link,
+            link_text=link_text
+        )
+        logger.info(f"Synchronously sent generic email to {user_email}",
+                    extra={'email_type': email_type, 'subject': subject})
+        return {"status": "success", "email_type": email_type, "email": user_email}
     except Exception as e:
         logger.exception(
             f"Failed to send email synchronously",

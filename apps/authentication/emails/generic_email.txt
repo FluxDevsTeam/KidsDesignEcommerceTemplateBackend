@@ -5,7 +5,7 @@ Dear Shop.co User,
 {{ message }}
 
 {% if otp %}
-Your OTP is: {{ otp }}. It expires in 5 minutes.
+Your OTP is: {{ otp }}. It expires in 5 minutes. Please use it promptly to complete your action.
 {% endif %}
 
 {% if link %}
@@ -21,6 +21,11 @@ support@shop.co | +1 (234) 567-890
 
 Best regards,
 The Shop.co Team
-Connect with us: https://www.facebook.com/shopco | https://twitter.com/shopco | https://www.instagram.com/shopco | https://www.linkedin.com/company/shopco
+Connect with us:
+- Facebook: https://www.facebook.com/shopco
+- Twitter: https://twitter.com/shopco
+- Instagram: https://www.instagram.com/shopco
+- LinkedIn: https://www.linkedin.com/company/shopco
+
 {{ current_year }} Shop.co. All rights reserved.
 Privacy Policy: {{ site_url }}/privacy | Terms of Service: {{ site_url }}/terms

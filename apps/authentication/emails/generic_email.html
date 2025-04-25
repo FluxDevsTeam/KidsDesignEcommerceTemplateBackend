@@ -8,16 +8,13 @@
 </head>
 <body style="margin: 0; padding: 20px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica', 'Arial', sans-serif; line-height: 1.6; color: #333333; background-color: #f4f4f4;">
     <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);">
-        <!-- Header -->
         <tr>
-            <td style="background: linear-gradient(135deg, #008080 0%, #00a3a3 100%); color: #ffffff; padding: 40px 20px; text-align: center;">
-                <img src="https://tse4.mm.bing.net/th/id/OIP.rcKRRDLHGEu5lWcn6vbKcAHaHa?rs=1&pid=ImgDetMain" alt="Shop.co Logo" style="max-width: 120px; margin-bottom: 15px; display: block; margin-left: auto; margin-right: auto;">
+            <td style="background: linear-gradient(135deg, #008080 0%, #00a3a3 100%); color: #ffffff; padding: 30px 20px; text-align: center;">
+                <img src="https://tse4.mm.bing.net/th/id/OIP.rcKRRDLHGEu5lWcn6vbKcAHaHa?rs=1&pid=ImgDetMain" alt="Shop.co Logo" width="80" height="80" style="width: 80px; height: 80px; border-radius: 50%; display: block; margin: 0 auto 15px;">
                 <h1 style="font-size: 28px; font-weight: 700; letter-spacing: 0.5px; margin: 0;">{{ subject }}</h1>
                 <p style="font-size: 16px; margin: 10px 0 0; opacity: 0.9;">Your Shop.co Account</p>
             </td>
         </tr>
-
-        <!-- Content -->
         <tr>
             <td style="padding: 30px;">
                 <h2 style="font-size: 22px; font-weight: 600; color: #008080; margin-bottom: 15px;">{{ action|capfirst }}</h2>
@@ -26,19 +23,17 @@
                 </p>
                 {% if otp %}
                 <p style="font-size: 16px; color: #555555; margin-bottom: 15px;">
-                    Your OTP is: <strong style="color: #008080;">{{ otp }}</strong>. It expires in 5 minutes.
+                    Your OTP is: <strong style="color: #008080;">{{ otp }}</strong>. It expires in 5 minutes. Please use it promptly to complete your action.
                 </p>
                 {% endif %}
                 {% if link %}
                 <p style="font-size: 16px; color: #555555; margin-bottom: 15px;">
                     Click the link below to proceed:
                 </p>
-                <a href="{{ link }}" style="display: inline-block; padding: 12px 30px; background: #008080; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px; border-radius: 50px; text-align: center;">
+                <a href="{{ link }}" style="display: inline-block; padding: 12px 30px; background: #008080; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px; border-radius: 50px; text-align: center; border: 2px solid #008080;">
                     {{ link_text|default:"Take Action" }}
                 </a>
                 {% endif %}
-
-                <!-- Customer Support -->
                 <table cellpadding="0" cellspacing="0" width="100%" style="background: #f8fafc; padding: 20px; border-radius: 8px; text-align: center; margin-top: 20px;">
                     <tr>
                         <td>
@@ -53,25 +48,23 @@
                 </table>
             </td>
         </tr>
-
-        <!-- Footer -->
         <tr>
             <td style="text-align: center; font-size: 12px; color: #6b7280; padding: 20px; background: #f8fafc; border-top: 1px solid #e5e7eb;">
                 <p style="margin-bottom: 8px;">Best regards,<br><a href="{{ site_url }}" style="color: #008080; text-decoration: none; font-weight: 500;">The Shop.co Team</a></p>
                 <p style="margin-bottom: 8px;">Connect with us:</p>
                 <table align="center" cellpadding="0" cellspacing="0" style="margin-top: 10px;">
                     <tr>
-                        <td style="padding: 0 10px;">
-                            <a href="https://www.facebook.com/shopco"><img src="https://cdn-icons-png.flaticon.com/512/5968/5968764.png" alt="Facebook" style="width: 24px; height: 24px; vertical-align: middle;"></a>
+                        <td style="padding: 0 6px;">
+                            <a href="https://www.facebook.com/shopco"><img src="https://cdn-icons-png.flaticon.com/64/5968/5968764.png" alt="Facebook" width="16" height="16" style="width: 16px; height: 16px; vertical-align: middle; display: block;"></a>
                         </td>
-                        <td style="padding: 0 10px;">
-                            <a href="https://twitter.com/shopco"><img src="https://cdn-icons-png.flaticon.com/512/732/732250.png" alt="Twitter" style="width: 24px; height: 24px; vertical-align: middle;"></a>
+                        <td style="padding: 0 6px;">
+                            <a href="https://twitter.com/shopco"><img src="https://cdn-icons-png.flaticon.com/64/733/733635.png" alt="Twitter" width="16" height="16" style="width: 16px; height: 16px; vertical-align: middle; display: block;"></a>
                         </td>
-                        <td style="padding: 0 10px;">
-                            <a href="https://www.instagram.com/shopco"><img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Instagram" style="width: 24px; height: 24px; vertical-align: middle;"></a>
+                        <td style="padding: 0 6px;">
+                            <a href="https://www.instagram.com/shopco"><img src="https://cdn-icons-png.flaticon.com/64/2111/2111463.png" alt="Instagram" width="16" height="16" style="width: 16px; height: 16px; vertical-align: middle; display: block;"></a>
                         </td>
-                        <td style="padding: 0 10px;">
-                            <a href="https://www.linkedin.com/company/shopco"><img src="https://cdn-icons-png.flaticon.com/512/3536/3536505.png" alt="LinkedIn" style="width: 24px; height: 24px; vertical-align: middle;"></a>
+                        <td style="padding: 0 6px;">
+                            <a href="https://www.linkedin.com/company/shopco"><img src="https://cdn-icons-png.flaticon.com/64/3536/3536505.png" alt="LinkedIn" width="16" height="16" style="width: 16px; height: 16px; vertical-align: middle; display: block;"></a>
                         </td>
                     </tr>
                 </table>
@@ -80,15 +73,13 @@
             </td>
         </tr>
     </table>
-
-    <!-- Responsive Design -->
     <style>
         @media screen and (max-width: 600px) {
             body { padding: 10px; }
-            table[max-width="600px"] { margin: 10px auto; }
-            td[style*="padding: 40px 20px"] { padding: 30px 15px !important; }
-            img[alt="Shop.co Logo"] { max-width: 100px; }
-            h1 { font-size: 24px; }
+            table[max-width="600px"] { margin: 10px auto; max-width: 100%; }
+            td[style*="padding: 30px 20px"] { padding: 20px 15px !important; }
+            img[alt="Shop.co Logo"] { width: 40px !important; height: 40px !important; }
+            h1 { font-size: 22px; }
             p[style*="font-size: 16px; margin: 10px"] { font-size: 14px; }
             td[style*="padding: 30px"] { padding: 20px !important; }
             h2 { font-size: 20px; }
@@ -97,7 +88,25 @@
             h3 { font-size: 16px; }
             p[style*="font-size: 14px; color: #555555"] { font-size: 13px; }
             td[style*="padding: 20px; background: #f8fafc"] { font-size: 11px; }
-            img[style*="width: 24px"] { width: 20px !important; height: 20px !important; }
+            img[style*="width: 16px"] { width: 14px !important; height: 14px !important; }
+            td[style*="padding: 0 6px"] { padding: 0 4px !important; }
+        }
+        @media screen and (min-width: 601px) {
+            body { padding: 40px; }
+            table[max-width="600px"] { max-width: 640px; margin: 20px auto; }
+            td[style*="padding: 30px 20px"] { padding: 30px 20px; }
+            img[alt="Shop.co Logo"] { width: 80px !important; height: 80px !important; }
+            h1 { font-size: 26px; }
+            h2 { font-size: 20px; }
+            p[style*="font-size: 16px; margin: 10px"] { font-size: 15px; }
+            td[style*="padding: 30px"] { padding: 30px; }
+            p, td[style*="font-size: 16px; color: #555555"] { font-size: 15px; }
+            a[style*="padding: 12px 30px"] { padding: 12px 30px; font-size: 15px; }
+            h3 { font-size: 17px; }
+            p[style*="font-size: 14px; color: #555555"] { font-size: 13px; }
+            td[style*="padding: 20px; background: #f8fafc"] { font-size: 12px; }
+            img[style*="width: 16px"] { width: 18px !important; height: 18px !important; }
+            td[style*="padding: 0 6px"] { padding: 0 8px !important; }
         }
     </style>
 </body>
