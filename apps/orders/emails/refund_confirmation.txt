@@ -1,0 +1,26 @@
+Dear {{ first_name }},
+
+We have successfully processed your refund for order (#{{ order_id }}). Below are the details of your refund:
+
+- Refund Amount: {{ currency }} {{ total_amount }}
+- Refund Date: {{ refund_date }}
+
+The refund amount will be credited to your original payment method within 5-10 business days, depending on your bank or payment provider.
+
+You can view your order details here:
+{{ site_url }}/order/{{ order_id }}
+
+We Are Here to Help
+Have questions about your refund? Our support team is available anytime.
+support@shop.co | +1 (234) 567-890
+
+Best regards,
+The Shop.co Team
+Connect with us:
+- Facebook: https://www.facebook.com/shopco
+- Twitter: https://twitter.com/shopco
+- Instagram: https://www.instagram.com/shopco
+- LinkedIn: https://www.linkedin.com/company/shopco
+
+{{ current_year }} Shop.co. All rights reserved.
+Privacy Policy: {{ site_url }}/privacy | Terms of Service: {{ site_url }}/terms
