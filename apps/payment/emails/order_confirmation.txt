@@ -2,7 +2,23 @@ Dear {{ first_name }},
 
 Thank you for your order! Your order (#{{ order_id }}) has been successfully placed.
 Total Amount: {{ currency }} {{ total_amount }}
-We’ll notify you once your order ships.
+Order Date: {{ order_date }}
+Estimated Delivery: {{ estimated_delivery }}
+
+We’ll notify you once your order ships. You can track your order here:
+{{ site_url }}/track/{{ order_id }}
+
+We Are Here to Help
+Have questions? Our support team is available anytime.
+support@shop.co | +1 (234) 567-890
 
 Best regards,
-ASLUXURY ORIGINALS Team
+The Shop.co Team
+Connect with us:
+- Facebook: https://www.facebook.com/shopco
+- Twitter: https://twitter.com/shopco
+- Instagram: https://www.instagram.com/shopco
+- LinkedIn: https://www.linkedin.com/company/shopco
+
+{{ current_year }} Shop.co. All rights reserved.
+Privacy Policy: {{ site_url }}/privacy | Terms of Service: {{ site_url }}/terms
