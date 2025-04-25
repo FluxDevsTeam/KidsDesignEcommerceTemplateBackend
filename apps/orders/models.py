@@ -27,6 +27,7 @@ class Order(models.Model):
     delivery_address = models.CharField(max_length=50)
     phone_number = models.CharField(max_length=50)
     order_date = models.DateField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     delivery_date = models.DateField(null=True, blank=True)
     transaction_id = models.CharField(max_length=100, null=True, blank=True, unique=True)
     payment_provider = models.CharField(max_length=20, null=True, blank=True)

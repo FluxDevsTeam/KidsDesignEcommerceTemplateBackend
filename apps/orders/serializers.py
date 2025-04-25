@@ -22,10 +22,19 @@ class OrderSerializer(serializers.ModelSerializer):
 
 
 class PatchOrderSerializer(serializers.ModelSerializer):
+    delivery_date = serializers.DateField(required=False, allow_null=True)
 
     class Meta:
         model = Order
         fields = ["status", "delivery_date"]
+
+
+class UserPatchOrderSerializer(serializers.ModelSerializer):
+    status = serializers.ChoiceField(choices=[('CANCELLED', 'Cancelled')], write_only=True)
+
+    class Meta:
+        model = Order
+        fields = ['status']
 
 # temporary feature for only development
 

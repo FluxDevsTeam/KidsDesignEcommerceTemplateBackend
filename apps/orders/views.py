@@ -2,24 +2,30 @@ from django.db.models import Sum, F, Count, Case, When, IntegerField, Q
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 
-from .serializers import OrderSerializer, OrderItemSerializerView, PatchOrderSerializer
+from .serializers import OrderSerializer, OrderItemSerializerView, PatchOrderSerializer, UserPatchOrderSerializer
 from .models import Order, OrderItem
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework import viewsets, status, filters
 from .pagination import CustomPagination
-from .utils import swagger_helper
-from .permissions import IsAuthenticatedAndOrderItemOwner
+from .utils import swagger_helper, initiate_refund
 from .filters import OrderFilter
+from datetime import datetime, timedelta
+from django.utils import timezone
+from .tasks import is_celery_healthy, refund_confirmation_email
 
 
 class ApiOrder(viewsets.ModelViewSet):
-    http_method_names = ["get", "head", "options"]
+    http_method_names = ["get", "patch", "head", "options"]
     pagination_class = CustomPagination
-    serializer_class = OrderSerializer
     permission_classes = [IsAuthenticated]
     ordering_fields = ['order_date', 'total_amount']
     ordering = ['-order_date']
     filterset_fields = ["status"]
+
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return OrderSerializer
+        return UserPatchOrderSerializer
 
     def get_queryset(self):
         return Order.objects.filter(user=self.request.user)
@@ -27,6 +33,58 @@ class ApiOrder(viewsets.ModelViewSet):
     @swagger_helper("Order", "order")
     def list(self, *args, **kwargs):
         return super().list(*args, **kwargs)
+
+    @swagger_helper("Order", "order")
+    def partial_update(self, *args, **kwargs):
+        order = self.get_object()
+        serializer = self.get_serializer(order, data=self.request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+
+        if serializer.validated_data.get('status') == 'CANCELLED':
+            time_limit = order.created_at + timedelta(hours=6)
+            if timezone.now() > time_limit:
+                return Response({"error": "Cancellations are only allowed within 6 hours of purchase."}, status=403)
+
+            if not order.transaction_id or not order.payment_provider:
+                return Response({"error": "Refund cannot be processed. Contact support."}, status=400)
+
+            refund_success = initiate_refund(order)
+
+            if refund_success:
+                order.status = 'REFUNDED'
+                order.save()
+
+                try:
+                    if not is_celery_healthy():
+                        refund_confirmation_email(
+                            order_id=str(order.id),
+                            user_email=order.email,
+                            first_name=order.first_name,
+                            total_amount=str(order.total_amount),
+                            refund_date=datetime.now().date()
+                        )
+                    else:
+                        from .tasks import refund_confirmation_email as refund_task
+                        refund_task.apply_async(
+                            kwargs={
+                                'order_id': str(order.id),
+                                'user_email': order.email,
+                                'first_name': order.first_name,
+                                'total_amount': str(order.total_amount),
+                                'refund_date': datetime.now().date()
+                            }
+                        )
+                except Exception:
+                    pass
+            else:
+                return Response({"error": "Refund processing failed. Admin has been notified."}, status=503)
+
+            response_serializer = OrderSerializer(order)
+            return Response(response_serializer.data)
+
+        serializer.save()
+        response_serializer = OrderSerializer(order)
+        return Response(response_serializer.data)
 
     @swagger_helper("Order", "order")
     def retrieve(self, *args, **kwargs):
@@ -44,9 +102,6 @@ class ApiOrder(viewsets.ModelViewSet):
     #
     #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    # @swagger_helper("Order", "order")
-    # def partial_update(self, *args, **kwargs):
-    #     return super().partial_update(*args, **kwargs)
     #
     # @swagger_helper("Order", "order")
     # def destroy(self, *args, **kwargs):
@@ -72,10 +127,8 @@ class ApiAdminOrder(viewsets.ModelViewSet):
 
     @swagger_helper("Order admin page", "order")
     def list(self, *args, **kwargs):
-        # Get filtered queryset
         queryset = self.filter_queryset(self.get_queryset())
 
-        # Apply pagination
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
@@ -89,17 +142,14 @@ class ApiAdminOrder(viewsets.ModelViewSet):
                 "results": serializer.data
             }
 
-        # Optimize status counts with a single query
         status_counts = queryset.aggregate(
             total_orders=Count('id'),
             delivered_orders=Count(Case(When(status="DELIVERED", then=1), output_field=IntegerField())),
             returned_orders=Count(Case(When(status="REFUNDED", then=1), output_field=IntegerField())),
-            # Using REFUNDED instead of RETURNED
             pending_orders=Count(
                 Case(When(~Q(status__in=["DELIVERED", "REFUNDED", "CANCELLED"]), then=1), output_field=IntegerField()))
         )
 
-        # Compute payment aggregates
         delivered_orders = queryset.filter(status="DELIVERED")
         refunded_orders = queryset.filter(status="REFUNDED")
 
@@ -113,7 +163,6 @@ class ApiAdminOrder(viewsets.ModelViewSet):
             "total_payment": queryset.aggregate(total=Sum("total_amount"))["total"] or 0
         }
 
-        # Structure response
         response_data = {
             "count": paginated_data["count"],
             "next": paginated_data["next"],
@@ -130,7 +179,48 @@ class ApiAdminOrder(viewsets.ModelViewSet):
 
     @swagger_helper("Order admin page", "order")
     def partial_update(self, *args, **kwargs):
-        return super().partial_update(*args, **kwargs)
+        order = self.get_object()
+        serializer = self.get_serializer(order, data=self.request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        if serializer.validated_data.get('status') == 'REFUNDED':
+            if not order.transaction_id or not order.payment_provider:
+                return Response({"error": "Refund cannot be processed. Contact support."}, status=400)
+            refund_success = initiate_refund(order, is_admin=True)
+            if refund_success:
+                order.status = 'REFUNDED'
+                order.save()
+                try:
+                    if not is_celery_healthy():
+                        refund_confirmation_email(
+                            order_id=str(order.id),
+                            user_email=order.email,
+                            first_name=order.first_name,
+                            total_amount=str(order.total_amount),
+                            refund_date=datetime.now().date()
+                        )
+                    else:
+                        from .tasks import refund_confirmation_email as refund_task
+                        refund_task.apply_async(
+                            kwargs={
+                                'order_id': str(order.id),
+                                'user_email': order.email,
+                                'first_name': order.first_name,
+                                'total_amount': str(order.total_amount),
+                                'refund_date': datetime.now().date()
+                            }
+                        )
+                except Exception:
+                    pass
+            else:
+                return Response({"error": "Refund processing failed."}, status=503)
+        elif serializer.validated_data.get('status') == 'DELIVERED':
+            order.status = 'DELIVERED'
+            order.delivery_date = timezone.now().date()
+            order.save()
+        else:
+            serializer.save()
+        response_serializer = OrderSerializer(order)
+        return Response(response_serializer.data)
 
 # temporary feature for only development
 # class ApiOrderItem(viewsets.ModelViewSet):
