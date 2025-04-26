@@ -8,6 +8,8 @@ import logging
 import requests
 from django.conf import settings
 from django.core.mail import send_mail
+from .tasks import is_celery_healthy
+from ..orders.tasks import refund_confirmation_email
 
 logger = logging.getLogger(__name__)
 
@@ -99,7 +101,7 @@ def swagger_helper(tags, model):
     return decorators
 
 
-def initiate_refund(tx_ref, provider, amount, transaction_id=None):
+def initiate_refund(tx_ref, provider, amount, user, transaction_id=None, ):
     try:
         if provider == "paystack":
             payload = {"transaction": tx_ref}
@@ -126,16 +128,18 @@ def initiate_refund(tx_ref, provider, amount, transaction_id=None):
             response = requests.post(url, json=payload, headers=headers)
             response.raise_for_status()
             return True
-    except requests.exceptions.RequestException as e:
-        notify_admin_for_manual_refund(tx_ref, provider, amount)
+    except:
+        notify_admin_for_manual_refund(tx_ref, provider, amount, user, transaction_id)
         return False
 
 
-def notify_admin_for_manual_refund(payment_session):
+def notify_admin_for_manual_refund(tx_ref, provider, amount, user, transaction_id):
+    phone_no = user.phone_number or None
     send_mail(
         subject="Manual Refund Required",
-        message=f"Refund failed for session {payment_session.id}, user {payment_session.user.email}, tx_ref {payment_session.token}",
+        message=f"Refund failed for: \nuser_id - {user.id}, \nname - {user.first_name} {user.last_name},\nphone no - {phone_no}\ntx_ref - {tx_ref}, \ntransaction_id - {transaction_id}, \nprovider - {provider}, \namount - {amount}. \nThis was due to insufficient stock. Please process manually.",
         from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=["admin@ecommercetemplate.com"],
+        recipient_list=["suskidee@gmail.com"],
         fail_silently=True
     )
+
