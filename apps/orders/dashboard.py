@@ -1,7 +1,7 @@
 import datetime
 from django.contrib.auth import get_user_model
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.permissions import IsAdminUser
+from rest_framework.permissions import IsAdminUser, AllowAny
 from rest_framework.response import Response
 from apps.orders.models import Order
 from apps.products.models import Product
@@ -16,6 +16,7 @@ User = get_user_model()
 class OrderDashboard(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     permission_classes = [IsAdminUser]
+    permission_classes = [AllowAny]
 
     @swagger_auto_schema(operation_id="order --admin only", operation_description="monthly order data", tags=["Order admin page"])
     def retrieve(self, *args, **kwargs):
