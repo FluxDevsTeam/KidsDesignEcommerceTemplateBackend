@@ -173,6 +173,7 @@ CELERY_RESULT_BACKEND = 'redis://localhost:6379/2'
 BASE_ROUTE = os.getenv("BASE_ROUTE")
 PAYMENT_IMAGE_URL = os.getenv("PAYMENT_IMAGE_URL")
 SITE_URL = os.getenv("SITE_URL")
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 
 # Time & retry settings
 CELERY_TIMEZONE = 'Africa/Lagos'
@@ -199,7 +200,7 @@ ORDER_URL = os.getenv("ORDER_URL", "http://127.0.0.1:8000/api/v1/orders/")
 PAYMENT_SUCCESS_URL = os.getenv("PAYMENT_SUCCESS_URL", "http:/127.0.0.1:8000/api/v1/payment/success/")
 PAYMENT_PROVIDERS = {
     "flutterwave": {
-        "verify_url": "https://api.flutterwave.com/v3/transactions/verify_by_reference?tx_ref={}",
+        "verify_url": "https://api.flutterwave.com/v3/transactions/{}/verify",
         "secret_key": os.getenv("FLW_SEC_KEY"),
     },
     "paystack": {
