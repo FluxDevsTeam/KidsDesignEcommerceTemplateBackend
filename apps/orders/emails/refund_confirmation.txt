@@ -5,7 +5,7 @@ We have successfully processed your refund for order (#{{ order_id }}). Below ar
 - Refund Amount: {{ currency }} {{ total_amount }}
 - Refund Date: {{ refund_date }}
 
-The refund amount will be credited to your original payment method within 5-10 business days, depending on your bank or payment provider.
+The refund amount will be credited to your original payment method within 5-14 business days, depending on your bank or payment provider.
 
 You can view your order details here:
 {{ site_url }}/order/{{ order_id }}
