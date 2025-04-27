@@ -19,7 +19,7 @@ import hmac
 import hashlib
 import json
 from django.conf import settings
-from .tasks import send_order_confirmation_email, create_order_from_webhook, is_celery_healthy, send_email_synchronously
+from .tasks import send_order_confirmation_email, is_celery_healthy, send_email_synchronously
 from django.contrib.auth import get_user_model
 from .delivery_date import calculate_delivery_dates
 from .utils import generate_confirm_token, swagger_helper, initiate_refund
@@ -131,7 +131,7 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
             token = request.query_params.get("confirm_token")
             transaction_id = request.query_params.get("transaction_id")
 
-            if not all([tx_ref, transaction_id, amount, provider, token]):
+            if not all([tx_ref, amount, provider, token]):
                 return redirect(f"{settings.SITE_URL}/cart/error/?data=Invalid-request-parameters")
 
             try:
@@ -142,8 +142,9 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
             except Exception as e:
                 return redirect(f"{settings.SITE_URL}/cart/error/?data=Invalid-token-or-cart")
 
-            if Order.objects.filter(tx_ref=tx_ref).exists():
-                return redirect(f"{settings.SITE_URL}/cart/error/?data=Order-already-processed")
+            existing_order = Order.objects.filter(tx_ref=tx_ref).first()
+            if existing_order:
+                return redirect(f"{settings.SITE_URL}/order/{existing_order.id}")
 
             provider_config = settings.PAYMENT_PROVIDERS[provider]
             url = provider_config["verify_url"].format(transaction_id if provider == "flutterwave" and transaction_id else tx_ref)
@@ -164,22 +165,23 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
 
             if provider == "flutterwave":
                 verification_success = (
-                        response_data.get("status") == "success" and
-                        response_data["data"]["status"] == "successful" and
-                        float(response_data["data"]["amount"]) >= float(amount) and
-                        response_data["data"]["currency"] == expected_currency and
-                        response_data["data"]["tx_ref"] == tx_ref
+                    response_data.get("status") == "success" and
+                    response_data["data"]["status"] == "successful" and
+                    float(response_data["data"]["amount"]) >= float(amount) and
+                    response_data["data"]["currency"] == expected_currency and
+                    response_data["data"]["tx_ref"] == tx_ref
                 )
                 flutterwave_transaction_id = str(response_data["data"]["id"]) if verification_success else None
             else:
                 verification_success = (
-                        response_data.get("status") and
-                        response_data["data"]["status"] == "success" and
-                        (response_data["data"]["amount"] / 100) >= float(amount) and
-                        response_data["data"]["currency"] == expected_currency
+                    response_data.get("status") and
+                    response_data["data"]["status"] == "success" and
+                    (response_data["data"]["amount"] / 100) >= float(amount) and
+                    response_data["data"]["currency"] == expected_currency
                 )
 
             if not verification_success:
+                logger.error(f"Verification failed: {response_data}", extra={'tx_ref': tx_ref})
                 return redirect(f"{settings.SITE_URL}/cart/error/?data=Payment-verification-failed")
 
             serializer = PaymentCartSerializer(cart)
@@ -193,7 +195,6 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
             product_sizes = ProductSize.objects.filter(id__in=product_size_ids).select_for_update()
 
             for item in cart_items:
-                print("here")
                 product_size = next(ps for ps in product_sizes if ps.id == item.size.id)
                 if product_size.quantity < item.quantity:
                     if initiate_refund(
@@ -205,8 +206,7 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
                     ):
                         return redirect(f"{settings.ORDER_URL}/cart/?error=Insufficient-stock-Refund-initiated")
                     else:
-                        return redirect(
-                            f"{settings.SITE_URL}/cart/error/?data=Insufficient-stock-Refund-failed-please-contact-support")
+                        return redirect(f"{settings.SITE_URL}/cart/error/?data=Insufficient-stock-Refund-failed-please-contact-support")
 
             # Deduct stock
             for item in cart_items:
@@ -236,7 +236,7 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
                 city=cart.city,
                 delivery_address=cart.delivery_address,
                 phone_number=cart.phone_number or user.phone_number,
-                transaction_id=flutterwave_transaction_id if provider == "flutterwave" else tx_ref,
+                transaction_id=flutterwave_transaction_id if provider == "flutterwave" else transaction_id,
                 tx_ref=tx_ref,
                 payment_provider=provider,
                 estimated_delivery=cart.estimated_delivery
@@ -293,6 +293,7 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
 
     @swagger_helper("Payment", "Payment Webhook")
     @transaction.atomic
+    @action(detail=False, methods=["POST"])
     def create(self, request):
         try:
             if "HTTP_X_FLUTTERWAVE_SIGNATURE" in request.META:
@@ -301,81 +302,100 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
                 secret_key = settings.PAYMENT_PROVIDERS["flutterwave"]["secret_key"]
                 expected_signature = hmac.new(secret_key.encode(), request.body, hashlib.sha256).hexdigest()
                 if not hmac.compare_digest(signature, expected_signature):
-                    logger.error("Invalid Flutterwave webhook signature")
                     return Response({"error": "Invalid signature"}, status=403)
             elif "HTTP_X_PAYSTACK_SIGNATURE" in request.META:
                 provider = "paystack"
                 signature = request.META["HTTP_X_PAYSTACK_SIGNATURE"]
                 secret_key = settings.PAYMENT_PROVIDERS["paystack"]["secret_key"]
-                expected_signature = hmac.new(secret_key.encode(), request.body, hashlib.sha256).hexdigest()
+                expected_signature = hmac.new(secret_key.encode(), request.body, hashlib.sha512).hexdigest()
                 if not hmac.compare_digest(signature, expected_signature):
-                    logger.error("Invalid Paystack webhook signature")
                     return Response({"error": "Invalid signature"}, status=403)
             else:
                 return Response({"error": "Unknown provider"}, status=400)
 
             payload = request.data
-            logger.info(f"Webhook received from {provider}", extra={'payload': json.dumps(payload)})
-
-            tx_ref = payload.get("tx_ref") if provider == "flutterwave" else payload.get("data", {}).get("reference")
-            if not tx_ref:
-                return Response({"error": "Missing transaction reference"}, status=400)
-
-            if Order.objects.filter(tx_ref=tx_ref).exists():
-                logger.info(f"Duplicate webhook for {tx_ref}")
-                return Response({"message": "Transaction already processed"}, status=200)
-
-            provider_config = settings.PAYMENT_PROVIDERS[provider]
-            url = provider_config["verify_url"].format(tx_ref)
-            headers = {"Authorization": f"Bearer {provider_config['secret_key']}"}
-            try:
-                response = requests.get(url, headers=headers, timeout=10)
-                response.raise_for_status()
-            except requests.exceptions.RequestException as err:
-                logger.error(f"{provider.capitalize()} webhook verification failed",
-                             extra={'error': str(err), 'tx_ref': tx_ref})
-                return Response({"error": "Payment verification failed"}, status=400)
-
-            response_data = response.json()
-            flutterwave_transaction_id = None
 
             if provider == "flutterwave":
-                status = response_data.get("status") == "success" and response_data["data"]["status"] == "successful"
-                amount = float(response_data["data"]["amount"])
-                email = response_data["data"]["customer"]["email"]
-                currency = response_data["data"]["currency"]
-                flutterwave_transaction_id = str(response_data["data"]["id"]) if status else None
+                if payload.get("event") != "charge.completed":
+                    return Response({"message": "Event ignored"}, status=200)
+                tx_ref = payload.get("tx_ref")
+                transaction_id = str(payload.get("id"))
+                status = payload.get("status") == "successful"
+                amount = float(payload.get("amount", 0))
+                email = payload.get("customer", {}).get("email")
+                currency = payload.get("currency")
             else:
-                status = response_data.get("status") and response_data["data"]["status"] == "success"
-                amount = response_data["data"]["amount"] / 100
-                email = response_data["data"]["customer"]["email"]
-                currency = response_data["data"]["currency"]
+                if payload.get("event") != "charge.success":
+                    return Response({"message": "Event ignored"}, status=200)
+                tx_ref = payload.get("data", {}).get("reference")
+                transaction_id = None
+                status = payload.get("data", {}).get("status") == "success"
+                amount = float(payload.get("data", {}).get("amount", 0)) / 100
+                email = payload.get("data", {}).get("customer", {}).get("email")
+                currency = payload.get("data", {}).get("currency")
+
+            if not all([tx_ref, transaction_id, amount, email]):
+                return Response({"error": "Missing transaction reference, ID, amount, or email"}, status=400)
+
+            existing_order = Order.objects.filter(tx_ref=tx_ref).first()
+            if existing_order:
+                return Response({"message": "Transaction already processed"}, status=200)
 
             if not status:
-                logger.info(f"Webhook payment not successful for {tx_ref}", extra={'response': response_data})
                 return Response({"message": "Payment not successful"}, status=200)
 
             if currency != settings.PAYMENT_CURRENCY:
-                logger.error("Currency mismatch in webhook",
-                             extra={'provider': provider, 'tx_ref': tx_ref, 'currency': currency})
                 return Response({"error": "Currency not supported"}, status=400)
 
             user = User.objects.filter(email=email).first()
             if not user:
-                logger.error(f"No user found for email {email}", extra={'tx_ref': tx_ref})
                 return Response({"error": "User not found"}, status=400)
             cart = Cart.objects.filter(user=user).select_for_update().first()
             if not cart:
-                logger.error(f"No cart found for user {user.email}", extra={'tx_ref': tx_ref, 'user_id': user.id})
                 return Response({"error": "Cart not found"}, status=400)
+
+            provider_config = settings.PAYMENT_PROVIDERS[provider]
+            url = provider_config["verify_url"].format(transaction_id if provider == "flutterwave" and transaction_id else tx_ref)
+            headers = {
+                "Authorization": f"Bearer {provider_config['secret_key']}",
+                "Content-Type": "application/json"
+            }
+
+            try:
+                verification_response = requests.get(url, headers=headers, timeout=10)
+                verification_response.raise_for_status()
+            except requests.exceptions.RequestException:
+                return Response({"error": "Payment verification failed"}, status=503)
+
+            response_data = verification_response.json()
+            expected_currency = settings.PAYMENT_CURRENCY
+
+            if provider == "flutterwave":
+                verification_success = (
+                    response_data.get("status") == "success" and
+                    response_data["data"]["status"] == "successful" and
+                    float(response_data["data"]["amount"]) >= float(amount) and
+                    response_data["data"]["currency"] == expected_currency and
+                    response_data["data"]["tx_ref"] == tx_ref
+                )
+                flutterwave_transaction_id = str(response_data["data"]["id"]) if verification_success else None
+            else:
+                verification_success = (
+                    response_data.get("status") and
+                    response_data["data"]["status"] == "success" and
+                    (response_data["data"]["amount"] / 100) >= float(amount) and
+                    response_data["data"]["currency"] == expected_currency
+                )
+
+            if not verification_success:
+                return Response({"error": "Payment verification failed"}, status=400)
 
             serializer = PaymentCartSerializer(cart)
             server_total = serializer.data["total"]
             if abs(Decimal(str(server_total)) - Decimal(str(amount))) > Decimal("0.01"):
-                logger.error("Payment amount mismatch", extra={'tx_ref': tx_ref, 'user_id': user.id})
                 return Response({"error": "Payment amount mismatch"}, status=400)
 
-            # Check and deduct stock with lock
+            # check for stock availability
             cart_items = cart.cartitem_cart.select_related('size', 'product').all()
             product_size_ids = [item.size.id for item in cart_items]
             product_sizes = ProductSize.objects.filter(id__in=product_size_ids).select_for_update()
@@ -384,27 +404,34 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
                 product_size = next(ps for ps in product_sizes if ps.id == item.size.id)
                 if product_size.quantity < item.quantity:
                     if initiate_refund(
-                            tx_ref=tx_ref,
-                            provider=provider,
-                            amount=amount,
-                            user=user,
-                            transaction_id=flutterwave_transaction_id,
+                        tx_ref=tx_ref,
+                        provider=provider,
+                        amount=amount,
+                        user=user,
+                        transaction_id=flutterwave_transaction_id if provider == "flutterwave" else transaction_id
                     ):
-                        logger.info(f"Refund initiated for {tx_ref} due to insufficient stock",
-                                    extra={'user_id': user.id})
+                        logger.info(f"Refund initiated for {tx_ref} due to insufficient stock", extra={'user_id': user.id})
                         return Response({"message": "Insufficient stock. Refund initiated."}, status=200)
                     else:
                         logger.error(f"Refund failed for {tx_ref}", extra={'user_id': user.id})
-                        return Response({"error": "Insufficient stock. Refund failed, please contact support."},
-                                        status=400)
+                        return Response({"error": "Insufficient stock. Refund failed, please contact support."}, status=400)
 
             # Deduct stock
             for item in cart_items:
                 product_size = next(ps for ps in product_sizes if ps.id == item.size.id)
                 product_size.quantity -= item.quantity
+                if product_size.quantity <= 0:
+                    cache.delete_pattern("product_size_list:*")
+                    cache.delete_pattern(f"product_size_detail:{product_size.id}")
+                    cache.delete_pattern("product_list:*")
+                    cache.delete_pattern(f"product_detail:{product_size.product.id}")
+                    cache.delete_pattern("search:*")
+                    cache.delete_pattern("search_suggestions:*")
+                    cache.delete_pattern("product_suggestions:*")
+                    cache.delete_pattern("product_homepage:*")
                 product_size.save()
 
-            # Create order
+            # create order on success
             order = Order.objects.create(
                 user=user,
                 status="PAID",
@@ -417,7 +444,7 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
                 city=cart.city,
                 delivery_address=cart.delivery_address,
                 phone_number=cart.phone_number or user.phone_number,
-                transaction_id=flutterwave_transaction_id if provider == "flutterwave" else tx_ref,
+                transaction_id=flutterwave_transaction_id if provider == "flutterwave" else transaction_id,
                 tx_ref=tx_ref,
                 payment_provider=provider,
                 estimated_delivery=cart.estimated_delivery
@@ -463,7 +490,6 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
                     }
                 )
 
-            logger.info(f"Order created for {tx_ref}", extra={'provider': provider, 'user_id': user.id})
             return Response({"message": "Webhook processed"}, status=200)
 
         except Exception as e:
