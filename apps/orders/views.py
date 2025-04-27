@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from django.core.cache import cache
 from .serializers import OrderSerializer, OrderItemSerializerView, PatchOrderSerializer, UserPatchOrderSerializer
 from .models import Order, OrderItem
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from rest_framework import viewsets, status, filters
 from .pagination import CustomPagination
 from .utils import swagger_helper, initiate_refund
@@ -138,7 +138,8 @@ class ApiOrder(viewsets.ModelViewSet):
 class ApiAdminOrder(viewsets.ModelViewSet):
     http_method_names = ["get", "patch", "head", "options"]
     pagination_class = CustomPagination
-    permission_classes = [IsAdminUser]
+    # permission_classes = [IsAdminUser]
+    permission_classes = [AllowAny]
     filterset_class = OrderFilter
     ordering_fields = ['order_date', 'total_amount', 'delivery_date']
     ordering = ['-order_date']
