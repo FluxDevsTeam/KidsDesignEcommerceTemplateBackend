@@ -81,41 +81,17 @@ class ApiOrder(viewsets.ModelViewSet):
                     cache.delete_pattern("search:*")
                     cache.delete_pattern("search_suggestions:*")
 
-                try:
-                    if not is_celery_healthy():
-                        refund_confirmation_email(
-                            order_id=str(order.id),
-                            user_email=order.email,
-                            first_name=order.first_name,
-                            total_amount=str(order.total_amount),
-                            refund_date=datetime.now().date()
-                        )
-                    else:
-                        from .tasks import refund_confirmation_email as refund_task
-                        refund_task.apply_async(
-                            kwargs={
-                                'order_id': str(order.id),
-                                'user_email': order.email,
-                                'first_name': order.first_name,
-                                'total_amount': str(order.total_amount),
-                                'refund_date': datetime.now().date()
-                            }
-                        )
-                except Exception:
-                    pass
             else:
                 return Response({"error": "Refund processing failed. Admin has been notified."}, status=503)
 
-            response_serializer = OrderSerializer(order)
-            return Response(response_serializer.data)
-
-        serializer.save()
+        elif serializer.validated_data.get('status') == 'DELIVERED':
+            order.status = 'DELIVERED'
+            order.delivery_date = timezone.now().date()
+            order.save()
+        else:
+            serializer.save()
         response_serializer = OrderSerializer(order)
         return Response(response_serializer.data)
-
-    @swagger_helper("Order", "order")
-    def retrieve(self, *args, **kwargs):
-        return super().retrieve(*args, **kwargs)
 
     # temporary feature only for development. user cant edit or delete orders
 
@@ -242,26 +218,6 @@ class ApiAdminOrder(viewsets.ModelViewSet):
                     cache.delete_pattern("search:*")
                     cache.delete_pattern("search_suggestions:*")
 
-                if not is_celery_healthy():
-                    refund_confirmation_email(
-                        order_id=str(order.id),
-                        user_email=order.email,
-                        first_name=order.first_name,
-                        total_amount=str(order.total_amount),
-                        refund_date=datetime.now().date()
-                    )
-                else:
-                    from .tasks import refund_confirmation_email as refund_task
-                    refund_task.apply_async(
-                        kwargs={
-                            'order_id': str(order.id),
-                            'user_email': order.email,
-                            'first_name': order.first_name,
-                            'total_amount': str(order.total_amount),
-                            'refund_date': datetime.now().date()
-                        }
-                    )
-
             else:
                 return Response({"error": "Refund processing failed."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
         elif serializer.validated_data.get('status') == 'DELIVERED':
@@ -272,6 +228,7 @@ class ApiAdminOrder(viewsets.ModelViewSet):
             serializer.save()
         response_serializer = OrderSerializer(order)
         return Response(response_serializer.data)
+
 
 # temporary feature for only development
 # class ApiOrderItem(viewsets.ModelViewSet):

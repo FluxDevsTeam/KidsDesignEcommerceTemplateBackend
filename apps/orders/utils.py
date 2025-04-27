@@ -1,8 +1,9 @@
 from drf_yasg.utils import swagger_auto_schema
 from .pagination import PAGINATION_PARAMS
-from django.core.mail import send_mail
 from django.conf import settings
 import requests
+from django.utils import timezone
+from .tasks import send_manual_refund_notification_email, send_refund_initiated_notification_email, is_celery_healthy, send_refund_email_synchronously, send_refund_initiated_email_synchronously, refund_confirmation_email
 
 
 def swagger_helper(tags, model):
@@ -37,6 +38,7 @@ def initiate_refund(order, is_admin=False):
             )
             response.raise_for_status()
             notify_admin_for_refund_initiated(order)
+            notify_user_for_refunded_order(order)
             return True
         elif order.payment_provider == "flutterwave":
             if not order.transaction_id:
@@ -44,39 +46,114 @@ def initiate_refund(order, is_admin=False):
             url = f"https://api.flutterwave.com/v3/transactions/{order.transaction_id}/refund"
             headers = {
                 "Authorization": f"Bearer {settings.PAYMENT_PROVIDERS['flutterwave']['secret_key']}",
-                # "Content-Type": "application/json"
+                "Content-Type": "application/json"
             }
-            print(headers)
-            # payload = {
-            #     "amount": str(order.total_amount)
-            # }
             payload = {}
             response = requests.post(url, json=payload, headers=headers)
             response.raise_for_status()
             notify_admin_for_refund_initiated(order)
+            notify_user_for_refunded_order(order)
             return True
-    except requests.exceptions.RequestException as e:
-        print(e)
+    except requests.exceptions.RequestException:
         if not is_admin:
             notify_admin_for_manual_refund(order)
         return False
 
 
 def notify_admin_for_manual_refund(order):
-    send_mail(
-        subject="Manual Refund Required",
-        message=f"Refund failed for order {order.id}, user {order.email}, tx_ref {order.transaction_id}",
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=["suskidee1@gmail.com"],
-        fail_silently=True
-    )
+    admin_email = "suskidee1@gmail.com"
+    user_id = order.user.id
+    first_name = order.first_name or ''
+    last_name = order.last_name or ''
+    phone_no = order.phone_number or 'Not provided'
+    reason = f"Refund failed for order {order.id}"
+
+    if not is_celery_healthy():
+        send_refund_email_synchronously(
+            order_id=str(order.id),
+            user_id=user_id,
+            first_name=first_name,
+            last_name=last_name,
+            phone_no=phone_no,
+            transaction_id=order.transaction_id,
+            amount=str(order.total_amount),
+            provider=order.payment_provider,
+            reason=reason,
+            admin_email=admin_email
+        )
+    else:
+        send_manual_refund_notification_email.apply_async(
+            kwargs={
+                'order_id': str(order.id),
+                'user_id': user_id,
+                'first_name': first_name,
+                'last_name': last_name,
+                'phone_no': phone_no,
+                'transaction_id': order.transaction_id,
+                'amount': str(order.total_amount),
+                'provider': order.payment_provider,
+                'reason': reason,
+                'admin_email': admin_email
+            }
+        )
 
 
 def notify_admin_for_refund_initiated(order):
-    send_mail(
-        subject="Refund Initiated",
-        message=f"A refund was initiated for order {order.id}, user {order.email}, tx_ref {order.transaction_id}, amount {settings.PAYMENT_CURRENCY} {order.total_amount}",
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=["suskidee1@gmail.com"],
-        fail_silently=True
-    )
+    admin_email = "suskidee1@gmail.com"
+    user_id = order.user.id
+    first_name = order.first_name or ''
+    last_name = order.last_name or ''
+    phone_no = order.phone_number or 'Not provided'
+
+    if not is_celery_healthy():
+        send_refund_initiated_email_synchronously(
+            order_id=str(order.id),
+            user_id=user_id,
+            first_name=first_name,
+            last_name=last_name,
+            phone_no=phone_no,
+            transaction_id=order.transaction_id,
+            amount=str(order.total_amount),
+            provider=order.payment_provider,
+            admin_email=admin_email
+        )
+    else:
+        send_refund_initiated_notification_email.apply_async(
+            kwargs={
+                'order_id': str(order.id),
+                'user_id': user_id,
+                'first_name': first_name,
+                'last_name': last_name,
+                'phone_no': phone_no,
+                'transaction_id': order.transaction_id,
+                'amount': str(order.total_amount),
+                'provider': order.payment_provider,
+                'admin_email': admin_email
+            }
+        )
+
+
+def notify_user_for_refunded_order(order):
+    user_email = order.email or 'unknown@example.com'
+    first_name = order.first_name or 'Customer'
+    currency = settings.PAYMENT_CURRENCY
+    refund_date = timezone.now().date()
+
+    if not is_celery_healthy():
+        refund_confirmation_email(
+            order_id=str(order.id),
+            user_email=user_email,
+            first_name=first_name,
+            total_amount=str(order.total_amount),
+            refund_date=refund_date
+        )
+    else:
+        refund_confirmation_email.apply_async(
+            kwargs={
+                'order_id': str(order.id),
+                'user_email': user_email,
+                'first_name': first_name,
+                'total_amount': str(order.total_amount),
+                'refund_date': refund_date
+            }
+        )
