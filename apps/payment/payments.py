@@ -3,9 +3,6 @@ import requests
 from rest_framework.response import Response
 from django.conf import settings
 
-from apps.payment.utils import generate_confirm_token
-
-
 base_url = settings.BASE_ROUTE
 image_url = settings.PAYMENT_IMAGE_URL
 webhook_url = settings.WEBHOOK_URL
@@ -24,7 +21,8 @@ def initiate_flutterwave_payment(confirm_token, amount, user):
             "tx_ref": reference,
             "amount": str(amount),
             "currency": settings.PAYMENT_CURRENCY,
-            "redirect_url": f"{base_url}/api/v1/payment/verify/?tx_ref={reference}&confirm_token={confirm_token}&provider=flutterwave&amount={int(amount)}&transaction_id={{transaction_id}}",
+            # "redirect_url": f"{base_url}/api/v1/payment/verify/?tx_ref={reference}&confirm_token={confirm_token}&provider=flutterwave&amount={int(amount)}&transaction_id={{transaction_id}}",
+            "redirect_url": base_url,
             "webhook_url": webhook_url,
             "meta": {"consumer_id": user.id},
             "customer": {
@@ -64,13 +62,12 @@ def initiate_paystack_payment(confirm_token, amount, user):
     try:
         paystack_key = settings.PAYMENT_PROVIDERS['paystack']['secret_key']
         headers = {"Authorization": f"Bearer {paystack_key}", "Content-Type": "application/json"}
-        try:
-            response = requests.post("https://api.paystack.co/integration/webhooks",
-                                     headers=headers,
-                                     json={"url": webhook_url, "enabled_events": ["charge.success"]})
-            response.raise_for_status()
-        except requests.exceptions.RequestException as err:
-            return Response({"error": "Failed to update Paystack webhook"}, status=500)
+        # paystack doesn't really approve this most of the time. so just manually add redirect to clients dashboard
+        # try:
+        #     response = requests.post("https://api.paystack.co/integration/webhooks", headers=headers, json={"url": webhook_url, "enabled_events": ["charge.success"]})
+        #     response.raise_for_status()
+        # except requests.exceptions.RequestException as err:
+        #     pass
 
         url = "https://api.paystack.co/transaction/initialize"
         first_name = user.first_name or ""
@@ -82,7 +79,8 @@ def initiate_paystack_payment(confirm_token, amount, user):
             "email": user.email,
             "currency": settings.PAYMENT_CURRENCY,
             "reference": reference,
-            "callback_url": f"{base_url}/api/v1/payment/verify/?tx_ref={reference}&confirm_token={confirm_token}&provider=paystack&amount={int(amount)}",
+            # "callback_url": f"{base_url}/api/v1/payment/verify/?tx_ref={reference}&confirm_token={confirm_token}&provider=paystack&amount={int(amount)}",
+            "callback_url": base_url,
             "metadata": {
                 "consumer_id": user.id,
                 "image_url": image_url
