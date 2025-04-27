@@ -1,16 +1,6 @@
-from django.core.mail import mail_admins
-from django.conf import settings
-
-from .serializers import PaymentCartSerializer
-from ..orders.models import Order, OrderItem
-from ..cart.models import Cart
-from decimal import Decimal
-from django.db import transaction
-from django.db.utils import OperationalError
-from .emails import order_confirmation_email
+from .emails import order_confirmation_email, manual_refund_notification_email, user_refund_notification_email
 from celery import shared_task, current_app
 from celery.exceptions import MaxRetriesExceededError
-import logging
 
 
 def is_celery_healthy():
@@ -22,7 +12,6 @@ def is_celery_healthy():
 
 
 def send_email_synchronously(order_id, user_email, first_name, total_amount, order_date, estimated_delivery):
-
     try:
         order_confirmation_email(
             order_id=order_id,
@@ -32,15 +21,46 @@ def send_email_synchronously(order_id, user_email, first_name, total_amount, ord
             order_date=order_date,
             estimated_delivery=estimated_delivery
         )
-
         return {"status": "success", "order_id": order_id, "email": user_email}
     except Exception as e:
         return {"status": "failure", "order_id": order_id, "email": user_email, "error": str(e)}
 
 
+def send_refund_email_synchronously(provider, amount, user_id, first_name, last_name, phone_no, transaction_id, reason, admin_email):
+    try:
+        manual_refund_notification_email(
+            provider=provider,
+            amount=amount,
+            user_id=user_id,
+            first_name=first_name,
+            last_name=last_name,
+            phone_no=phone_no,
+            transaction_id=transaction_id,
+            reason=reason,
+            admin_email=admin_email
+        )
+        return {"status": "success", "transaction_id": transaction_id, "email": admin_email}
+    except Exception as e:
+        return {"status": "failure", "transaction_id": transaction_id, "email": admin_email, "error": str(e)}
+
+
+def send_user_refund_email_synchronously(user_email, first_name, amount, provider, transaction_id, currency):
+    try:
+        user_refund_notification_email(
+            user_email=user_email,
+            first_name=first_name,
+            amount=amount,
+            provider=provider,
+            transaction_id=transaction_id,
+            currency=currency
+        )
+        return {"status": "success", "transaction_id": transaction_id, "email": user_email}
+    except Exception as e:
+        return {"status": "failure", "transaction_id": transaction_id, "email": user_email, "error": str(e)}
+
+
 @shared_task(bind=True, max_retries=3)
 def send_order_confirmation_email(self, order_id, user_email, first_name, total_amount, order_date, estimated_delivery):
-
     try:
         order_confirmation_email(
             order_id=order_id,
@@ -50,10 +70,50 @@ def send_order_confirmation_email(self, order_id, user_email, first_name, total_
             order_date=order_date,
             estimated_delivery=estimated_delivery
         )
-
         return {"status": "success", "order_id": order_id, "email": user_email}
     except Exception as e:
         try:
             self.retry(exc=e, countdown=30)
         except MaxRetriesExceededError:
-            return send_email_synchronously(order_id, user_email, first_name, total_amount)
+            return send_email_synchronously(order_id, user_email, first_name, total_amount, order_date, estimated_delivery)
+
+
+@shared_task(bind=True, max_retries=3)
+def send_manual_refund_notification_email(self, provider, amount, user_id, first_name, last_name, phone_no, transaction_id, reason, admin_email):
+    try:
+        manual_refund_notification_email(
+            provider=provider,
+            amount=amount,
+            user_id=user_id,
+            first_name=first_name,
+            last_name=last_name,
+            phone_no=phone_no,
+            transaction_id=transaction_id,
+            reason=reason,
+            admin_email=admin_email
+        )
+        return {"status": "success", "transaction_id": transaction_id, "email": admin_email}
+    except Exception as e:
+        try:
+            self.retry(exc=e, countdown=30)
+        except MaxRetriesExceededError:
+            return send_refund_email_synchronously(provider, amount, user_id, first_name, last_name, phone_no, transaction_id, reason, admin_email)
+
+
+@shared_task(bind=True, max_retries=3)
+def send_user_refund_notification_email(self, user_email, first_name, amount, provider, transaction_id, currency):
+    try:
+        user_refund_notification_email(
+            user_email=user_email,
+            first_name=first_name,
+            amount=amount,
+            provider=provider,
+            transaction_id=transaction_id,
+            currency=currency
+        )
+        return {"status": "success", "transaction_id": transaction_id, "email": user_email}
+    except Exception as e:
+        try:
+            self.retry(exc=e, countdown=30)
+        except MaxRetriesExceededError:
+            return send_user_refund_email_synchronously(user_email, first_name, amount, provider, transaction_id, currency)

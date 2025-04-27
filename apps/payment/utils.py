@@ -8,12 +8,12 @@ import logging
 import requests
 from django.conf import settings
 from django.core.mail import send_mail
-from .tasks import is_celery_healthy
+from .tasks import is_celery_healthy, send_refund_email_synchronously, send_manual_refund_notification_email, \
+    send_user_refund_email_synchronously, send_user_refund_notification_email
 from ..orders.tasks import refund_confirmation_email
 
 AVAILABLE_STATES = ["Lagos", "Ogun", "Abuja", "Kaduna", "Anambra", "Cross River"]
 WAREHOUSE_CITY = "Lagos"
-
 
 state_coords = {
     "Lagos": (6.5244, 3.3792),
@@ -93,15 +93,17 @@ def swagger_helper(tags, model):
 
         action_type = func.__name__
         get_description = descriptions.get(action_type, f"{action_type} {model}")
-        return swagger_auto_schema(operation_id=f"{action_type} {model}", operation_description=f"{get_description}. you dont need to pass in any data. just be authenticated (pass in JWT key) and the backend would process everything", tags=[tags])(func)
+        return swagger_auto_schema(operation_id=f"{action_type} {model}",
+                                   operation_description=f"{get_description}. you dont need to pass in any data. just be authenticated (pass in JWT key) and the backend would process everything",
+                                   tags=[tags])(func)
 
     return decorators
 
 
-def initiate_refund(tx_ref, provider, amount, user, transaction_id=None, ):
+def initiate_refund(provider, amount, user, transaction_id):
     try:
         if provider == "paystack":
-            payload = {"transaction": tx_ref}
+            payload = {"transaction": transaction_id}
             headers = {
                 "Authorization": f"Bearer {settings.PAYMENT_PROVIDERS['paystack']['secret_key']}",
                 "Content-Type": "application/json"
@@ -112,6 +114,7 @@ def initiate_refund(tx_ref, provider, amount, user, transaction_id=None, ):
                 headers=headers
             )
             response.raise_for_status()
+            notify_user_for_successful_refund(provider, amount, user, transaction_id)
             return True
         elif provider == "flutterwave":
             if not transaction_id:
@@ -124,19 +127,65 @@ def initiate_refund(tx_ref, provider, amount, user, transaction_id=None, ):
             payload = {}
             response = requests.post(url, json=payload, headers=headers)
             response.raise_for_status()
+            notify_user_for_successful_refund(provider, amount, user, transaction_id)
             return True
     except:
-        notify_admin_for_manual_refund(tx_ref, provider, amount, user, transaction_id)
+        notify_admin_for_manual_refund(provider, amount, user, transaction_id)
         return False
 
 
-def notify_admin_for_manual_refund(tx_ref, provider, amount, user, transaction_id):
-    phone_no = user.phone_number or None
-    send_mail(
-        subject="Manual Refund Required",
-        message=f"Refund failed for: \nuser_id - {user.id}, \nname - {user.first_name} {user.last_name},\nphone no - {phone_no}\ntx_ref - {tx_ref}, \ntransaction_id - {transaction_id}, \nprovider - {provider}, \namount - {amount}. \nThis was due to insufficient stock. Please process manually.",
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=["suskidee@gmail.com"],
-        fail_silently=True
-    )
+def notify_admin_for_manual_refund(provider, amount, user, transaction_id):
+    admin_email = settings.ADMIN_EMAIL
+    if not is_celery_healthy():
+        send_refund_email_synchronously(
+            provider=provider,
+            amount=amount,
+            user_id=user.id,
+            first_name=user.first_name or '',
+            last_name=user.last_name or '',
+            phone_no=user.phone_number or None,
+            transaction_id=transaction_id,
+            reason="Insufficient stock",
+            admin_email=admin_email
+        )
+    else:
+        send_manual_refund_notification_email.apply_async(
+            kwargs={
+                'provider': provider,
+                'amount': amount,
+                'user_id': user.id,
+                'first_name': user.first_name or '',
+                'last_name': user.last_name or '',
+                'phone_no': user.phone_number or None,
+                'transaction_id': transaction_id,
+                'reason': "Insufficient stock",
+                'admin_email': admin_email
+            }
+        )
 
+
+def notify_user_for_successful_refund(provider, amount, user, transaction_id):
+    user_email = user.email or 'unknown@example.com'
+    first_name = user.first_name or 'Customer'
+    currency = settings.PAYMENT_CURRENCY
+
+    if not is_celery_healthy():
+        send_user_refund_email_synchronously(
+            user_email=user_email,
+            first_name=first_name,
+            amount=amount,
+            provider=provider,
+            transaction_id=transaction_id,
+            currency=currency
+        )
+    else:
+        send_user_refund_notification_email.apply_async(
+            kwargs={
+                'user_email': user_email,
+                'first_name': first_name,
+                'amount': amount,
+                'provider': provider,
+                'transaction_id': transaction_id,
+                'currency': currency
+            }
+        )

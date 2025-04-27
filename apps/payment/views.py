@@ -124,7 +124,7 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
             amount = request.query_params.get("amount")
             provider = request.query_params.get("provider")
             token = request.query_params.get("confirm_token")
-            transaction_id = request.query_params.get("transaction_id")
+            transaction_id = request.query_params.get("transaction_id") or tx_ref
 
             if not all([tx_ref, amount, provider, token]):
                 return redirect(f"{settings.SITE_URL}/cart/error/?data=Invalid-request-parameters")
@@ -142,7 +142,7 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
                 return redirect(f"{settings.SITE_URL}/order/{existing_order.id}")
 
             provider_config = settings.PAYMENT_PROVIDERS[provider]
-            url = provider_config["verify_url"].format(transaction_id if provider == "flutterwave" and transaction_id else tx_ref)
+            url = provider_config["verify_url"].format(transaction_id)
             headers = {
                 "Authorization": f"Bearer {provider_config['secret_key']}",
                 "Content-Type": "application/json"
@@ -190,15 +190,14 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
 
             for item in cart_items:
                 product_size = next(ps for ps in product_sizes if ps.id == item.size.id)
-                if product_size.quantity < item.quantity:
+                if 0 < item.quantity:
                     if initiate_refund(
-                        tx_ref=tx_ref,
                         provider=provider,
                         amount=amount,
                         user=user,
                         transaction_id=flutterwave_transaction_id if provider == "flutterwave" else transaction_id
                     ):
-                        return redirect(f"{settings.ORDER_URL}/cart/?error=Insufficient-stock-Refund-initiated")
+                        return redirect(f"{settings.SITE_URL}/cart/?error=Insufficient-stock-Refund-initiated")
                     else:
                         return redirect(f"{settings.SITE_URL}/cart/error/?data=Insufficient-stock-Refund-failed-please-contact-support")
 
@@ -321,14 +320,14 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
                 if payload.get("event") != "charge.success":
                     return Response({"message": "Event ignored"}, status=200)
                 tx_ref = payload.get("data", {}).get("reference")
-                transaction_id = None
+                transaction_id = tx_ref
                 status = payload.get("data", {}).get("status") == "success"
                 amount = float(payload.get("data", {}).get("amount", 0)) / 100
                 email = payload.get("data", {}).get("customer", {}).get("email")
                 currency = payload.get("data", {}).get("currency")
 
-            if not all([tx_ref, transaction_id, amount, email]):
-                return Response({"error": "Missing transaction reference, ID, amount, or email"}, status=400)
+            if not all([tx_ref, amount, email]):
+                return Response({"error": "Missing transaction reference, amount, or email"}, status=400)
 
             existing_order = Order.objects.filter(tx_ref=tx_ref).first()
             if existing_order:
@@ -348,7 +347,7 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
                 return Response({"error": "Cart not found"}, status=400)
 
             provider_config = settings.PAYMENT_PROVIDERS[provider]
-            url = provider_config["verify_url"].format(transaction_id if provider == "flutterwave" and transaction_id else tx_ref)
+            url = provider_config["verify_url"].format(transaction_id)
             headers = {
                 "Authorization": f"Bearer {provider_config['secret_key']}",
                 "Content-Type": "application/json"
@@ -362,6 +361,7 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
 
             response_data = verification_response.json()
             expected_currency = settings.PAYMENT_CURRENCY
+            flutterwave_transaction_id = None
 
             if provider == "flutterwave":
                 verification_success = (
@@ -397,7 +397,6 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
                 product_size = next(ps for ps in product_sizes if ps.id == item.size.id)
                 if product_size.quantity < item.quantity:
                     if initiate_refund(
-                        tx_ref=tx_ref,
                         provider=provider,
                         amount=amount,
                         user=user,
@@ -482,5 +481,5 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
 
             return Response({"message": "Webhook processed"}, status=200)
 
-        except Exception as e:
+        except Exception:
             return Response({"error": "Webhook processing failed"}, status=500)
