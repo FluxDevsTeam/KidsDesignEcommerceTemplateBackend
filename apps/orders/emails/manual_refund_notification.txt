@@ -1,0 +1,31 @@
+Dear Admin,
+
+An automatic refund has failed for an order. Please process the refund manually using the details below.
+
+Refund Details:
+Order ID: {{ order_id }}
+User ID: {{ user_id }}
+User Name: {{ first_name }} {{ last_name }}
+Phone Number: {{ phone_no }}
+Transaction ID: {{ transaction_id }}
+Amount: {{ currency }} {{ amount }}
+Provider: {{ provider }}
+Reason: {{ reason }}
+
+Please log in to the payment provider’s dashboard to process the refund:
+{{ site_url }}/admin
+
+Need Assistance?
+Contact our support team for help.
+support@shop.co | +1 (234) 567-890
+
+Best regards,
+The Shop.co Team
+Connect with us:
+- Facebook: https://www.facebook.com/shopco
+- Twitter: https://twitter.com/shopco
+- Instagram: https://www.instagram.com/shopco
+- LinkedIn: https://www.linkedin.com/company/shopco
+
+{{ current_year }} Shop.co. All rights reserved.
+Privacy Policy: {{ site_url }}/privacy | Terms of Service: {{ site_url }}/terms
