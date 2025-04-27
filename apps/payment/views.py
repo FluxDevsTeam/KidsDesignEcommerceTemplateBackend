@@ -12,7 +12,6 @@ from .payments import initiate_flutterwave_payment, initiate_paystack_payment
 from django.utils.timezone import now
 import requests
 from decimal import Decimal
-import logging
 from django.db import transaction
 from rest_framework_simplejwt.tokens import AccessToken
 import hmac
@@ -24,8 +23,6 @@ from django.contrib.auth import get_user_model
 from .delivery_date import calculate_delivery_dates
 from .utils import generate_confirm_token, swagger_helper, initiate_refund
 from ..products.models import Product, ProductSize
-
-logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
@@ -61,7 +58,6 @@ class PaymentSummaryViewSet(viewsets.ViewSet):
             return Response(data)
 
         except Exception as e:
-            logger.exception("Error in payment summary", extra={'user_id': request.user.id})
             return Response({"error": "Could not generate payment summary. Please try again."}, status=500)
 
 
@@ -113,7 +109,6 @@ class PaymentInitiateViewSet(viewsets.ModelViewSet):
             return Response({"data": response.data}, status=response.status_code)
 
         except Exception as e:
-            logger.exception("Error initiating payment", extra={"user_id": request.user.id})
             return Response({"error": "Payment initiation failed. Please try again."}, status=500)
 
 
@@ -181,7 +176,6 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
                 )
 
             if not verification_success:
-                logger.error(f"Verification failed: {response_data}", extra={'tx_ref': tx_ref})
                 return redirect(f"{settings.SITE_URL}/cart/error/?data=Payment-verification-failed")
 
             serializer = PaymentCartSerializer(cart)
@@ -261,7 +255,6 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
             cache.delete(f"cart_list:{user.id}:*")
 
             if not is_celery_healthy():
-                logger.warning("Celery is not healthy. Sending email synchronously.")
                 send_email_synchronously(
                     order_id=str(order.id),
                     user_email=order.email,
@@ -410,10 +403,8 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
                         user=user,
                         transaction_id=flutterwave_transaction_id if provider == "flutterwave" else transaction_id
                     ):
-                        logger.info(f"Refund initiated for {tx_ref} due to insufficient stock", extra={'user_id': user.id})
                         return Response({"message": "Insufficient stock. Refund initiated."}, status=200)
                     else:
-                        logger.error(f"Refund failed for {tx_ref}", extra={'user_id': user.id})
                         return Response({"error": "Insufficient stock. Refund failed, please contact support."}, status=400)
 
             # Deduct stock
@@ -469,7 +460,6 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
             cache.delete(f"cart_list:{user.id}:*")
 
             if not is_celery_healthy():
-                logger.warning("Celery is not healthy. Sending email synchronously.")
                 send_email_synchronously(
                     order_id=str(order.id),
                     user_email=order.email,

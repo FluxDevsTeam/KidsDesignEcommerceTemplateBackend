@@ -11,8 +11,6 @@ from django.core.mail import send_mail
 from .tasks import is_celery_healthy
 from ..orders.tasks import refund_confirmation_email
 
-logger = logging.getLogger(__name__)
-
 AVAILABLE_STATES = ["Lagos", "Ogun", "Abuja", "Kaduna", "Anambra", "Cross River"]
 WAREHOUSE_CITY = "Lagos"
 
@@ -80,7 +78,6 @@ def generate_confirm_token(user, cart_id):
         refresh['exp'] = int((now() + timedelta(hours=1)).timestamp())
         return str(refresh.access_token)
     except Exception as e:
-        logger.exception("Error generating confirmation token", extra={'user_id': user.id})
         raise
 
 

@@ -65,6 +65,8 @@ class ApiProductCategory(viewsets.ModelViewSet):
         cache.delete_pattern("product_list:*")
         cache.delete_pattern("search:*")
         cache.delete_pattern("search_suggestions:*")
+        cache.delete_pattern("product_suggestions:*")
+        cache.delete_pattern("product_homepage:*")
         return response
 
     @swagger_helper(tags="ProductCategory", model="Product category")
@@ -77,6 +79,8 @@ class ApiProductCategory(viewsets.ModelViewSet):
         cache.delete_pattern("product_list:*")
         cache.delete_pattern("search:*")
         cache.delete_pattern("search_suggestions:*")
+        cache.delete_pattern("product_suggestions:*")
+        cache.delete_pattern("product_homepage:*")
         return response
 
     @swagger_helper(tags="ProductCategory", model="Product category")
@@ -89,6 +93,8 @@ class ApiProductCategory(viewsets.ModelViewSet):
         cache.delete_pattern("product_list:*")
         cache.delete_pattern("search:*")
         cache.delete_pattern("search_suggestions:*")
+        cache.delete_pattern("product_suggestions:*")
+        cache.delete_pattern("product_homepage:*")
         return response
 
 
@@ -138,6 +144,8 @@ class ApiProductSubCategory(viewsets.ModelViewSet):
         cache.delete_pattern("product_list:*")
         cache.delete_pattern("search:*")
         cache.delete_pattern("search_suggestions:*")
+        cache.delete_pattern("product_suggestions:*")
+        cache.delete_pattern("product_homepage:*")
         return response
 
     @swagger_helper(tags="ProductSubCategory", model="Product sub category")
@@ -148,6 +156,8 @@ class ApiProductSubCategory(viewsets.ModelViewSet):
         cache.delete_pattern("product_list:*")
         cache.delete_pattern("search:*")
         cache.delete_pattern("search_suggestions:*")
+        cache.delete_pattern("product_suggestions:*")
+        cache.delete_pattern("product_homepage:*")
         return response
 
     @swagger_helper(tags="ProductSubCategory", model="Product sub category")
@@ -158,6 +168,8 @@ class ApiProductSubCategory(viewsets.ModelViewSet):
         cache.delete_pattern("product_list:*")
         cache.delete_pattern("search:*")
         cache.delete_pattern("search_suggestions:*")
+        cache.delete_pattern("product_suggestions:*")
+        cache.delete_pattern("product_homepage:*")
         return response
 
 
@@ -209,6 +221,8 @@ class ApiProduct(viewsets.ModelViewSet):
         cache.delete_pattern("cart_list:*")
         cache.delete_pattern("cart_item_list:*")
         cache.delete_pattern("wishlist_list:*")
+        cache.delete_pattern("product_suggestions:*")
+        cache.delete_pattern("product_homepage:*")
         return response
 
     @swagger_helper(tags="Product", model="Product")
@@ -263,7 +277,8 @@ class ApiProduct(viewsets.ModelViewSet):
             cache.delete_pattern("cart_list:*")
             cache.delete_pattern("cart_item_list:*")
             cache.delete_pattern("wishlist_list:*")
-
+            cache.delete_pattern("product_suggestions:*")
+            cache.delete_pattern("product_homepage:*")
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -278,6 +293,8 @@ class ApiProduct(viewsets.ModelViewSet):
         cache.delete_pattern("cart_list:*")
         cache.delete_pattern("cart_item_list:*")
         cache.delete_pattern("wishlist_list:*")
+        cache.delete_pattern("product_suggestions:*")
+        cache.delete_pattern("product_homepage:*")
         return response
 
     @swagger_helper(tags="Product", model="Product")
@@ -314,7 +331,7 @@ class ApiProduct(viewsets.ModelViewSet):
             "latest_items": latest_paginator.get_paginated_response(latest_serializer.data).data,
             "top_selling_items": top_selling_paginator.get_paginated_response(top_selling_serializer.data).data
         }
-        # cache.set(cache_key, response_data, cache_timeout)
+        cache.set(cache_key, response_data, cache_timeout)
         return Response(response_data)
 
     @swagger_auto_schema(manual_parameters=[openapi.Parameter('search', openapi.IN_QUERY, description="Search keyword", type=openapi.TYPE_STRING), openapi.Parameter('page', openapi.IN_QUERY, description="Page number", type=openapi.TYPE_INTEGER), openapi.Parameter('page_size', openapi.IN_QUERY, description="Items per page (max: 100)", type=openapi.TYPE_INTEGER)], operation_id="Search Products", operation_description="Search and paginate products", tags=["Product"])
@@ -391,72 +408,71 @@ class ApiProduct(viewsets.ModelViewSet):
         cache.set(cache_key, suggestions, cache_timeout)
         return Response(suggestions)
 
+    @swagger_auto_schema(manual_parameters=[
+            openapi.Parameter('sub_category_id', openapi.IN_QUERY, description="Subcategory ID for suggestions",type=openapi.TYPE_INTEGER),
+            openapi.Parameter('page', openapi.IN_QUERY, description="Page number", type=openapi.TYPE_INTEGER),
+            openapi.Parameter('page_size', openapi.IN_QUERY, description="Items per page (max: 20)",type=openapi.TYPE_INTEGER),],
+        operation_id="Product Suggestions", operation_description="Get product suggestions based on subcategory priority", tags=["Product"])
+    @action(detail=False, methods=['get'], url_path='suggestions')
+    def suggestions(self, request, *args, **kwargs):
+        cache_timeout = 300
+        cache_params = dict(request.query_params)
+        cache_key = f"product_suggestions:{json.dumps(cache_params, sort_keys=True)}"
+        cached_response = cache.get(cache_key)
+        if cached_response:
+            return Response(cached_response)
 
-@swagger_auto_schema(manual_parameters=[
-        openapi.Parameter('sub_category_id', openapi.IN_QUERY, description="Subcategory ID for suggestions",type=openapi.TYPE_INTEGER),
-        openapi.Parameter('page', openapi.IN_QUERY, description="Page number", type=openapi.TYPE_INTEGER),
-        openapi.Parameter('page_size', openapi.IN_QUERY, description="Items per page (max: 20)",type=openapi.TYPE_INTEGER),],
-    operation_id="Product Suggestions", operation_description="Get product suggestions based on subcategory priority", tags=["Product"])
-@action(detail=False, methods=['get'], url_path='suggestions')
-def suggestions(self, request, *args, **kwargs):
-    cache_timeout = 300
-    cache_params = dict(request.query_params)
-    cache_key = f"product_suggestions:{json.dumps(cache_params, sort_keys=True)}"
-    cached_response = cache.get(cache_key)
-    if cached_response:
-        return Response(cached_response)
+        sub_category_id = request.query_params.get('sub_category_id')
+        products = Product.objects.select_related('sub_category__category')
+        max_items = 20
 
-    sub_category_id = request.query_params.get('sub_category_id')
-    products = Product.objects.select_related('sub_category__category')
-    max_items = 20
+        ordering = [
+            Case(When(top_selling_items=True, then=Value(0)), default=Value(1), output_field=BooleanField()),
+            Case(When(latest_item=True, then=Value(0)), default=Value(1), output_field=BooleanField()),
+        ]
 
-    ordering = [
-        Case(When(top_selling_items=True, then=Value(0)), default=Value(1), output_field=BooleanField()),
-        Case(When(latest_item=True, then=Value(0)), default=Value(1), output_field=BooleanField()),
-    ]
+        if sub_category_id:
+            try:
+                sub_category_id = int(sub_category_id)
+                target_subcategory = ProductSubCategory.objects.get(id=sub_category_id)
+                target_category = target_subcategory.category
 
-    if sub_category_id:
-        try:
-            sub_category_id = int(sub_category_id)
-            target_subcategory = ProductSubCategory.objects.get(id=sub_category_id)
-            target_category = target_subcategory.category
+                priority_1 = products.filter(sub_category_id=sub_category_id).order_by(*ordering)
+                priority_2 = products.filter(
+                    sub_category__category=target_category
+                ).exclude(sub_category_id=sub_category_id).order_by(*ordering)
+                priority_3 = products.exclude(
+                    sub_category__category=target_category
+                ).order_by(*ordering)
 
-            priority_1 = products.filter(sub_category_id=sub_category_id).order_by(*ordering)
-            priority_2 = products.filter(
-                sub_category__category=target_category
-            ).exclude(sub_category_id=sub_category_id).order_by(*ordering)
-            priority_3 = products.exclude(
-                sub_category__category=target_category
-            ).order_by(*ordering)
+                p1_count = priority_1.count()
+                p2_limit = max(0, max_items - p1_count)
+                p3_limit = max(0, max_items - p1_count - priority_2.count())
 
-            p1_count = priority_1.count()
-            p2_limit = max(0, max_items - p1_count)
-            p3_limit = max(0, max_items - p1_count - priority_2.count())
-
-            final_products = list(
-                chain(
-                    priority_1[:max_items],
-                    priority_2[:p2_limit],
-                    priority_3[:p3_limit]
-                )
-            )[:max_items]
-        except (ProductSubCategory.DoesNotExist, ValueError):
+                final_products = list(
+                    chain(
+                        priority_1[:max_items],
+                        priority_2[:p2_limit],
+                        priority_3[:p3_limit]
+                    )
+                )[:max_items]
+            except (ProductSubCategory.DoesNotExist, ValueError):
+                final_products = products.order_by(*ordering)[:max_items]
+        else:
             final_products = products.order_by(*ordering)[:max_items]
-    else:
-        final_products = products.order_by(*ordering)[:max_items]
 
-    paginator = self.pagination_class()
-    page = paginator.paginate_queryset(final_products, request, view=self)
+        paginator = self.pagination_class()
+        page = paginator.paginate_queryset(final_products, request, view=self)
 
-    if page is not None:
-        serializer = self.get_serializer(page, many=True)
-        response_data = paginator.get_paginated_response(serializer.data).data
-    else:
-        serializer = self.get_serializer(final_products, many=True)
-        response_data = serializer.data
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            response_data = paginator.get_paginated_response(serializer.data).data
+        else:
+            serializer = self.get_serializer(final_products, many=True)
+            response_data = serializer.data
 
-    cache.set(cache_key, response_data, cache_timeout)
-    return Response(response_data, status=status.HTTP_200_OK)
+        cache.set(cache_key, response_data, cache_timeout)
+        return Response(response_data, status=status.HTTP_200_OK)
 
 
 class ApiProductSize(viewsets.ModelViewSet):
@@ -507,6 +523,8 @@ class ApiProductSize(viewsets.ModelViewSet):
         cache.delete_pattern("product_detail:*")
         cache.delete_pattern("search:*")
         cache.delete_pattern("search_suggestions:*")
+        cache.delete_pattern("product_suggestions:*")
+        cache.delete_pattern("product_homepage:*")
         return response
 
     @swagger_helper(tags="ProductSize", model="Product size")
@@ -518,6 +536,8 @@ class ApiProductSize(viewsets.ModelViewSet):
         cache.delete_pattern("product_detail:*")
         cache.delete_pattern("search:*")
         cache.delete_pattern("search_suggestions:*")
+        cache.delete_pattern("product_suggestions:*")
+        cache.delete_pattern("product_homepage:*")
         return response
 
     @swagger_helper(tags="ProductSize", model="Product size")
@@ -529,4 +549,6 @@ class ApiProductSize(viewsets.ModelViewSet):
         cache.delete_pattern("product_detail:*")
         cache.delete_pattern("search:*")
         cache.delete_pattern("search_suggestions:*")
+        cache.delete_pattern("product_suggestions:*")
+        cache.delete_pattern("product_homepage:*")
         return response
