@@ -44,14 +44,19 @@ def initiate_refund(order, is_admin=False):
             url = f"https://api.flutterwave.com/v3/transactions/{order.transaction_id}/refund"
             headers = {
                 "Authorization": f"Bearer {settings.PAYMENT_PROVIDERS['flutterwave']['secret_key']}",
-                "Content-Type": "application/json"
+                # "Content-Type": "application/json"
             }
+            print(headers)
+            # payload = {
+            #     "amount": str(order.total_amount)
+            # }
             payload = {}
             response = requests.post(url, json=payload, headers=headers)
             response.raise_for_status()
             notify_admin_for_refund_initiated(order)
             return True
-    except requests.exceptions.RequestException:
+    except requests.exceptions.RequestException as e:
+        print(e)
         if not is_admin:
             notify_admin_for_manual_refund(order)
         return False
@@ -62,7 +67,7 @@ def notify_admin_for_manual_refund(order):
         subject="Manual Refund Required",
         message=f"Refund failed for order {order.id}, user {order.email}, tx_ref {order.transaction_id}",
         from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=["admin@ecommercetemplate.com"],
+        recipient_list=["suskidee1@gmail.com"],
         fail_silently=True
     )
 
@@ -72,6 +77,6 @@ def notify_admin_for_refund_initiated(order):
         subject="Refund Initiated",
         message=f"A refund was initiated for order {order.id}, user {order.email}, tx_ref {order.transaction_id}, amount {settings.PAYMENT_CURRENCY} {order.total_amount}",
         from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=["admin@ecommercetemplate.com"],
+        recipient_list=["suskidee1@gmail.com"],
         fail_silently=True
     )

@@ -30,6 +30,7 @@ class Order(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     delivery_date = models.DateField(null=True, blank=True)
     transaction_id = models.CharField(max_length=100, null=True, blank=True, unique=True)
+    tx_ref = models.CharField(max_length=100, null=True, blank=True, unique=True)
     payment_provider = models.CharField(max_length=20, null=True, blank=True)
     estimated_delivery = models.CharField(max_length=100)
 

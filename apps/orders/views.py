@@ -1,7 +1,8 @@
+from django.db import transaction
 from django.db.models import Sum, F, Count, Case, When, IntegerField, Q
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
-
+from django.core.cache import cache
 from .serializers import OrderSerializer, OrderItemSerializerView, PatchOrderSerializer, UserPatchOrderSerializer
 from .models import Order, OrderItem
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
@@ -12,6 +13,7 @@ from .filters import OrderFilter
 from datetime import datetime, timedelta
 from django.utils import timezone
 from .tasks import is_celery_healthy, refund_confirmation_email
+from ..products.models import ProductSize
 
 
 class ApiOrder(viewsets.ModelViewSet):
@@ -40,7 +42,7 @@ class ApiOrder(viewsets.ModelViewSet):
         serializer = self.get_serializer(order, data=self.request.data, partial=True)
         serializer.is_valid(raise_exception=True)
 
-        if serializer.validated_data.get('status') == 'CANCELLED':
+        if serializer.validated_data.get('status') == 'CANCELLED' and order.status != 'REFUNDED':
             time_limit = order.created_at + timedelta(hours=6)
             if timezone.now() > time_limit:
                 return Response({"error": "Cancellations are only allowed within 6 hours of purchase."}, status=403)
@@ -53,6 +55,31 @@ class ApiOrder(viewsets.ModelViewSet):
             if refund_success:
                 order.status = 'REFUNDED'
                 order.save()
+
+                # returning items to store
+                with transaction.atomic():
+                    order_items = order.orderitem_order.select_related('product').all()
+                    product_ids = set()
+
+                    for item in order_items:
+                        product_size = ProductSize.objects.filter(
+                            product=item.product,
+                            size=item.size
+                        ).select_for_update().first()
+
+                        if product_size:
+                            product_size.quantity += item.quantity
+                            product_size.save()
+                            product_ids.add(product_size.product.id)
+                        else:
+                            return Response({"error": "Product size not found."}, status=status.HTTP_400_BAD_REQUEST)
+
+                    cache.delete_pattern("product_list:*")
+                    for product_id in product_ids:
+                        cache.delete_pattern(f"product_detail:{product_id}")
+                    cache.delete_pattern("product_suggestions:*")
+                    cache.delete_pattern("search:*")
+                    cache.delete_pattern("search_suggestions:*")
 
                 try:
                     if not is_celery_healthy():
@@ -115,7 +142,7 @@ class ApiAdminOrder(viewsets.ModelViewSet):
     filterset_class = OrderFilter
     ordering_fields = ['order_date', 'total_amount', 'delivery_date']
     ordering = ['-order_date']
-    search_fields = ["id", "user"]
+    search_fields = ["id", "status", "payment_provider"]
 
     def get_serializer_class(self):
         if self.request.method == "GET":
@@ -182,37 +209,60 @@ class ApiAdminOrder(viewsets.ModelViewSet):
         order = self.get_object()
         serializer = self.get_serializer(order, data=self.request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-        if serializer.validated_data.get('status') == 'REFUNDED':
+        if serializer.validated_data.get('status') == 'CANCELLED' and order.status != 'REFUNDED':
             if not order.transaction_id or not order.payment_provider:
                 return Response({"error": "Refund cannot be processed. Contact support."}, status=400)
             refund_success = initiate_refund(order, is_admin=True)
             if refund_success:
                 order.status = 'REFUNDED'
                 order.save()
-                try:
-                    if not is_celery_healthy():
-                        refund_confirmation_email(
-                            order_id=str(order.id),
-                            user_email=order.email,
-                            first_name=order.first_name,
-                            total_amount=str(order.total_amount),
-                            refund_date=datetime.now().date()
-                        )
-                    else:
-                        from .tasks import refund_confirmation_email as refund_task
-                        refund_task.apply_async(
-                            kwargs={
-                                'order_id': str(order.id),
-                                'user_email': order.email,
-                                'first_name': order.first_name,
-                                'total_amount': str(order.total_amount),
-                                'refund_date': datetime.now().date()
-                            }
-                        )
-                except Exception:
-                    pass
+
+                with transaction.atomic():
+                    order_items = order.orderitem_order.select_related('product').all()
+                    product_ids = set()
+
+                    for item in order_items:
+                        product_size = ProductSize.objects.filter(
+                            product=item.product,
+                            size=item.size
+                        ).select_for_update().first()
+
+                        if product_size:
+                            product_size.quantity += item.quantity
+                            product_size.save()
+                            product_ids.add(product_size.product.id)
+                        else:
+                            return Response({"error": "Product size not found."}, status=status.HTTP_400_BAD_REQUEST)
+
+                    cache.delete_pattern("product_list:*")
+                    for product_id in product_ids:
+                        cache.delete_pattern(f"product_detail:{product_id}")
+                    cache.delete_pattern("product_suggestions:*")
+                    cache.delete_pattern("search:*")
+                    cache.delete_pattern("search_suggestions:*")
+
+                if not is_celery_healthy():
+                    refund_confirmation_email(
+                        order_id=str(order.id),
+                        user_email=order.email,
+                        first_name=order.first_name,
+                        total_amount=str(order.total_amount),
+                        refund_date=datetime.now().date()
+                    )
+                else:
+                    from .tasks import refund_confirmation_email as refund_task
+                    refund_task.apply_async(
+                        kwargs={
+                            'order_id': str(order.id),
+                            'user_email': order.email,
+                            'first_name': order.first_name,
+                            'total_amount': str(order.total_amount),
+                            'refund_date': datetime.now().date()
+                        }
+                    )
+
             else:
-                return Response({"error": "Refund processing failed."}, status=503)
+                return Response({"error": "Refund processing failed."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
         elif serializer.validated_data.get('status') == 'DELIVERED':
             order.status = 'DELIVERED'
             order.delivery_date = timezone.now().date()

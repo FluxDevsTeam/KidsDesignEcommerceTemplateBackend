@@ -17,12 +17,13 @@ class OrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ["id", "user", "order_date", "status", "delivery_fee", "first_name", "last_name", "email", "state", "city", "delivery_address", "phone_number", "delivery_date", "estimated_delivery", "order_items"]
+        fields = ["id", "payment_provider", "transaction_id", "user", "order_date", "created_at", "status", "delivery_fee", "total_amount", "first_name", "last_name", "email", "state", "city", "delivery_address", "phone_number", "delivery_date", "estimated_delivery", "order_items"]
         read_only_fields = ["id", "user", "order_date"]
 
 
 class PatchOrderSerializer(serializers.ModelSerializer):
     delivery_date = serializers.DateField(required=False, allow_null=True)
+    status = serializers.ChoiceField(choices=[('PAID', 'Paid'), ('SHIPPED', 'Shipped'), ('DELIVERED', 'Delivered'), ('CANCELLED', 'Cancelled')], write_only=True)
 
     class Meta:
         model = Order
