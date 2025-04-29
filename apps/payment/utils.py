@@ -140,10 +140,7 @@ def notify_admin_for_manual_refund(provider, amount, user, transaction_id):
         send_refund_email_synchronously(
             provider=provider,
             amount=amount,
-            user_id=user.id,
-            first_name=user.first_name or '',
-            last_name=user.last_name or '',
-            phone_no=user.phone_number or None,
+            user=user,
             transaction_id=transaction_id,
             reason="Insufficient stock",
             admin_email=admin_email
@@ -154,9 +151,6 @@ def notify_admin_for_manual_refund(provider, amount, user, transaction_id):
                 'provider': provider,
                 'amount': amount,
                 'user_id': user.id,
-                'first_name': user.first_name or '',
-                'last_name': user.last_name or '',
-                'phone_no': user.phone_number or None,
                 'transaction_id': transaction_id,
                 'reason': "Insufficient stock",
                 'admin_email': admin_email
@@ -165,27 +159,26 @@ def notify_admin_for_manual_refund(provider, amount, user, transaction_id):
 
 
 def notify_user_for_successful_refund(provider, amount, user, transaction_id):
-    user_email = user.email or 'unknown@example.com'
-    first_name = user.first_name or 'Customer'
+    admin_email = settings.ADMIN_EMAIL
     currency = settings.PAYMENT_CURRENCY
 
     if not is_celery_healthy():
         send_user_refund_email_synchronously(
-            user_email=user_email,
-            first_name=first_name,
+            user=user,
             amount=amount,
             provider=provider,
             transaction_id=transaction_id,
-            currency=currency
+            currency=currency,
+            admin_email=admin_email
         )
     else:
         send_user_refund_notification_email.apply_async(
             kwargs={
-                'user_email': user_email,
-                'first_name': first_name,
+                'user_id': user.id,
                 'amount': amount,
                 'provider': provider,
                 'transaction_id': transaction_id,
-                'currency': currency
+                'currency': currency,
+                'admin_email': admin_email
             }
         )
