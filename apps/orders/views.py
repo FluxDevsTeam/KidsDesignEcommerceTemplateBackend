@@ -12,7 +12,6 @@ from .utils import swagger_helper, initiate_refund
 from .filters import OrderFilter
 from datetime import datetime, timedelta
 from django.utils import timezone
-from .tasks import is_celery_healthy, refund_confirmation_email
 from ..products.models import ProductSize
 
 
@@ -21,7 +20,7 @@ class ApiOrder(viewsets.ModelViewSet):
     pagination_class = CustomPagination
     permission_classes = [IsAuthenticated]
     ordering_fields = ['order_date', 'total_amount']
-    ordering = ['-order_date']
+    ordering = ['-order_date', '-created_at']
     filterset_fields = ["status"]
 
     def get_serializer_class(self):
@@ -118,7 +117,7 @@ class ApiAdminOrder(viewsets.ModelViewSet):
     permission_classes = [AllowAny]
     filterset_class = OrderFilter
     ordering_fields = ['order_date', 'total_amount', 'delivery_date']
-    ordering = ['-order_date']
+    ordering = ['-order_date', '-created_at']
     search_fields = ["id", "status", "payment_provider"]
 
     def get_serializer_class(self):
