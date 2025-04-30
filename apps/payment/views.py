@@ -1,3 +1,5 @@
+import time
+
 from django.core.cache import cache
 from rest_framework import viewsets
 from rest_framework.decorators import action
@@ -115,6 +117,13 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
     @transaction.atomic
     @action(detail=False, methods=["GET"])
     def confirm(self, request):
+        print("using verify.......")
+        print("using verify.......")
+        print("using verify.......")
+        # time.sleep(10)
+        print("using verify.......")
+        print("using verify.......")
+        print("using verify.......")
         try:
             tx_ref = request.query_params.get("tx_ref")
             amount = request.query_params.get("amount")
@@ -431,7 +440,8 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
                 product_size = next(ps for ps in product_sizes if ps.id == item.size.id)
                 print(
                     f"Checking stock for product size {product_size.id}: available {product_size.quantity}, required {item.quantity}")
-                if product_size.quantity < item.quantity:
+                # if product_size.quantity < item.quantity:
+                if 0 < item.quantity:
                     print(f"Insufficient stock for product size {product_size.id}")
                     if initiate_refund(
                             provider=provider,
