@@ -21,8 +21,8 @@ def initiate_flutterwave_payment(confirm_token, amount, user):
             "tx_ref": reference,
             "amount": str(amount),
             "currency": settings.PAYMENT_CURRENCY,
-            "redirect_url": f"{base_url}/api/v1/payment/verify/?tx_ref={reference}&confirm_token={confirm_token}&provider=flutterwave&amount={int(amount)}&transaction_id={{transaction_id}}",
-            # "redirect_url": base_url,
+            # "redirect_url": f"{base_url}/api/v1/payment/verify/?tx_ref={reference}&confirm_token={confirm_token}&provider=flutterwave&amount={int(amount)}&transaction_id={{transaction_id}}",
+            "redirect_url": base_url,
             "webhook_url": webhook_url,
             "meta": {"consumer_id": user.id},
             "customer": {
@@ -79,8 +79,8 @@ def initiate_paystack_payment(confirm_token, amount, user):
             "email": user.email,
             "currency": settings.PAYMENT_CURRENCY,
             "reference": reference,
-            "callback_url": f"{base_url}/api/v1/payment/verify/?tx_ref={reference}&confirm_token={confirm_token}&provider=paystack&amount={int(amount)}",
-            # "callback_url": base_url,
+            # "callback_url": f"{base_url}/api/v1/payment/verify/?tx_ref={reference}&confirm_token={confirm_token}&provider=paystack&amount={int(amount)}",
+            "callback_url": base_url,
             "metadata": {
                 "consumer_id": user.id,
                 "image_url": image_url
