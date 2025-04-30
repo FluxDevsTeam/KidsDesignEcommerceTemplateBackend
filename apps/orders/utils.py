@@ -64,7 +64,7 @@ def initiate_refund(order, is_admin=False):
 
 
 def notify_admin_for_manual_refund(order):
-    admin_email = "suskidee1@gmail.com"
+    admin_email = settings.ADMIN_EMAIL
     user_id = order.user.id
     first_name = order.first_name or ''
     last_name = order.last_name or ''
@@ -102,7 +102,7 @@ def notify_admin_for_manual_refund(order):
 
 
 def notify_admin_for_refund_initiated(order):
-    admin_email = "suskidee1@gmail.com"
+    admin_email = settings.ADMIN_EMAIL
     user_id = order.user.id
     first_name = order.first_name or ''
     last_name = order.last_name or ''
