@@ -1,0 +1,24 @@
+Dear {{ first_name }},
+
+Great news! Your order has been shipped and is on its way to you. Here are the details:
+
+Order ID: {{ order_id }}
+Estimated Delivery: {{ estimated_delivery }}
+
+You can track your order status here:
+{{ site_url }}/order/{{ order_id }}
+
+Need Assistance?
+Contact our support team if you have any questions.
+support@shop.co | +1 (234) 567-890
+
+Best regards,
+The Shop.co Team
+Connect with us:
+- Facebook: https://www.facebook.com/shopco
+- Twitter: https://twitter.com/shopco
+- Instagram: https://www.instagram.com/shopco
+- LinkedIn: https://www.linkedin.com/company/shopco
+
+{{ current_year }} Shop.co. All rights reserved.
+Privacy Policy: {{ site_url }}/privacy | Terms of Service: {{ site_url }}/terms
