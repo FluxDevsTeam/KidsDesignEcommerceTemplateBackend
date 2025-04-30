@@ -10,3 +10,5 @@ data
 logs/
 **/__pycache__/
 
+static/
+staticfiles/
