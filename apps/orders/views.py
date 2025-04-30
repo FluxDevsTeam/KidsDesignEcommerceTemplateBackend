@@ -8,11 +8,13 @@ from .models import Order, OrderItem
 from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from rest_framework import viewsets, status, filters
 from .pagination import CustomPagination
-from .utils import swagger_helper, initiate_refund
+from .utils import swagger_helper, initiate_refund, notify_user_for_shipped_order, notify_user_for_delivered_order
 from .filters import OrderFilter
 from datetime import datetime, timedelta
 from django.utils import timezone
 from ..products.models import ProductSize
+from django.utils import timezone
+from pytz import timezone as pytz_timezone
 
 
 class ApiOrder(viewsets.ModelViewSet):
@@ -85,8 +87,12 @@ class ApiOrder(viewsets.ModelViewSet):
 
         elif serializer.validated_data.get('status') == 'DELIVERED':
             order.status = 'DELIVERED'
-            order.delivery_date = timezone.now().date()
+            current_time = timezone.now()
+            lagos_tz = pytz_timezone('Africa/Lagos')
+            lagos_time = current_time.astimezone(lagos_tz)
+            order.delivery_date = lagos_time.date()
             order.save()
+            notify_user_for_delivered_order(order)  # Send email notification
         else:
             serializer.save()
         response_serializer = OrderSerializer(order)
@@ -219,58 +225,20 @@ class ApiAdminOrder(viewsets.ModelViewSet):
 
             else:
                 return Response({"error": "Refund processing failed."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
-        elif serializer.validated_data.get('status') == 'DELIVERED':
-            order.status = 'DELIVERED'
-            order.delivery_date = timezone.now().date()
+        elif serializer.validated_data.get('status') == 'SHIPPED' and order.status != "SHIPPED":
+            order.status = 'SHIPPED'
             order.save()
+            notify_user_for_shipped_order(order)
+
+        elif serializer.validated_data.get('status') == 'DELIVERED' and order.status != "DELIVERED":
+            order.status = 'DELIVERED'
+            current_time = timezone.now()
+            lagos_tz = pytz_timezone('Africa/Lagos')
+            lagos_time = current_time.astimezone(lagos_tz)
+            order.delivery_date = lagos_time.date()
+            order.save()
+            notify_user_for_delivered_order(order)
         else:
             serializer.save()
         response_serializer = OrderSerializer(order)
         return Response(response_serializer.data)
-
-
-# temporary feature for only development
-# class ApiOrderItem(viewsets.ModelViewSet):
-#     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
-#     pagination_class = CustomPagination
-#     permission_classes = [IsAuthenticatedAndOrderItemOwner]
-#
-#     def get_serializer_class(self):
-#         if self.request.method == "GET":
-#             return OrderItemSerializerView
-#         return OrderItemSerializer
-#
-#     def get_queryset(self):
-#         return OrderItem.objects.filter(order=self.kwargs.get("order_pk"), order__user=self.request.user)
-#
-#     @swagger_helper("OrderItem", "order item")
-#     def list(self, *args, **kwargs):
-#         return super().list(*args, **kwargs)
-#
-#     @swagger_helper("OrderItem", "order item")
-#     def create(self, *args, **kwargs):
-#         serializer = self.get_serializer(data=self.request.data)
-#
-#         if serializer.is_valid():
-#             order_id = self.kwargs.get("order_pk")
-#             order = get_object_or_404(Order, id=order_id)
-#             size = self.request.data.get("size")
-#             if not size:
-#                 return Response({"error": "Size is required."}, status=status.HTTP_400_BAD_REQUEST)
-#
-#             serializer.save(order=order, size=size)
-#             return Response(serializer.data, status=status.HTTP_201_CREATED)
-#
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-#
-#     @swagger_helper("OrderItem", "order item")
-#     def retrieve(self, *args, **kwargs):
-#         return super().retrieve(*args, **kwargs)
-#
-#     @swagger_helper("OrderItem", "order item")
-#     def partial_update(self, *args, **kwargs):
-#         return super().partial_update(*args, **kwargs)
-#
-#     @swagger_helper("OrderItem", "order item")
-#     def destroy(self, *args, **kwargs):
-#         return super().destroy(*args, **kwargs)
