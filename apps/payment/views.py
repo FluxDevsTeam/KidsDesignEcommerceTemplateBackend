@@ -73,6 +73,21 @@ class PaymentInitiateViewSet(viewsets.ModelViewSet):
 
     @swagger_helper("Payment", "Initiate payment")
     def create(self, request):
+        print("in")
+        print("in")
+        print("in")
+        print("in")
+        print("in")
+        print("in")
+        print("in")
+        print("in")
+        print("in")
+        print("in")
+        print("in")
+        print("in")
+        print("in")
+        logger.info(f"Transaction already processed")
+        logger.error(f"Transaction already processed")
         try:
             cart = get_object_or_404(Cart, user=request.user)
             if not cart.cartitem_cart.exists():
