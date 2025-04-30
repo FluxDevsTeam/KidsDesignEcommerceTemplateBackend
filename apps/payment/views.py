@@ -12,11 +12,10 @@ from .payments import initiate_flutterwave_payment, initiate_paystack_payment
 from django.utils.timezone import now
 import requests
 from decimal import Decimal
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from rest_framework_simplejwt.tokens import AccessToken
 import hmac
 import hashlib
-import json
 from django.conf import settings
 from .tasks import send_order_confirmation_email, is_celery_healthy, send_email_synchronously
 from django.contrib.auth import get_user_model
@@ -82,10 +81,7 @@ class PaymentInitiateViewSet(viewsets.ModelViewSet):
 
             input_serializer = PaymentCartSerializer(cart, data=request.data, partial=True)
             if not input_serializer.is_valid():
-                return Response(
-                    {"error": "Invalid payment data", "details": input_serializer.errors},
-                    status=400
-                )
+                return Response({"error": "Invalid payment data", "details": input_serializer.errors}, status=400)
 
             cart.delivery_fee = calculate_delivery_fee(cart)
             cart.save()
@@ -216,24 +212,29 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
                 cache.delete_pattern(f"product_size_detail:{product_size.id}")
                 product_size.save()
 
-            # Create order
-            order = Order.objects.create(
-                user=user,
-                status="PAID",
-                delivery_fee=cart.delivery_fee,
-                total_amount=server_total,
-                first_name=cart.first_name or user.first_name,
-                last_name=cart.last_name or user.last_name,
-                email=cart.email or user.email,
-                state=cart.state,
-                city=cart.city,
-                delivery_address=cart.delivery_address,
-                phone_number=cart.phone_number or user.phone_number,
-                transaction_id=flutterwave_transaction_id if provider == "flutterwave" else transaction_id,
-                tx_ref=tx_ref,
-                payment_provider=provider,
-                estimated_delivery=cart.estimated_delivery
-            )
+            try:
+                order = Order.objects.create(
+                    user=user,
+                    status="PAID",
+                    delivery_fee=cart.delivery_fee,
+                    total_amount=server_total,
+                    first_name=cart.first_name or user.first_name,
+                    last_name=cart.last_name or user.last_name,
+                    email=cart.email or user.email,
+                    state=cart.state,
+                    city=cart.city,
+                    delivery_address=cart.delivery_address,
+                    phone_number=cart.phone_number or user.phone_number,
+                    transaction_id=flutterwave_transaction_id if provider == "flutterwave" else transaction_id,
+                    tx_ref=tx_ref,
+                    payment_provider=provider,
+                    estimated_delivery=cart.estimated_delivery
+                )
+            except IntegrityError:
+                existing_order = Order.objects.filter(tx_ref=tx_ref).first()
+                if existing_order:
+                    return redirect(f"{settings.SITE_URL}/order/{existing_order.id}")
+                raise
 
             for item in cart.cartitem_cart.all():
                 OrderItem.objects.create(
@@ -464,23 +465,30 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
                 product_size.save()
 
             print("Creating order")
-            order = Order.objects.create(
-                user=user,
-                status="PAID",
-                delivery_fee=cart.delivery_fee,
-                total_amount=server_total,
-                first_name=cart.first_name or user.first_name,
-                last_name=cart.last_name or user.last_name,
-                email=cart.email or user.email,
-                state=cart.state,
-                city=cart.city,
-                delivery_address=cart.delivery_address,
-                phone_number=cart.phone_number or user.phone_number,
-                transaction_id=flutterwave_transaction_id if provider == "flutterwave" else transaction_id,
-                tx_ref=tx_ref,
-                payment_provider=provider,
-                estimated_delivery=cart.estimated_delivery
-            )
+            try:
+                order = Order.objects.create(
+                    user=user,
+                    status="PAID",
+                    delivery_fee=cart.delivery_fee,
+                    total_amount=server_total,
+                    first_name=cart.first_name or user.first_name,
+                    last_name=cart.last_name or user.last_name,
+                    email=cart.email or user.email,
+                    state=cart.state,
+                    city=cart.city,
+                    delivery_address=cart.delivery_address,
+                    phone_number=cart.phone_number or user.phone_number,
+                    transaction_id=flutterwave_transaction_id if provider == "flutterwave" else transaction_id,
+                    tx_ref=tx_ref,
+                    payment_provider=provider,
+                    estimated_delivery=cart.estimated_delivery
+                )
+            except IntegrityError:
+                existing_order = Order.objects.filter(tx_ref=tx_ref).first()
+                if existing_order:
+                    print(f"Transaction already processed for tx_ref: {tx_ref}")
+                    return Response({"message": "Transaction already processed"}, status=200)
+                raise
             print(f"Order created: {order.id}")
 
             for item in cart.cartitem_cart.all():
