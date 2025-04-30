@@ -1,4 +1,3 @@
-import logging
 import os
 from ast import literal_eval
 from django.core.mail import send_mail

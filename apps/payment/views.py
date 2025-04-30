@@ -190,7 +190,7 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
 
             for item in cart_items:
                 product_size = next(ps for ps in product_sizes if ps.id == item.size.id)
-                if 0 < item.quantity:
+                if product_size.quantity < item.quantity:
                     if initiate_refund(
                         provider=provider,
                         amount=amount,
@@ -206,14 +206,14 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
                 product_size = next(ps for ps in product_sizes if ps.id == item.size.id)
                 product_size.quantity -= item.quantity
                 if product_size.quantity <= 0:
-                    cache.delete_pattern("product_size_list:*")
-                    cache.delete_pattern(f"product_size_detail:{product_size.id}")
                     cache.delete_pattern("product_list:*")
                     cache.delete_pattern(f"product_detail:{product_size.product.id}")
                     cache.delete_pattern("search:*")
                     cache.delete_pattern("search_suggestions:*")
                     cache.delete_pattern("product_suggestions:*")
                     cache.delete_pattern("product_homepage:*")
+                cache.delete_pattern("product_size_list:*")
+                cache.delete_pattern(f"product_size_detail:{product_size.id}")
                 product_size.save()
 
             # Create order
@@ -253,24 +253,26 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
             cache.delete(f"cart_item_detail:{user.id}:{cart.id}")
             cache.delete(f"cart_list:{user.id}:*")
 
+            admin_email = settings.ADMIN_EMAIL
             if not is_celery_healthy():
                 send_email_synchronously(
                     order_id=str(order.id),
-                    user_email=order.email,
-                    first_name=order.first_name,
+                    user=user,
                     total_amount=str(order.total_amount),
                     order_date=now().date(),
-                    estimated_delivery=order.estimated_delivery
+                    estimated_delivery=order.estimated_delivery,
+                    admin_email=admin_email
                 )
             else:
                 send_order_confirmation_email.apply_async(
                     kwargs={
                         'order_id': str(order.id),
                         'user_email': order.email,
-                        'first_name': order.first_name,
                         'total_amount': str(order.total_amount),
                         'order_date': now().date(),
-                        'estimated_delivery': order.estimated_delivery
+                        'estimated_delivery': order.estimated_delivery,
+                        'admin_email': admin_email,
+                        'user_id': user.id
                     }
                 )
 
@@ -411,14 +413,14 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
                 product_size = next(ps for ps in product_sizes if ps.id == item.size.id)
                 product_size.quantity -= item.quantity
                 if product_size.quantity <= 0:
-                    cache.delete_pattern("product_size_list:*")
-                    cache.delete_pattern(f"product_size_detail:{product_size.id}")
                     cache.delete_pattern("product_list:*")
                     cache.delete_pattern(f"product_detail:{product_size.product.id}")
                     cache.delete_pattern("search:*")
                     cache.delete_pattern("search_suggestions:*")
                     cache.delete_pattern("product_suggestions:*")
                     cache.delete_pattern("product_homepage:*")
+                cache.delete_pattern("product_size_list:*")
+                cache.delete_pattern(f"product_size_detail:{product_size.id}")
                 product_size.save()
 
             # create order on success
@@ -458,24 +460,26 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
             cache.delete(f"cart_item_detail:{user.id}:{cart.id}")
             cache.delete(f"cart_list:{user.id}:*")
 
+            admin_email = settings.ADMIN_EMAIL
             if not is_celery_healthy():
                 send_email_synchronously(
                     order_id=str(order.id),
-                    user_email=order.email,
-                    first_name=order.first_name,
+                    user=user,
                     total_amount=str(order.total_amount),
                     order_date=now().date(),
-                    estimated_delivery=order.estimated_delivery
+                    estimated_delivery=order.estimated_delivery,
+                    admin_email=admin_email
                 )
             else:
                 send_order_confirmation_email.apply_async(
                     kwargs={
                         'order_id': str(order.id),
                         'user_email': order.email,
-                        'first_name': order.first_name,
                         'total_amount': str(order.total_amount),
                         'order_date': now().date(),
-                        'estimated_delivery': order.estimated_delivery
+                        'estimated_delivery': order.estimated_delivery,
+                        'admin_email': admin_email,
+                        'user_id': user.id
                     }
                 )
 

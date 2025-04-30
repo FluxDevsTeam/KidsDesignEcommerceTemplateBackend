@@ -16,6 +16,7 @@ from rest_framework.response import Response
 from django.db.models import F, Q, Case, When, Value, BooleanField
 from django.db import transaction
 from itertools import chain
+import random
 
 
 class ApiProductCategory(viewsets.ModelViewSet):
@@ -409,10 +410,10 @@ class ApiProduct(viewsets.ModelViewSet):
         return Response(suggestions)
 
     @swagger_auto_schema(manual_parameters=[
-            openapi.Parameter('sub_category_id', openapi.IN_QUERY, description="Subcategory ID for suggestions",type=openapi.TYPE_INTEGER),
-            openapi.Parameter('page', openapi.IN_QUERY, description="Page number", type=openapi.TYPE_INTEGER),
-            openapi.Parameter('page_size', openapi.IN_QUERY, description="Items per page (max: 20)",type=openapi.TYPE_INTEGER),],
-        operation_id="Product Suggestions", operation_description="Get product suggestions based on subcategory priority", tags=["Product"])
+        openapi.Parameter('sub_category_id', openapi.IN_QUERY, description="Primary Subcategory ID for suggestions", type=openapi.TYPE_INTEGER),
+        openapi.Parameter('second_sub_category_id', openapi.IN_QUERY, description="Secondary Subcategory ID for suggestions", type=openapi.TYPE_INTEGER),
+        openapi.Parameter('page', openapi.IN_QUERY, description="Page number", type=openapi.TYPE_INTEGER),
+        openapi.Parameter('page_size', openapi.IN_QUERY, description="Items per page (max: 20)", type=openapi.TYPE_INTEGER),], operation_id="Product Suggestions", operation_description="Get product suggestions based on subcategory priority, with optional secondary subcategory", tags=["Product"])
     @action(detail=False, methods=['get'], url_path='suggestions')
     def suggestions(self, request, *args, **kwargs):
         cache_timeout = 300
@@ -423,6 +424,7 @@ class ApiProduct(viewsets.ModelViewSet):
             return Response(cached_response)
 
         sub_category_id = request.query_params.get('sub_category_id')
+        second_sub_category_id = request.query_params.get('second_sub_category_id')
         products = Product.objects.select_related('sub_category__category')
         max_items = 20
 
@@ -431,35 +433,96 @@ class ApiProduct(viewsets.ModelViewSet):
             Case(When(latest_item=True, then=Value(0)), default=Value(1), output_field=BooleanField()),
         ]
 
-        if sub_category_id:
+        if not sub_category_id and not second_sub_category_id:
+            all_products = products.order_by('?')[:max_items]
+            final_products = list(all_products)
+
+        elif sub_category_id and second_sub_category_id:
             try:
                 sub_category_id = int(sub_category_id)
+                second_sub_category_id = int(second_sub_category_id)
+
+                if sub_category_id == second_sub_category_id:
+                    second_sub_category_id = None
+
                 target_subcategory = ProductSubCategory.objects.get(id=sub_category_id)
                 target_category = target_subcategory.category
 
-                priority_1 = products.filter(sub_category_id=sub_category_id).order_by(*ordering)
-                priority_2 = products.filter(
+                priority_1 = list(products.filter(sub_category_id=sub_category_id).order_by(*ordering))
+                p1_count = len(priority_1)
+
+                priority_2 = list(products.filter(
                     sub_category__category=target_category
-                ).exclude(sub_category_id=sub_category_id).order_by(*ordering)
-                priority_3 = products.exclude(
-                    sub_category__category=target_category
-                ).order_by(*ordering)
+                ).exclude(sub_category_id=sub_category_id).order_by(*ordering))
+                p2_limit = max(0, max_items - p1_count)
+                p2_count = len(priority_2[:p2_limit])
+
+                priority_3 = []
+                if second_sub_category_id:
+                    second_target_subcategory = ProductSubCategory.objects.get(id=second_sub_category_id)
+                    priority_3 = list(products.filter(sub_category_id=second_sub_category_id).order_by(*ordering))
+                p3_count = len(priority_3)
+
+                priority_4 = []
+                if second_sub_category_id:
+                    second_target_category = second_target_subcategory.category
+                    priority_4 = list(products.filter(sub_category__category=second_target_category).exclude(sub_category_id=second_sub_category_id).order_by(*ordering))
+                p4_limit = max(0, max_items - p1_count - p2_count - p3_count)
+
+                priority_5 = list(products.exclude(sub_category__category__in=[target_category, second_target_category] if second_sub_category_id else [target_category]).order_by(*ordering))
+                p5_limit = max(0, max_items - p1_count - p2_count - p3_count - len(priority_4[:p4_limit]))
+
+                primary_pool = list(chain(priority_1[:max_items], priority_2[:p2_limit]))
+                secondary_pool = list(chain(priority_3[:max_items], priority_4[:p4_limit])) if second_sub_category_id else []
+
+                final_products = []
+                primary_weight = 0.7
+                while len(final_products) < max_items:
+                    if not primary_pool and not secondary_pool:
+                        break
+
+                    if not primary_pool:
+                        final_products.extend(secondary_pool[:max_items - len(final_products)])
+                        break
+                    if not secondary_pool:
+                        final_products.extend(primary_pool[:max_items - len(final_products)])
+                        break
+
+                    if random.random() < primary_weight:
+                        if primary_pool:
+                            final_products.append(primary_pool.pop(0))
+                    else:
+                        if secondary_pool:
+                            final_products.append(secondary_pool.pop(0))
+
+                remaining_slots = max_items - len(final_products)
+                if remaining_slots > 0:
+                    final_products.extend(priority_5[:remaining_slots])
+
+                final_products = final_products[:max_items]
+
+            except (ProductSubCategory.DoesNotExist, ValueError):
+                final_products = products.order_by('?')[:max_items]
+
+        else:
+            active_sub_category_id = sub_category_id or second_sub_category_id
+            try:
+                active_sub_category_id = int(active_sub_category_id)
+                target_subcategory = ProductSubCategory.objects.get(id=active_sub_category_id)
+                target_category = target_subcategory.category
+
+                priority_1 = products.filter(sub_category_id=active_sub_category_id).order_by(*ordering)
+                priority_2 = products.filter(sub_category__category=target_category).exclude(sub_category_id=active_sub_category_id).order_by(*ordering)
+                priority_3 = products.exclude(sub_category__category=target_category).order_by(*ordering)
 
                 p1_count = priority_1.count()
                 p2_limit = max(0, max_items - p1_count)
                 p3_limit = max(0, max_items - p1_count - priority_2.count())
 
                 final_products = list(
-                    chain(
-                        priority_1[:max_items],
-                        priority_2[:p2_limit],
-                        priority_3[:p3_limit]
-                    )
-                )[:max_items]
+                    chain(priority_1[:max_items], priority_2[:p2_limit], priority_3[:p3_limit]))[:max_items]
             except (ProductSubCategory.DoesNotExist, ValueError):
-                final_products = products.order_by(*ordering)[:max_items]
-        else:
-            final_products = products.order_by(*ordering)[:max_items]
+                final_products = products.order_by('?')[:max_items]
 
         paginator = self.pagination_class()
         page = paginator.paginate_queryset(final_products, request, view=self)
