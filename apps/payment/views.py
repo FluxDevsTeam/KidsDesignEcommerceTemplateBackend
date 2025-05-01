@@ -1,6 +1,7 @@
 import time
 
 from django.core.cache import cache
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -302,6 +303,7 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
     @swagger_helper("Payment", "Payment Webhook")
     @transaction.atomic
     @action(detail=False, methods=["POST"])
+    @csrf_exempt
     def create(self, request):
         try:
             print("Received webhook request")
