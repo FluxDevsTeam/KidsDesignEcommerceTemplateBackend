@@ -118,13 +118,19 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
     @transaction.atomic
     @action(detail=False, methods=["GET"])
     def confirm(self, request):
-        print("using verify.......")
-        print("using verify.......")
-        print("using verify.......")
+        print("using verify start.......")
+        print("using verify start.......")
+        print("using verify start.......")
+        print("using verify start.......")
+        print("using verify start.......")
+        print("using verify start.......")
         time.sleep(10)
-        print("using verify.......")
-        print("using verify.......")
-        print("using verify.......")
+        print("using verify end.......")
+        print("using verify end.......")
+        print("using verify end.......")
+        print("using verify end.......")
+        print("using verify end.......")
+        print("using verify end.......")
         try:
             tx_ref = request.query_params.get("tx_ref")
             amount = request.query_params.get("amount")
@@ -309,9 +315,9 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
             print("using webhook.......")
             print("using webhook.......")
             print("using webhook.......")
+            print("using webhook.......")
+            print("using webhook.......")
             print("Received webhook request")
-            print("Request headers:", {k: v for k, v in request.META.items() if k.startswith('HTTP_')})
-            print("Request body:", request.body.decode('utf-8', errors='ignore'))
 
             if "HTTP_VERIF_HASH" in request.META:
                 provider = "flutterwave"
@@ -355,8 +361,7 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
                 amount = float(data.get("amount", 0))
                 email = data.get("customer", {}).get("email")
                 currency = data.get("currency")
-                print(
-                    f"Flutterwave transaction details - tx_ref: {tx_ref}, transaction_id: {transaction_id}, status: {status}, amount: {amount}, email: {email}, currency: {currency}")
+
             else:
                 if payload.get("event") != "charge.success":
                     print("Paystack event ignored: not charge.success")
@@ -368,8 +373,6 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
                 amount = float(data.get("amount", 0)) / 100
                 email = data.get("customer", {}).get("email")
                 currency = data.get("currency")
-                print(
-                    f"Paystack transaction details - tx_ref: {tx_ref}, transaction_id: {transaction_id}, status: {status}, amount: {amount}, email: {email}, currency: {currency}")
 
             if not all([tx_ref, amount, email]):
                 print("Missing transaction reference, amount, or email")
