@@ -121,7 +121,7 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
         print("using verify.......")
         print("using verify.......")
         print("using verify.......")
-        # time.sleep(10)
+        time.sleep(10)
         print("using verify.......")
         print("using verify.......")
         print("using verify.......")
@@ -306,6 +306,9 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
     @csrf_exempt
     def create(self, request):
         try:
+            print("using webhook.......")
+            print("using webhook.......")
+            print("using webhook.......")
             print("Received webhook request")
             print("Request headers:", {k: v for k, v in request.META.items() if k.startswith('HTTP_')})
             print("Request body:", request.body.decode('utf-8', errors='ignore'))
