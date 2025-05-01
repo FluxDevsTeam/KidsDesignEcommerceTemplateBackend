@@ -263,7 +263,7 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
                     size=item.size.size
                 )
 
-            cart.cartitem_cart.all().delete()
+            # cart.cartitem_cart.all().delete()
             cache.delete(f"cart_item_list:{user.id}:*")
             cache.delete(f"cart_item_detail:{user.id}:{cart.id}")
             cache.delete(f"cart_list:{user.id}:*")
@@ -453,8 +453,7 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
                 product_size = next(ps for ps in product_sizes if ps.id == item.size.id)
                 print(
                     f"Checking stock for product size {product_size.id}: available {product_size.quantity}, required {item.quantity}")
-                # if product_size.quantity < item.quantity:
-                if 0 < item.quantity:
+                if product_size.quantity < item.quantity:
                     print(f"Insufficient stock for product size {product_size.id}")
                     refund_result = initiate_refund(
                         provider=provider,

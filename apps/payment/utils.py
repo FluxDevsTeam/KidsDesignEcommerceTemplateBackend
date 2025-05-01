@@ -105,7 +105,7 @@ def initiate_refund(provider, amount, user, transaction_id):
         if provider == "paystack":
             payload = {"transaction": transaction_id}
             headers = {
-                "Authorization": f"Bearer {settings.PAYMENT_PROVIDERS['paystaack']['secret_key']}",
+                "Authorization": f"Bearer {settings.PAYMENT_PROVIDERS['paystack']['secret_key']}",
                 "Content-Type": "application/json"
             }
             response = requests.post(
@@ -121,7 +121,7 @@ def initiate_refund(provider, amount, user, transaction_id):
                 return False
             url = f"https://api.flutterwave.com/v3/transactions/{transaction_id}/refund"
             headers = {
-                "Authorization": f"Bearer {settings.PAYMENT_PROVIDERS['flutterwasve']['secret_key']}",
+                "Authorization": f"Bearer {settings.PAYMENT_PROVIDERS['flutterwave']['secret_key']}",
                 "Content-Type": "application/json"
             }
             payload = {}
