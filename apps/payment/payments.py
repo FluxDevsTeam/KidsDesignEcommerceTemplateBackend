@@ -23,7 +23,7 @@ def initiate_flutterwave_payment(confirm_token, amount, user):
             "currency": settings.PAYMENT_CURRENCY,
             # "redirect_url": f"{base_url}/api/v1/payment/verify/?tx_ref={reference}&confirm_token={confirm_token}&provider=flutterwave&amount={int(amount)}&transaction_id={{transaction_id}}",
             "redirect_url": base_url,
-            "webhook_url": webhook_url,
+            # "webhook_url": webhook_url,
             "meta": {"consumer_id": user.id},
             "customer": {
                 "email": user.email,
