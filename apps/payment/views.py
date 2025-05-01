@@ -307,17 +307,16 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
     def create(self, request):
         try:
             print("Received webhook request")
+            print("Request headers:", {k: v for k, v in request.META.items() if k.startswith('HTTP_')})
 
-            if "HTTP_X_FLUTTERWAVE_SIGNATURE" in request.META:
+            if "HTTP_VERIF_HASH" in request.META:
                 provider = "flutterwave"
-                signature = request.META["HTTP_X_FLUTTERWAVE_SIGNATURE"]
-                secret_key = settings.PAYMENT_PROVIDERS["flutterwave"]["secret_key"]
+                signature = request.META["HTTP_VERIF_HASH"]
+                secret_hash = settings.PAYMENT_PROVIDERS["flutterwave"]["secret_hash"]
                 print(f"Processing flutterwave webhook with signature: {signature}")
-                expected_signature = hmac.new(secret_key.encode(), request.body, hashlib.sha256).hexdigest()
-                print(f"Calculated expected signature: {expected_signature}")
-                if not hmac.compare_digest(signature, expected_signature):
+                if signature != secret_hash:
                     print("Invalid flutterwave signature")
-                    return Response({"error": "Invalid signature"}, status=403)
+                    return Response({"error": "Invalid signature"}, status=401)
             elif "HTTP_X_PAYSTACK_SIGNATURE" in request.META:
                 provider = "paystack"
                 signature = request.META["HTTP_X_PAYSTACK_SIGNATURE"]
@@ -330,6 +329,7 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
                     return Response({"error": "Invalid signature"}, status=403)
             else:
                 print("Unknown provider detected")
+                print("Request body:", request.body.decode('utf-8', errors='ignore'))
                 return Response({"error": "Unknown provider"}, status=400)
 
             payload = request.data
