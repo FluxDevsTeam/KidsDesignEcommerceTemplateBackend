@@ -196,13 +196,17 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
             for item in cart_items:
                 product_size = next(ps for ps in product_sizes if ps.id == item.size.id)
                 if product_size.quantity < item.quantity:
-                    if initiate_refund(
+                    refund_result = initiate_refund(
                         provider=provider,
                         amount=amount,
                         user=user,
                         transaction_id=flutterwave_transaction_id if provider == "flutterwave" else transaction_id
-                    ):
+                    )
+                    if refund_result is True:
+                        print("Refund initiated due to insufficient stock")
                         return redirect(f"{settings.SITE_URL}/cart/?error=Insufficient-stock-Refund-initiated")
+                    elif refund_result == "admin":
+                        return redirect(f"{settings.SITE_URL}/cart/?error=Insufficient-stock-Admin-notified")
                     else:
                         return redirect(f"{settings.SITE_URL}/cart/error/?data=Insufficient-stock-Refund-failed-please-contact-support")
 
@@ -443,18 +447,21 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
                 # if product_size.quantity < item.quantity:
                 if 0 < item.quantity:
                     print(f"Insufficient stock for product size {product_size.id}")
-                    if initiate_refund(
-                            provider=provider,
-                            amount=amount,
-                            user=user,
-                            transaction_id=flutterwave_transaction_id if provider == "flutterwave" else transaction_id
-                    ):
+                    refund_result = initiate_refund(
+                        provider=provider,
+                        amount=amount,
+                        user=user,
+                        transaction_id=flutterwave_transaction_id if provider == "flutterwave" else transaction_id
+                    )
+                    if refund_result is True:
                         print("Refund initiated due to insufficient stock")
-                        return Response({"message": "Insufficient stock. Refund initiated."}, status=200)
+                        return Response("Insufficient stock. Refund initiated", status=200)
+                    elif refund_result == "admin":
+                        print("Admin notified for refund due to insufficient stock")
+                        return Response("Insufficient stock. Admin notified", status=200)
                     else:
                         print("Refund failed due to insufficient stock")
-                        return Response({"error": "Insufficient stock. Refund failed, please contact support."},
-                                        status=400)
+                        return Response("Insufficient stock. Refund failed. please contact support", status=400)
 
             print("Deducting stock")
             for item in cart_items:

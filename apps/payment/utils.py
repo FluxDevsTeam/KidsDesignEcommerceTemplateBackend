@@ -130,8 +130,11 @@ def initiate_refund(provider, amount, user, transaction_id):
             notify_user_for_successful_refund(provider, amount, user, transaction_id)
             return True
     except:
-        notify_admin_for_manual_refund(provider, amount, user, transaction_id)
-        return False
+        try:
+            notify_admin_for_manual_refund(provider, amount, user, transaction_id)
+            return "admin"
+        except:
+            return False
 
 
 def notify_admin_for_manual_refund(provider, amount, user, transaction_id):
