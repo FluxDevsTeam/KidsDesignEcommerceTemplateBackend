@@ -17,6 +17,7 @@ def initiate_flutterwave_payment(confirm_token, amount, user):
         last_name = user.last_name or ""
         phone_no = user.phone_number or ""
         reference = str(uuid.uuid4())
+        print(webhook_url)
         data = {
             "tx_ref": reference,
             "amount": str(amount),
