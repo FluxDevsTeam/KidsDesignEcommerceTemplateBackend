@@ -345,31 +345,32 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
                 if payload.get("event") != "charge.completed":
                     print("Flutterwave event ignored: not charge.completed")
                     return Response({"message": "Event ignored"}, status=200)
-                tx_ref = payload.get("tx_ref")
-                transaction_id = str(payload.get("id"))
-                status = payload.get("status") == "successful"
-                amount = float(payload.get("amount", 0))
-                email = payload.get("customer", {}).get("email")
-                currency = payload.get("currency")
+                data = payload.get("data", {})
+                tx_ref = data.get("tx_ref")
+                transaction_id = str(data.get("id"))
+                status = data.get("status") == "successful"
+                amount = float(data.get("amount", 0))
+                email = data.get("customer", {}).get("email")
+                currency = data.get("currency")
                 print(
                     f"Flutterwave transaction details - tx_ref: {tx_ref}, transaction_id: {transaction_id}, status: {status}, amount: {amount}, email: {email}, currency: {currency}")
             else:
                 if payload.get("event") != "charge.success":
                     print("Paystack event ignored: not charge.success")
                     return Response({"message": "Event ignored"}, status=200)
-                tx_ref = payload.get("data", {}).get("reference")
+                data = payload.get("data", {})
+                tx_ref = data.get("reference")
                 transaction_id = tx_ref
-                status = payload.get("data", {}).get("status") == "success"
-                amount = float(payload.get("data", {}).get("amount", 0)) / 100
-                email = payload.get("data", {}).get("customer", {}).get("email")
-                currency = payload.get("data", {}).get("currency")
+                status = data.get("status") == "success"
+                amount = float(data.get("amount", 0)) / 100
+                email = data.get("customer", {}).get("email")
+                currency = data.get("currency")
                 print(
                     f"Paystack transaction details - tx_ref: {tx_ref}, transaction_id: {transaction_id}, status: {status}, amount: {amount}, email: {email}, currency: {currency}")
 
             if not all([tx_ref, amount, email]):
                 print("Missing transaction reference, amount, or email")
                 return Response({"error": "Missing transaction reference, amount, or email"}, status=400)
-
             existing_order = Order.objects.filter(tx_ref=tx_ref).first()
             if existing_order:
                 print(f"Transaction already processed for tx_ref: {tx_ref}")
