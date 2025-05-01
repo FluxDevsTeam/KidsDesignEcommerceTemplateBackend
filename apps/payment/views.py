@@ -124,13 +124,7 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
         print("using verify start.......")
         print("using verify start.......")
         print("using verify start.......")
-        time.sleep(10)
-        print("using verify end.......")
-        print("using verify end.......")
-        print("using verify end.......")
-        print("using verify end.......")
-        print("using verify end.......")
-        print("using verify end.......")
+
         try:
             tx_ref = request.query_params.get("tx_ref")
             amount = request.query_params.get("amount")
@@ -318,6 +312,13 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
             print("using webhook.......")
             print("using webhook.......")
             print("Received webhook request")
+            time.sleep(10)
+            print("using verify end.......")
+            print("using verify end.......")
+            print("using verify end.......")
+            print("using verify end.......")
+            print("using verify end.......")
+            print("using verify end.......")
 
             if "HTTP_VERIF_HASH" in request.META:
                 provider = "flutterwave"
@@ -416,7 +417,6 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
                 return Response({"error": "Payment verification failed"}, status=503)
 
             response_data = verification_response.json()
-            print(f"Verification response: {response_data}")
             expected_currency = settings.PAYMENT_CURRENCY
             flutterwave_transaction_id = None
 
@@ -429,7 +429,6 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
                         response_data["data"]["tx_ref"] == tx_ref
                 )
                 flutterwave_transaction_id = str(response_data["data"]["id"]) if verification_success else None
-                print(f"Flutterwave verification success: {verification_success}")
             else:
                 verification_success = (
                         response_data.get("status") and
@@ -437,10 +436,8 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
                         (response_data["data"]["amount"] / 100) >= float(amount) and
                         response_data["data"]["currency"] == expected_currency
                 )
-                print(f"Paystack verification success: {verification_success}")
 
             if not verification_success:
-                print("Payment verification failed")
                 return Response({"error": "Payment verification failed"}, status=400)
 
             serializer = PaymentCartSerializer(cart)
@@ -537,15 +534,12 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
                 print(f"Created order item for product {item.product.id}")
 
             # cart.cartitem_cart.all().delete()
-            print("Cleared cart items")
             cache.delete(f"cart_item_list:{user.id}:*")
             cache.delete(f"cart_item_detail:{user.id}:{cart.id}")
             cache.delete(f"cart_list:{user.id}:*")
-            print("Cleared cart-related cache")
 
             admin_email = settings.ADMIN_EMAIL
             if not is_celery_healthy():
-                print("Celery not healthy, sending email synchronously")
                 send_email_synchronously(
                     order_id=str(order.id),
                     user=user,
@@ -555,7 +549,6 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
                     admin_email=admin_email
                 )
             else:
-                print("Sending order confirmation email asynchronously")
                 send_order_confirmation_email.apply_async(
                     kwargs={
                         'order_id': str(order.id),
