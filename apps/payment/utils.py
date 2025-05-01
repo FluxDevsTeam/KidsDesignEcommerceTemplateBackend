@@ -105,7 +105,7 @@ def initiate_refund(provider, amount, user, transaction_id):
         if provider == "paystack":
             payload = {"transaction": transaction_id}
             headers = {
-                "Authorization": f"Bearer {settings.PAYMENT_PROVIDERS['paystack']['secret_key']}",
+                "Authorization": f"Bearer {settings.PAYMENT_PROVIDERS['paystaack']['secret_key']}",
                 "Content-Type": "application/json"
             }
             response = requests.post(
