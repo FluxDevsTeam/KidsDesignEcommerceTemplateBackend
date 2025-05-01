@@ -312,7 +312,7 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
             print("using webhook.......")
             print("using webhook.......")
             print("Received webhook request")
-            time.sleep(10)
+            time.sleep(20)
             print("using verify end.......")
             print("using verify end.......")
             print("using verify end.......")
@@ -349,7 +349,6 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
                     return Response({"error": "Unknown provider"}, status=400)
 
             payload = request.data
-            print(f"Webhook payload: {payload}")
 
             if provider == "flutterwave":
                 if payload.get("event") != "charge.completed":
