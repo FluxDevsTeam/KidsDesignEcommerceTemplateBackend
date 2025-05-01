@@ -202,6 +202,7 @@ PAYMENT_SUCCESS_URL = os.getenv("PAYMENT_SUCCESS_URL", "http:/127.0.0.1:8000/api
 PAYMENT_PROVIDERS = {
     "flutterwave": {
         "verify_url": "https://api.flutterwave.com/v3/transactions/{}/verify",
+        "secret_hash": os.getenv("FLW_SECRET_HASH"),
         "secret_key": os.getenv("FLW_SEC_KEY"),
     },
     "paystack": {
