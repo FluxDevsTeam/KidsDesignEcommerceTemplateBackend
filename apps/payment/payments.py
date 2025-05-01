@@ -17,14 +17,12 @@ def initiate_flutterwave_payment(confirm_token, amount, user):
         last_name = user.last_name or ""
         phone_no = user.phone_number or ""
         reference = str(uuid.uuid4())
-        print(webhook_url)
         data = {
             "tx_ref": reference,
             "amount": str(amount),
             "currency": settings.PAYMENT_CURRENCY,
             # "redirect_url": f"{base_url}/api/v1/payment/verify/?tx_ref={reference}&confirm_token={confirm_token}&provider=flutterwave&amount={int(amount)}&transaction_id={{transaction_id}}",
             "redirect_url": base_url,
-            # "webhook_url": webhook_url,
             "meta": {"consumer_id": user.id},
             "customer": {
                 "email": user.email,
@@ -63,13 +61,6 @@ def initiate_paystack_payment(confirm_token, amount, user):
     try:
         paystack_key = settings.PAYMENT_PROVIDERS['paystack']['secret_key']
         headers = {"Authorization": f"Bearer {paystack_key}", "Content-Type": "application/json"}
-        # paystack doesn't really approve this most of the time. so just manually add redirect to clients dashboard
-        # try:
-        #     response = requests.post("https://api.paystack.co/integration/webhooks", headers=headers, json={"url": webhook_url, "enabled_events": ["charge.success"]})
-        #     response.raise_for_status()
-        # except requests.exceptions.RequestException as err:
-        #     pass
-
         url = "https://api.paystack.co/transaction/initialize"
         first_name = user.first_name or ""
         last_name = user.last_name or ""
