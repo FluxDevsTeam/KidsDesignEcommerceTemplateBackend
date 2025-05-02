@@ -1,0 +1,24 @@
+Dear {{ first_name }},
+
+We’re happy to inform you that your order has been delivered! Here are the details:
+
+Order ID: {{ order_id }}
+Delivery Date: {{ delivery_date }}
+
+We hope you love your purchase! View your order details here:
+{{ site_url }}/order/{{ order_id }}
+
+Need Assistance?
+Contact our support team if you have any questions.
+support@shop.co | +1 (234) 567-890
+
+Best regards,
+The Shop.co Team
+Connect with us:
+- Facebook: https://www.facebook.com/shopco
+- Twitter: https://twitter.com/shopco
+- Instagram: https://www.instagram.com/shopco
+- LinkedIn: https://www.linkedin.com/company/shopco
+
+{{ current_year }} Shop.co. All rights reserved.
+Privacy Policy: {{ site_url }}/privacy | Terms of Service: {{ site_url }}/terms
