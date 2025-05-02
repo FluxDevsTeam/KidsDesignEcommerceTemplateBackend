@@ -1,7 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from rest_framework_nested.routers import NestedDefaultRouter
-from .dashboard import OrderDashboard
+from apps.admin.dashboard import OrderDashboard
 from .views import ApiOrder, ApiAdminOrder
 
 router = DefaultRouter()
