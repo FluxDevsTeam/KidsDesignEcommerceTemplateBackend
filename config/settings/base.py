@@ -51,7 +51,7 @@ INSTALLED_APPS = [
     'apps.payment',
     'apps.products',
     'apps.wishlist',
-    'apps.admin',
+    'apps.ecommerce_admin',
 ]
 
 MIDDLEWARE = [
