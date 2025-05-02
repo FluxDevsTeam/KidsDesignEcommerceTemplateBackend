@@ -1,5 +1,3 @@
-import time
-
 from django.core.cache import cache
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import viewsets
