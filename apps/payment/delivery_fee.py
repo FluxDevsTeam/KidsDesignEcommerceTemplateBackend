@@ -11,7 +11,7 @@ SIZE_FEE = 40
 
 # Quantity thresholds for different pricing tiers
 QUANTITY_THRESHOLDS = [
-    (3, 1800),  # For quantities up to 3 items, fee is 1800 per item
+    (3, 1800),
     (5, 1500),
     (10, 1200),
     (15, 1000),

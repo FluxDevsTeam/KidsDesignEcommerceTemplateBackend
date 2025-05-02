@@ -1,16 +1,12 @@
-from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
 from math import radians, sin, cos, sqrt, atan2
 from datetime import timedelta
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils.timezone import now
-import logging
 import requests
 from django.conf import settings
-from django.core.mail import send_mail
 from .tasks import is_celery_healthy, send_refund_email_synchronously, send_manual_refund_notification_email, \
     send_user_refund_email_synchronously, send_user_refund_notification_email
-from ..orders.tasks import refund_confirmation_email
 
 AVAILABLE_STATES = ["Lagos", "Ogun", "Abuja", "Kaduna", "Anambra", "Cross River"]
 WAREHOUSE_CITY = "Lagos"
