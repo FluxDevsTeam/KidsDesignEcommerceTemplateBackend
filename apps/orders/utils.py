@@ -4,9 +4,7 @@ from django.conf import settings
 import requests
 from django.utils import timezone
 from .tasks import (send_manual_refund_notification_email, send_refund_initiated_notification_email, is_celery_healthy,
-                    send_refund_email_synchronously, send_refund_initiated_email_synchronously,
-                    refund_confirmation_email, send_order_shipped_email, send_order_delivered_email,
-                    send_shipped_email_synchronously, send_delivered_email_synchronously)
+                    send_refund_email_synchronously, send_refund_initiated_email_synchronously,refund_confirmation_email)
 
 
 def swagger_helper(tags, model):
@@ -58,8 +56,7 @@ def initiate_refund(order, is_admin=False):
             notify_user_for_refunded_order(order)
             return True
     except requests.exceptions.RequestException:
-        if not is_admin:
-            notify_admin_for_manual_refund(order)
+        notify_admin_for_manual_refund(order)
         return False
 
 
@@ -158,51 +155,5 @@ def notify_user_for_refunded_order(order):
                 'first_name': first_name,
                 'total_amount': str(order.total_amount),
                 'refund_date': refund_date
-            }
-        )
-
-
-def notify_user_for_shipped_order(order):
-    user_email = order.email or 'unknown@example.com'
-    first_name = order.first_name or 'Customer'
-    estimated_delivery = order.estimated_delivery
-
-    if not is_celery_healthy():
-        send_shipped_email_synchronously(
-            order_id=str(order.id),
-            user_email=user_email,
-            first_name=first_name,
-            estimated_delivery=estimated_delivery
-        )
-    else:
-        send_order_shipped_email.apply_async(
-            kwargs={
-                'order_id': str(order.id),
-                'user_email': user_email,
-                'first_name': first_name,
-                'estimated_delivery': estimated_delivery
-            }
-        )
-
-
-def notify_user_for_delivered_order(order):
-    user_email = order.email or 'unknown@example.com'
-    first_name = order.first_name or 'Customer'
-    delivery_date = order.delivery_date
-
-    if not is_celery_healthy():
-        send_delivered_email_synchronously(
-            order_id=str(order.id),
-            user_email=user_email,
-            first_name=first_name,
-            delivery_date=delivery_date
-        )
-    else:
-        send_order_delivered_email.apply_async(
-            kwargs={
-                'order_id': str(order.id),
-                'user_email': user_email,
-                'first_name': first_name,
-                'delivery_date': delivery_date
             }
         )
