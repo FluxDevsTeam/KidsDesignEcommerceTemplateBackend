@@ -9,6 +9,7 @@ def is_celery_healthy():
     except Exception as e:
         return False
 
+
 def send_refund_initiated_email_synchronously(order_id, user_id, first_name, last_name, phone_no, transaction_id, amount, provider, admin_email):
     try:
         refund_initiated_notification_email(

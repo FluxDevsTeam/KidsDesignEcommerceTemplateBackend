@@ -28,7 +28,7 @@ class OrderDashboard(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     permission_classes = [IsAdminUser]
 
-    @swagger_auto_schema(operation_id="order --admin only", operation_description="monthly order data", tags=["Order admin page"])
+    @swagger_auto_schema(operation_id="Admin dashboard page", operation_description="monthly operational data", tags=["Admin"])
     def retrieve(self, *args, **kwargs):
         year = date.today().year
         query = self.get_queryset()
@@ -99,7 +99,7 @@ class ApiAdminOrder(viewsets.ModelViewSet):
     def get_queryset(self):
         return Order.objects.all()
 
-    @swagger_helper("Order admin page", "order")
+    @swagger_helper("Admin", "Admin Orders page")
     def list(self, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
 
@@ -147,11 +147,11 @@ class ApiAdminOrder(viewsets.ModelViewSet):
 
         return Response(response_data)
 
-    @swagger_helper("Order admin page", "order")
+    @swagger_helper("Admin", "Admin Orders page")
     def retrieve(self, *args, **kwargs):
         return super().retrieve(*args, **kwargs)
 
-    @swagger_helper("Order admin page", "order")
+    @swagger_helper("Admin", "Admin Orders page")
     def partial_update(self, *args, **kwargs):
         order = self.get_object()
         serializer = self.get_serializer(order, data=self.request.data, partial=True)

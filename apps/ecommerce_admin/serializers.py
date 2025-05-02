@@ -1,6 +1,5 @@
 from rest_framework import serializers
-from .models import Order, OrderItem
-from ..products.serializers import ProductSimpleViewSerializer
+from ..orders.models import Order
 
 
 class PatchOrderSerializer(serializers.ModelSerializer):
