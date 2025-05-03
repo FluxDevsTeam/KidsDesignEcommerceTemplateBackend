@@ -1,4 +1,6 @@
 from rest_framework import serializers
+
+from .models import AdminSettings, DeliverySettings, DeveloperSettings
 from ..orders.models import Order
 
 
@@ -9,3 +11,21 @@ class PatchOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = ["status", "delivery_date"]
+
+
+class AdminSettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AdminSettings
+        fields = ["available_states", "warehouse_state", "phone_number", "customer_support_email", "admin_email", "brand_logo", "facebook", "twitter", "linkedin", "tiktok"]
+
+
+class DeliverySettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DeliverySettings
+        fields = ["base_fee", "fee_per_km", "weigh_fee"]
+
+
+class DeveloperSettingsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DeveloperSettings
+        fields = ["brand_name", "contact_us", "terms_of_service", "backend_base_route", "frontend_base_route", "order_route_frontend", "payment_failed_url"]
