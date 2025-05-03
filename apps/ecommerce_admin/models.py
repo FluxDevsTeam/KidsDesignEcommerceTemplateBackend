@@ -42,13 +42,14 @@ STATE_CHOICES = (
 )
 
 
+# had to set default for everything so the application doesn't crash and for better understanding as it is a template
 class AdminSettings(models.Model):
     singleton = models.BooleanField(default=True, unique=True, editable=False)
     available_states = models.JSONField(default=list)
-    warehouse_state = models.CharField(max_length=50, choices=STATE_CHOICES)
-    phone_number = models.CharField(max_length=20)
-    customer_support_email = models.EmailField()
-    admin_email = models.EmailField()
+    warehouse_state = models.CharField(max_length=50, choices=STATE_CHOICES, default="Lagos")
+    phone_number = models.CharField(max_length=20, default="+0123456789")
+    customer_support_email = models.EmailField(default="suskidee@gmail.com")
+    admin_email = models.EmailField(default="suskidee@gmail.com")
     brand_logo = models.ImageField(upload_to="brand_logo/")
     facebook = models.CharField(max_length=100, null=True, blank=True)
     instagram = models.CharField(max_length=100, null=True, blank=True)
@@ -74,9 +75,9 @@ class AdminSettings(models.Model):
 
 class DeliverySettings(models.Model):
     singleton = models.BooleanField(default=True, unique=True, editable=False)
-    fee_per_km = models.CharField(max_length=20)
-    base_fee = models.CharField(max_length=20)
-    weigh_fee = models.CharField(max_length=20)
+    fee_per_km = models.DecimalField(max_digits=10, decimal_places=2, default=5000)
+    base_fee = models.DecimalField(max_digits=10, decimal_places=2, default=5000)
+    weigh_fee = models.DecimalField(max_digits=10, decimal_places=2, default=5000)
 
     def __str__(self):
         return self.warehouse_state
@@ -96,13 +97,13 @@ class DeliverySettings(models.Model):
 
 class DeveloperSettings(models.Model):
     singleton = models.BooleanField(default=True, unique=True, editable=False)
-    brand_name = models.CharField(max_length=200)
-    contact_us = models.CharField(max_length=200)
-    terms_of_service = models.CharField(max_length=200)
-    backend_base_route = models.CharField(max_length=200)
-    frontend_base_route = models.CharField(max_length=200)
-    order_route_frontend = models.CharField(max_length=200)
-    payment_failed_url = models.CharField(max_length=200)
+    brand_name = models.CharField(max_length=200, default="Shop.co")
+    contact_us = models.CharField(max_length=200, default="https://ecommercetemplateweb.netlify.app/terms-of-service")
+    terms_of_service = models.CharField(max_length=200, default="https://ecommercetemplateweb.netlify.app/contact-us")
+    backend_base_route = models.CharField(max_length=200, default="https://ecommercetemplate.pythonanywhere.com/")
+    frontend_base_route = models.CharField(max_length=200, default="https://ecommercetemplateweb.netlify.app/")
+    order_route_frontend = models.CharField(max_length=200, default="https://ecommercetemplate.pythonanywhere.com/orders")
+    payment_failed_url = models.CharField(max_length=200, default="https://ecommercetemplate.pythonanywhere.com/order_failed")
 
     def save(self, *args, **kwargs):
         self.singleton = True
