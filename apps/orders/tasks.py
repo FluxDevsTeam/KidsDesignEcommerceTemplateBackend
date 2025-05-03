@@ -1,5 +1,5 @@
 from celery import shared_task, current_app
-from .emails import refund_confirmation_email as email_func, manual_refund_notification_email, refund_initiated_notification_email, order_shipped_email, order_delivered_email
+from .emails import refund_confirmation_email as email_func, manual_refund_notification_email, refund_initiated_notification_email
 
 
 def is_celery_healthy():

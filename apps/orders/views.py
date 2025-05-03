@@ -6,11 +6,10 @@ from .models import Order
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets, status
 from .pagination import CustomPagination
-from .utils import swagger_helper, initiate_refund, notify_user_for_delivered_order
+from .utils import swagger_helper, initiate_refund
 from datetime import timedelta
 from ..products.models import ProductSize
 from django.utils import timezone
-from pytz import timezone as pytz_timezone
 
 
 class ApiOrder(viewsets.ModelViewSet):
@@ -32,6 +31,10 @@ class ApiOrder(viewsets.ModelViewSet):
     @swagger_helper("Order", "order")
     def list(self, *args, **kwargs):
         return super().list(*args, **kwargs)
+
+    @swagger_helper("Order", "order")
+    def retrieve(self, *args, **kwargs):
+        return super().retrieve(*args, **kwargs)
 
     @swagger_helper("Order", "order")
     def partial_update(self, *args, **kwargs):
@@ -81,14 +84,6 @@ class ApiOrder(viewsets.ModelViewSet):
             else:
                 return Response({"error": "Refund processing failed. Admin has been notified."}, status=503)
 
-        elif serializer.validated_data.get('status') == 'DELIVERED':
-            order.status = 'DELIVERED'
-            current_time = timezone.now()
-            lagos_tz = pytz_timezone('Africa/Lagos')
-            lagos_time = current_time.astimezone(lagos_tz)
-            order.delivery_date = lagos_time.date()
-            order.save()
-            notify_user_for_delivered_order(order)
         else:
             serializer.save()
         response_serializer = OrderSerializer(order)
