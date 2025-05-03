@@ -1,11 +1,12 @@
 from django.db import transaction
 from django.db.models import Sum, F, Count, Case, When, IntegerField, Q
 from django.core.cache import cache
-from .serializers import PatchOrderSerializer
+from .models import AdminSettings, DeliverySettings, DeveloperSettings
+from .serializers import PatchOrderSerializer, DeveloperSettingsSerializer, DeliverySettingsSerializer, AdminSettingsSerializer
 from ..orders.serializers import OrderSerializer
 from ..orders.models import Order
 from rest_framework.permissions import IsAdminUser, AllowAny
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, mixins
 from .pagination import CustomPagination
 from .utils import swagger_helper, initiate_refund, notify_user_for_shipped_order, notify_user_for_delivered_order
 from .filters import OrderFilter
@@ -207,3 +208,69 @@ class ApiAdminOrder(viewsets.ModelViewSet):
             serializer.save()
         response_serializer = OrderSerializer(order)
         return Response(response_serializer.data)
+
+
+class ApiAdminSettings(mixins.UpdateModelMixin, viewsets.GenericViewSet):
+    serializer_class = AdminSettingsSerializer
+    http_method_names = ["get", "patch", "head", "options"]
+
+    def get_queryset(self):
+        return AdminSettings.objects.all()
+
+    def get_object(self):
+        instance, created = AdminSettings.objects.get_or_create(id=1)
+        return instance
+
+    @swagger_helper("Admin", "Admin settings page")
+    def list(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
+    @swagger_helper("Admin", "Admin settings page")
+    def partial_update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+
+class ApiDeliverySettings(mixins.UpdateModelMixin, viewsets.GenericViewSet):
+    serializer_class = AdminSettingsSerializer
+    http_method_names = ["get", "patch", "head", "options"]
+
+    def get_queryset(self):
+        return DeliverySettings.objects.all()
+
+    def get_object(self):
+        instance, created = DeliverySettings.objects.get_or_create(id=1)
+        return instance
+
+    @swagger_helper("Admin", "Admin delivery settings page")
+    def list(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
+    @swagger_helper("Admin", "Admin delivery settings page")
+    def partial_update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+
+class ApiDeveloperSettings(mixins.UpdateModelMixin, viewsets.GenericViewSet):
+    serializer_class = DeveloperSettingsSerializer
+    http_method_names = ["get", "patch", "head", "options"]
+
+    def get_queryset(self):
+        return DeveloperSettings.objects.all()
+
+    def get_object(self):
+        instance, created = DeveloperSettings.objects.get_or_create(id=1)
+        return instance
+
+    @swagger_helper("Admin", "Admin developer settings page")
+    def list(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
+    @swagger_helper("Admin", "Admin developer settings page")
+    def partial_update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
