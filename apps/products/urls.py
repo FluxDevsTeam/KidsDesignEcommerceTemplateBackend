@@ -1,5 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
+from rest_framework_nested.routers import NestedDefaultRouter
 from .views import ApiProductCategory, ApiProductSubCategory, ApiProduct, ApiProductSize
 
 router = DefaultRouter()
@@ -8,7 +9,10 @@ router.register("category", ApiProductCategory, basename="product_category")
 router.register("item", ApiProduct, basename="product_items")
 router.register("size", ApiProductSize, basename="product_size")
 
-urlpatterns = [
-    path("", include(router.urls))
-]
+product_router = NestedDefaultRouter(router, 'item', lookup='item')
+product_router.register('size', ApiProductSize, basename='product_size')
 
+urlpatterns = [
+    path("", include(router.urls)),
+    path("", include(product_router.urls))
+]

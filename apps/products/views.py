@@ -1,4 +1,7 @@
 import json
+
+from django.conf import settings
+from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from django.core.cache import cache
@@ -18,6 +21,8 @@ from django.db import transaction
 from itertools import chain
 import random
 
+TIMEOUT = int(settings.CACHE_TIMEOUT)
+
 
 class ApiProductCategory(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
@@ -33,7 +38,7 @@ class ApiProductCategory(viewsets.ModelViewSet):
 
     @swagger_helper(tags="ProductCategory", model="Product category")
     def list(self, request, *args, **kwargs):
-        cache_timeout = 300
+        cache_timeout = TIMEOUT
         cache_params = dict(request.query_params)
         cache_key = f"category_list:{json.dumps(cache_params, sort_keys=True)}"
         cached_response = cache.get(cache_key)
@@ -46,7 +51,7 @@ class ApiProductCategory(viewsets.ModelViewSet):
 
     @swagger_helper(tags="ProductCategory", model="Product category")
     def retrieve(self, request, *args, **kwargs):
-        cache_timeout = 300
+        cache_timeout = TIMEOUT
         cache_key = f"category_detail:{kwargs['pk']}"
         cached_response = cache.get(cache_key)
         if cached_response:
@@ -114,7 +119,7 @@ class ApiProductSubCategory(viewsets.ModelViewSet):
 
     @swagger_helper(tags="ProductSubCategory", model="Product sub category")
     def list(self, request, *args, **kwargs):
-        cache_timeout = 300
+        cache_timeout = TIMEOUT
         cache_params = dict(request.query_params)
         cache_key = f"subcategory_list:{json.dumps(cache_params, sort_keys=True)}"
         cached_response = cache.get(cache_key)
@@ -127,7 +132,7 @@ class ApiProductSubCategory(viewsets.ModelViewSet):
 
     @swagger_helper(tags="ProductSubCategory", model="Product sub category")
     def retrieve(self, request, *args, **kwargs):
-        cache_timeout = 300
+        cache_timeout = TIMEOUT
         cache_key = f"subcategory_detail:{kwargs['pk']}"
         cached_response = cache.get(cache_key)
         if cached_response:
@@ -190,7 +195,7 @@ class ApiProduct(viewsets.ModelViewSet):
 
     @swagger_helper(tags="Product", model="Product")
     def list(self, request, *args, **kwargs):
-        cache_timeout = 300
+        cache_timeout = TIMEOUT
         cache_params = dict(request.query_params)
         cache_key = f"product_list:{json.dumps(cache_params, sort_keys=True)}"
         cached_response = cache.get(cache_key)
@@ -203,7 +208,7 @@ class ApiProduct(viewsets.ModelViewSet):
 
     @swagger_helper(tags="Product", model="Product")
     def retrieve(self, request, *args, **kwargs):
-        cache_timeout = 300
+        cache_timeout = TIMEOUT
         cache_key = f"product_detail:{kwargs['pk']}"
         cached_response = cache.get(cache_key)
         if cached_response:
@@ -301,7 +306,7 @@ class ApiProduct(viewsets.ModelViewSet):
     @swagger_helper(tags="Product", model="Product")
     @action(methods=['GET'], detail=False)
     def homepage(self, request):
-        cache_timeout = 300
+        cache_timeout = TIMEOUT
         cache_params = dict(request.query_params)
         cache_key = f"product_homepage:{json.dumps(cache_params, sort_keys=True)}"
         cached_response = cache.get(cache_key)
@@ -339,7 +344,7 @@ class ApiProduct(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], url_path='search')
     def search(self, request, *args, **kwargs):
         query = request.query_params.get("search", "").strip()
-        cache_timeout = 300
+        cache_timeout = TIMEOUT
         cache_params = dict(request.query_params)
         cache_key = f"product_search:{json.dumps(cache_params, sort_keys=True)}"
         cached_response = cache.get(cache_key)
@@ -375,7 +380,7 @@ class ApiProduct(viewsets.ModelViewSet):
         if not query:
             return Response([])
 
-        cache_timeout = 300
+        cache_timeout = TIMEOUT
         cache_key = f"search_suggestions:{query}"
         cached_response = cache.get(cache_key)
         if cached_response:
@@ -416,7 +421,7 @@ class ApiProduct(viewsets.ModelViewSet):
         openapi.Parameter('page_size', openapi.IN_QUERY, description="Items per page (max: 20)", type=openapi.TYPE_INTEGER),], operation_id="Product Suggestions", operation_description="Get product suggestions based on subcategory priority, with optional secondary subcategory", tags=["Product"])
     @action(detail=False, methods=['get'], url_path='suggestions')
     def suggestions(self, request, *args, **kwargs):
-        cache_timeout = 300
+        cache_timeout = TIMEOUT
         cache_params = dict(request.query_params)
         cache_key = f"product_suggestions:{json.dumps(cache_params, sort_keys=True)}"
         cached_response = cache.get(cache_key)
@@ -434,95 +439,96 @@ class ApiProduct(viewsets.ModelViewSet):
         ]
 
         if not sub_category_id and not second_sub_category_id:
-            all_products = products.order_by('?')[:max_items]
+            all_products = products.order_by("top_selling_position", "latest_item_position")[:max_items]
             final_products = list(all_products)
 
-        elif sub_category_id and second_sub_category_id:
+        else:
             try:
-                sub_category_id = int(sub_category_id)
-                second_sub_category_id = int(second_sub_category_id)
+                priority_pools = []
+                used_category_ids = set()
+                selected_product_ids = set()
 
-                if sub_category_id == second_sub_category_id:
-                    second_sub_category_id = None
+                if sub_category_id:
+                    sub_category_id = int(sub_category_id)
+                    target_subcategory = ProductSubCategory.objects.get(id=sub_category_id)
+                    target_category = target_subcategory.category
+                    used_category_ids.add(target_category.id)
+                    priority_pools.append({
+                        'products': list(products.filter(sub_category_id=sub_category_id).order_by(*ordering)),
+                        'weight': 0.4
+                    })
+                    priority_pools.append({
+                        'products': list(products.filter(sub_category__category=target_category)
+                                         .exclude(sub_category_id=sub_category_id).order_by(*ordering)),
+                        'weight': 0.2
+                    })
 
-                target_subcategory = ProductSubCategory.objects.get(id=sub_category_id)
-                target_category = target_subcategory.category
-
-                priority_1 = list(products.filter(sub_category_id=sub_category_id).order_by(*ordering))
-                p1_count = len(priority_1)
-
-                priority_2 = list(products.filter(
-                    sub_category__category=target_category
-                ).exclude(sub_category_id=sub_category_id).order_by(*ordering))
-                p2_limit = max(0, max_items - p1_count)
-                p2_count = len(priority_2[:p2_limit])
-
-                priority_3 = []
                 if second_sub_category_id:
-                    second_target_subcategory = ProductSubCategory.objects.get(id=second_sub_category_id)
-                    priority_3 = list(products.filter(sub_category_id=second_sub_category_id).order_by(*ordering))
-                p3_count = len(priority_3)
+                    second_sub_category_id = int(second_sub_category_id)
+                    if sub_category_id and sub_category_id == second_sub_category_id:
+                        second_sub_category_id = None
+                    else:
+                        second_target_subcategory = ProductSubCategory.objects.get(id=second_sub_category_id)
+                        second_target_category = second_target_subcategory.category
+                        used_category_ids.add(second_target_category.id)
+                        priority_pools.append({
+                            'products': list(
+                                products.filter(sub_category_id=second_sub_category_id).order_by(*ordering)),
+                            'weight': 0.25
+                        })
+                        priority_pools.append({
+                            'products': list(products.filter(sub_category__category=second_target_category)
+                                             .exclude(sub_category_id=second_sub_category_id).order_by(*ordering)),
+                            'weight': 0.1
+                        })
 
-                priority_4 = []
-                if second_sub_category_id:
-                    second_target_category = second_target_subcategory.category
-                    priority_4 = list(products.filter(sub_category__category=second_target_category).exclude(sub_category_id=second_sub_category_id).order_by(*ordering))
-                p4_limit = max(0, max_items - p1_count - p2_count - p3_count)
+                priority_pools.append({
+                    'products': list(
+                        products.exclude(sub_category__category__in=used_category_ids).order_by(*ordering)),
+                    'weight': 0.05
+                })
 
-                priority_5 = list(products.exclude(sub_category__category__in=[target_category, second_target_category] if second_sub_category_id else [target_category]).order_by(*ordering))
-                p5_limit = max(0, max_items - p1_count - p2_count - p3_count - len(priority_4[:p4_limit]))
-
-                primary_pool = list(chain(priority_1[:max_items], priority_2[:p2_limit]))
-                secondary_pool = list(chain(priority_3[:max_items], priority_4[:p4_limit])) if second_sub_category_id else []
+                priority_pools = [pool for pool in priority_pools if pool['products']]
+                total_weight = sum(pool['weight'] for pool in priority_pools)
+                if total_weight > 0:
+                    for pool in priority_pools:
+                        pool['weight'] /= total_weight
 
                 final_products = []
-                primary_weight = 0.7
-                while len(final_products) < max_items:
-                    if not primary_pool and not secondary_pool:
+                while len(final_products) < max_items and any(pool['products'] for pool in priority_pools):
+                    rand = random.random()
+                    cumulative_weight = 0
+                    selected_pool = None
+                    for pool in priority_pools:
+                        if not pool['products']:
+                            continue
+                        cumulative_weight += pool['weight']
+                        if rand <= cumulative_weight:
+                            selected_pool = pool
+                            break
+                    if not selected_pool:
+                        selected_pool = next((pool for pool in priority_pools if pool['products']), None)
+                    if not selected_pool:
                         break
 
-                    if not primary_pool:
-                        final_products.extend(secondary_pool[:max_items - len(final_products)])
-                        break
-                    if not secondary_pool:
-                        final_products.extend(primary_pool[:max_items - len(final_products)])
-                        break
+                    selected_pool['products'] = [p for p in selected_pool['products'] if
+                                                 p.id not in selected_product_ids]
+                    if not selected_pool['products']:
+                        continue
 
-                    if random.random() < primary_weight:
-                        if primary_pool:
-                            final_products.append(primary_pool.pop(0))
-                    else:
-                        if secondary_pool:
-                            final_products.append(secondary_pool.pop(0))
+                    product = selected_pool['products'].pop(0)
+                    selected_product_ids.add(product.id)
+                    final_products.append(product)
 
-                remaining_slots = max_items - len(final_products)
-                if remaining_slots > 0:
-                    final_products.extend(priority_5[:remaining_slots])
+                if len(final_products) < max_items:
+                    remaining_products = list(
+                        products.exclude(id__in=selected_product_ids).order_by('?')[:max_items - len(final_products)])
+                    final_products.extend(remaining_products)
 
                 final_products = final_products[:max_items]
 
             except (ProductSubCategory.DoesNotExist, ValueError):
-                final_products = products.order_by('?')[:max_items]
-
-        else:
-            active_sub_category_id = sub_category_id or second_sub_category_id
-            try:
-                active_sub_category_id = int(active_sub_category_id)
-                target_subcategory = ProductSubCategory.objects.get(id=active_sub_category_id)
-                target_category = target_subcategory.category
-
-                priority_1 = products.filter(sub_category_id=active_sub_category_id).order_by(*ordering)
-                priority_2 = products.filter(sub_category__category=target_category).exclude(sub_category_id=active_sub_category_id).order_by(*ordering)
-                priority_3 = products.exclude(sub_category__category=target_category).order_by(*ordering)
-
-                p1_count = priority_1.count()
-                p2_limit = max(0, max_items - p1_count)
-                p3_limit = max(0, max_items - p1_count - priority_2.count())
-
-                final_products = list(
-                    chain(priority_1[:max_items], priority_2[:p2_limit], priority_3[:p3_limit]))[:max_items]
-            except (ProductSubCategory.DoesNotExist, ValueError):
-                final_products = products.order_by('?')[:max_items]
+                final_products = list(products.order_by('?')[:max_items])
 
         paginator = self.pagination_class()
         page = paginator.paginate_queryset(final_products, request, view=self)
@@ -540,12 +546,15 @@ class ApiProduct(viewsets.ModelViewSet):
 
 class ApiProductSize(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
-    queryset = ProductSize.objects.all()
     pagination_class = CustomPagination
     permission_classes = [IsAdminOrReadOnly]
     filterset_fields = ["product"]
     search_fields = ["size"]
     ordering_fields = ["quantity"]
+
+    def get_queryset(self):
+        product_id = self.kwargs.get('item_pk')
+        return ProductSize.objects.filter(product=product_id)
 
     def get_serializer_class(self):
         if self.request.method == "GET":
@@ -554,7 +563,7 @@ class ApiProductSize(viewsets.ModelViewSet):
 
     @swagger_helper(tags="ProductSize", model="Product size")
     def list(self, request, *args, **kwargs):
-        cache_timeout = 300
+        cache_timeout = TIMEOUT
         cache_params = dict(request.query_params)
         cache_key = f"product_size_list:{json.dumps(cache_params, sort_keys=True)}"
         cached_response = cache.get(cache_key)
@@ -567,7 +576,7 @@ class ApiProductSize(viewsets.ModelViewSet):
 
     @swagger_helper(tags="ProductSize", model="Product size")
     def retrieve(self, request, *args, **kwargs):
-        cache_timeout = 300
+        cache_timeout = TIMEOUT
         cache_key = f"product_size_detail:{kwargs['pk']}"
         cached_response = cache.get(cache_key)
         if cached_response:
@@ -616,5 +625,12 @@ class ApiProductSize(viewsets.ModelViewSet):
         cache.delete_pattern("product_homepage:*")
         return response
 
-        
+    def perform_create(self, serializer):
+        product_id = self.kwargs.get('item_pk')
+        product = get_object_or_404(Product, pk=product_id)
+        serializer.save(product=product)
 
+    def perform_update(self, serializer):
+        product_id = self.kwargs.get('item_pk')
+        product = get_object_or_404(Product, pk=product_id)
+        serializer.save(product=product)

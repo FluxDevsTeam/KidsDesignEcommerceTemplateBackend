@@ -16,10 +16,10 @@ class ProductFilter(FilterSet):
         fields = ['category', 'sub_category', 'date_created', 'min_price', 'max_price', 'is_available', 'latest_item', 'top_selling_items']
 
     def filter_min_price(self, queryset, name, value):
-        return queryset.annotate(min_size_price=Min('sizes__price')).filter(min_size_price__gte=value)
+        return queryset.filter(sizes__price__gt=0).annotate(min_size_price=Min('sizes__price')).filter(min_size_price__gte=value)
 
     def filter_max_price(self, queryset, name, value):
-        return queryset.annotate(min_size_price=Min('sizes__price')).filter(min_size_price__lte=value)
+        return queryset.filter(sizes__price__gt=0).annotate(min_size_price=Min('sizes__price')).filter(min_size_price__lte=value)
 
     def filter_discount(self, queryset, name, value):
         if value:
