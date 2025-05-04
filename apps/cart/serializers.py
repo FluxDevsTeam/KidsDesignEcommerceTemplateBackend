@@ -33,10 +33,9 @@ class CartItemSerializer(serializers.ModelSerializer):
 
 
 class CartProductViewSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Product
-        fields = ["id", "name", "image1", "discounted_price", "price"]
+        fields = ["id", "name", "image1"]
         read_only_fields = ["id"]
 
 
@@ -57,10 +56,9 @@ class CartSerializerView(serializers.ModelSerializer):
 
     class Meta:
         model = Cart
-        fields = ["id", "user", "first_name", "last_name", "email", "state", "city", "delivery_address", "phone_number",
-                  "estimated_delivery", "cart_items", "total"]
+        fields = ["id", "user", "first_name", "last_name", "email", "state", "city", "delivery_address", "phone_number","estimated_delivery", "cart_items", "total"]
         read_only_fields = ["id", "user"]
 
     def get_total(self, obj):
-        total = obj.cartitem_cart.aggregate(total=Sum(Case(When(product__discounted_price__isnull=False, product__discounted_price__lt=F("product__price"), then=F("product__discounted_price") * F("quantity")),default=F("product__price") * F("quantity"), output_field=DecimalField(max_digits=10, decimal_places=2))))["total"] or 0
+        total = obj.cartitem_cart.aggregate(total=Sum(F("size__price") * F("quantity"), output_field=DecimalField(max_digits=10, decimal_places=2)))["total"] or 0
         return total
