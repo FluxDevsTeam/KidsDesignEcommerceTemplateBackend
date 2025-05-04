@@ -47,8 +47,6 @@ class Product(models.Model):
     image1 = models.ImageField(upload_to="product_images/")
     image2 = models.ImageField(upload_to="product_images/", null=True, blank=True)
     image3 = models.ImageField(upload_to="product_images/", null=True, blank=True)
-    discounted_price = models.DecimalField(max_digits=10, decimal_places=2)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
     weight = models.CharField(max_length=50, choices=WEIGHT_CHOICES, default="Light")
     dimensional_size = models.CharField(max_length=50, choices=SIZE_CHOICES, default="Small")
     is_available = models.BooleanField(default=True)
@@ -58,6 +56,8 @@ class Product(models.Model):
     top_selling_position = models.PositiveIntegerField(null=True, blank=True)
     date_created = models.DateField(auto_now_add=True)
     date_updated = models.DateField(auto_now=True)
+    unlimited = models.BooleanField(default=False)
+    production_days = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         return self.name
@@ -66,7 +66,9 @@ class Product(models.Model):
 class ProductSize(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="sizes")
     size = models.CharField(max_length=100, unique=True)
-    quantity = models.PositiveIntegerField()
+    quantity = models.PositiveIntegerField(null=True, blank=True)
+    undiscounted_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 
     def __str__(self):
         return f"{self.product.name} -- {self.size}"
