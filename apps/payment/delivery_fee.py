@@ -4,10 +4,10 @@ from .utils import AVAILABLE_STATES, state_coords, calculate_distance, WAREHOUSE
 from ..cart.models import CartItem
 
 delivery = DeliverySettings.objects.first()
-FEE_PER_KM = 1000
-BASE_FEE = 1000
-WEIGHT_FEE = 1000
-SIZE_FEE = 1000
+FEE_PER_KM = delivery.fee_per_km
+BASE_FEE = delivery.base_fee
+WEIGHT_FEE = delivery.weigh_fee
+SIZE_FEE = delivery.size_fee
 
 # Quantity thresholds for different pricing tiers
 QUANTITY_THRESHOLDS = [
