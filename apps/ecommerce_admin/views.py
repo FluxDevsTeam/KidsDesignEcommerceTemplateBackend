@@ -100,7 +100,7 @@ class ApiAdminOrder(viewsets.ModelViewSet):
     def get_queryset(self):
         return Order.objects.all()
 
-    @swagger_helper("Admin", "Admin Orders page")
+    @swagger_helper("Admin Order", "Admin Orders page")
     def list(self, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
 
@@ -148,11 +148,11 @@ class ApiAdminOrder(viewsets.ModelViewSet):
 
         return Response(response_data)
 
-    @swagger_helper("Admin", "Admin Orders page")
+    @swagger_helper("Admin Order", "Admin Orders page")
     def retrieve(self, *args, **kwargs):
         return super().retrieve(*args, **kwargs)
 
-    @swagger_helper("Admin", "Admin Orders page")
+    @swagger_helper("Admin Order", "Admin Orders page")
     def partial_update(self, *args, **kwargs):
         order = self.get_object()
         serializer = self.get_serializer(order, data=self.request.data, partial=True)

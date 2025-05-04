@@ -7,8 +7,8 @@ router.register("order", ApiAdminOrder, basename="admin_order_page")
 
 urlpatterns = [
     path("", include(router.urls)),
-    path('ecommerce_admin-dashboard/', OrderDashboard.as_view({'get': 'retrieve'}), name='admin_dashboard_page'),
-    path('admin-settings/', ApiAdminSettings.as_view({'get': 'list', 'patch': 'partial_update'}), name='admin_settings'),
+    path('dashboard/', OrderDashboard.as_view({'get': 'retrieve'}), name='admin_dashboard_page'),
+    path('organisation-settings/', ApiAdminSettings.as_view({'get': 'list', 'patch': 'partial_update'}), name='admin_settings'),
     path('delivery-settings/', ApiDeliverySettings.as_view({'get': 'list', 'patch': 'partial_update'}), name='delivery_settings'),
     path('developer-settings/', ApiDeveloperSettings.as_view({'get': 'list', 'patch': 'partial_update'}), name='developer_settings'),
 ]
