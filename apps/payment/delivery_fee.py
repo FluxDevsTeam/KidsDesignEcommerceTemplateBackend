@@ -1,13 +1,17 @@
 from rest_framework.response import Response
-from ..ecommerce_admin.models import DeliverySettings
+# from ..ecommerce_admin.models import DeliverySettings
 from .utils import AVAILABLE_STATES, state_coords, calculate_distance, WAREHOUSE_CITY
 from ..cart.models import CartItem
 
-delivery = DeliverySettings.objects.first()
-FEE_PER_KM = delivery.fee_per_km
-BASE_FEE = delivery.base_fee
-WEIGHT_FEE = delivery.weigh_fee
-SIZE_FEE = delivery.size_fee
+# delivery = DeliverySettings.objects.first()
+# FEE_PER_KM = delivery.fee_per_km
+# BASE_FEE = delivery.base_fee
+# WEIGHT_FEE = delivery.weigh_fee
+# SIZE_FEE = delivery.size_fee
+FEE_PER_KM = 11
+BASE_FEE = 11
+WEIGHT_FEE = 11
+SIZE_FEE = 11
 
 # Quantity thresholds for different pricing tiers
 QUANTITY_THRESHOLDS = [
