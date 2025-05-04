@@ -8,7 +8,7 @@ from rest_framework import viewsets, status
 from .pagination import CustomPagination
 from .utils import swagger_helper, initiate_refund
 from datetime import timedelta
-from ..products.models import ProductSize
+from ..products.models import ProductSize, Product
 from django.utils import timezone
 
 
@@ -62,15 +62,14 @@ class ApiOrder(viewsets.ModelViewSet):
                     product_ids = set()
 
                     for item in order_items:
-                        product_size = ProductSize.objects.filter(
-                            product=item.product,
-                            size=item.size
-                        ).select_for_update().first()
-
+                        product_size = ProductSize.objects.filter(product=item.product,size=item.size).select_for_update().first()
                         if product_size:
-                            product_size.quantity += item.quantity
-                            product_size.save()
-                            product_ids.add(product_size.product.id)
+                            if not product_size.product.unlimited:
+                                product_ids.add(product_size.product.id)
+                            else:
+                                product_size.quantity += item.quantity
+                                product_size.save()
+                                product_ids.add(product_size.product.id)
                         else:
                             return Response({"error": "Product size not found."}, status=status.HTTP_400_BAD_REQUEST)
 

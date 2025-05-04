@@ -1,3 +1,4 @@
+from django.conf import settings
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
@@ -7,6 +8,8 @@ from .pagination import CustomPagination
 from .utils import swagger_helper
 from django.core.cache import cache
 import json
+
+TIMEOUT = int(settings.CACHE_TIMEOUT)
 
 
 class ApiWishlist(ModelViewSet):
@@ -24,7 +27,7 @@ class ApiWishlist(ModelViewSet):
 
     @swagger_helper("Wishlist", "wishlist")
     def list(self, request, *args, **kwargs):
-        cache_timeout = 300
+        cache_timeout = TIMEOUT
         cache_params = dict(request.query_params)
         cache_key = f"wishlist_list:{request.user.id}:{json.dumps(cache_params, sort_keys=True)}"
 
@@ -38,7 +41,7 @@ class ApiWishlist(ModelViewSet):
 
     @swagger_helper("Wishlist", "wishlist")
     def retrieve(self, request, *args, **kwargs):
-        cache_timeout = 300
+        cache_timeout = TIMEOUT
         wishlist_pk = kwargs["pk"]
         cache_key = f"wishlist_detail:{request.user.id}:{wishlist_pk}"
 
