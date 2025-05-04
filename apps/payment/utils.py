@@ -7,9 +7,11 @@ import requests
 from django.conf import settings
 from .tasks import is_celery_healthy, send_refund_email_synchronously, send_manual_refund_notification_email, \
     send_user_refund_email_synchronously, send_user_refund_notification_email
+from ..ecommerce_admin.models import OrganizationSettings
 
-AVAILABLE_STATES = ["Lagos", "Ogun", "Abuja", "Kaduna", "Anambra", "Cross River"]
-WAREHOUSE_CITY = "Lagos"
+organisation_settings = OrganizationSettings.objects.first()
+AVAILABLE_STATES = organisation_settings.available_states
+WAREHOUSE_CITY = organisation_settings.warehouse_state
 
 state_coords = {
     "Lagos": (6.5244, 3.3792),
@@ -89,9 +91,7 @@ def swagger_helper(tags, model):
 
         action_type = func.__name__
         get_description = descriptions.get(action_type, f"{action_type} {model}")
-        return swagger_auto_schema(operation_id=f"{action_type} {model}",
-                                   operation_description=f"{get_description}. you dont need to pass in any data. just be authenticated (pass in JWT key) and the backend would process everything",
-                                   tags=[tags])(func)
+        return swagger_auto_schema(operation_id=f"{action_type} {model}", operation_description=f"{get_description}. you dont need to pass in any data. just be authenticated (pass in JWT key) and the backend would process everything", tags=[tags])(func)
 
     return decorators
 

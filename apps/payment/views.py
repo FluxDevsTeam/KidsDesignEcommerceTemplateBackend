@@ -46,7 +46,7 @@ class PaymentSummaryViewSet(viewsets.ViewSet):
 
             # check for stock left
             for item in cart.cartitem_cart.all():
-                if item.size.quantity < item.quantity:
+                if not item.product.unlimited and item.size.quantity < item.quantity:
                     return Response({"error": f"Insufficient stock for {item.product.name}"}, status=400)
 
             estimated_delivery = calculate_delivery_dates(cart.state)
@@ -77,7 +77,7 @@ class PaymentInitiateViewSet(viewsets.ModelViewSet):
 
             # check stock availability
             for item in cart.cartitem_cart.all():
-                if item.size.quantity < item.quantity:
+                if not item.product.unlimited and item.size.quantity < item.quantity:
                     return Response({"error": f"Insufficient stock for {item.product.name}"}, status=400)
 
             input_serializer = PaymentCartSerializer(cart, data=request.data, partial=True)
@@ -187,7 +187,7 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
 
             for item in cart_items:
                 product_size = next(ps for ps in product_sizes if ps.id == item.size.id)
-                if product_size.quantity < item.quantity:
+                if not item.product.unlimited and product_size.quantity < item.quantity:
                     refund_result = initiate_refund(
                         provider=provider,
                         amount=amount,
@@ -205,14 +205,15 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
             # Deduct stock
             for item in cart_items:
                 product_size = next(ps for ps in product_sizes if ps.id == item.size.id)
-                product_size.quantity -= item.quantity
-                if product_size.quantity <= 0:
-                    cache.delete_pattern("product_list:*")
-                    cache.delete_pattern(f"product_detail:{product_size.product.id}")
-                    cache.delete_pattern("search:*")
-                    cache.delete_pattern("search_suggestions:*")
-                    cache.delete_pattern("product_suggestions:*")
-                    cache.delete_pattern("product_homepage:*")
+                if not item.product.unlimited:
+                    product_size.quantity -= item.quantity
+                    if product_size.quantity <= 0:
+                        cache.delete_pattern("product_list:*")
+                        cache.delete_pattern(f"product_detail:{product_size.product.id}")
+                        cache.delete_pattern("search:*")
+                        cache.delete_pattern("search_suggestions:*")
+                        cache.delete_pattern("product_suggestions:*")
+                        cache.delete_pattern("product_homepage:*")
                 cache.delete_pattern("product_size_list:*")
                 cache.delete_pattern(f"product_size_detail:{product_size.id}")
                 product_size.save()
@@ -250,7 +251,7 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
                     description=item.product.description,
                     colour=item.product.colour,
                     image1=item.product.image1,
-                    price=item.product.price,
+                    price=item.size.price,
                     size=item.size.size
                 )
 
@@ -408,7 +409,7 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
 
             for item in cart_items:
                 product_size = next(ps for ps in product_sizes if ps.id == item.size.id)
-                if product_size.quantity < item.quantity:
+                if not item.product.unlimited and product_size.quantity < item.quantity:
                     refund_result = initiate_refund(
                         provider=provider,
                         amount=amount,
@@ -424,14 +425,15 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
 
             for item in cart_items:
                 product_size = next(ps for ps in product_sizes if ps.id == item.size.id)
-                product_size.quantity -= item.quantity
-                if product_size.quantity <= 0:
-                    cache.delete_pattern("product_list:*")
-                    cache.delete_pattern(f"product_detail:{product_size.product.id}")
-                    cache.delete_pattern("search:*")
-                    cache.delete_pattern("search_suggestions:*")
-                    cache.delete_pattern("product_suggestions:*")
-                    cache.delete_pattern("product_homepage:*")
+                if not item.product.unlimited:
+                    product_size.quantity -= item.quantity
+                    if product_size.quantity <= 0:
+                        cache.delete_pattern("product_list:*")
+                        cache.delete_pattern(f"product_detail:{product_size.product.id}")
+                        cache.delete_pattern("search:*")
+                        cache.delete_pattern("search_suggestions:*")
+                        cache.delete_pattern("product_suggestions:*")
+                        cache.delete_pattern("product_homepage:*")
                 cache.delete_pattern("product_size_list:*")
                 cache.delete_pattern(f"product_size_detail:{product_size.id}")
                 product_size.save()
@@ -469,7 +471,7 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
                     description=item.product.description,
                     colour=item.product.colour,
                     image1=item.product.image1,
-                    price=item.product.price,
+                    price=item.size.price,
                     size=item.size.size
                 )
 
