@@ -175,6 +175,7 @@ PAYMENT_IMAGE_URL = os.getenv("PAYMENT_IMAGE_URL")
 SITE_URL = os.getenv("SITE_URL")
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")
+CACHE_TIMEOUT = os.getenv("CACHE_TIMEOUT")
 
 # Time & retry settings
 CELERY_TIMEZONE = 'Africa/Lagos'
