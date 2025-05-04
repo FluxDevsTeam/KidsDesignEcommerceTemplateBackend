@@ -7,13 +7,11 @@ import requests
 from django.conf import settings
 from .tasks import is_celery_healthy, send_refund_email_synchronously, send_manual_refund_notification_email, \
     send_user_refund_email_synchronously, send_user_refund_notification_email
-# from ..ecommerce_admin.models import OrganizationSettings
+from ..ecommerce_admin.models import OrganizationSettings
 
-# organisation_settings = OrganizationSettings.objects.first()
-# AVAILABLE_STATES = organisation_settings.available_states
-# WAREHOUSE_CITY = organisation_settings.warehouse_state
-AVAILABLE_STATES = ["Lagos"]
-WAREHOUSE_CITY = "Lagos"
+organisation_settings = OrganizationSettings.objects.first()
+AVAILABLE_STATES = organisation_settings.available_states
+WAREHOUSE_CITY = organisation_settings.warehouse_state
 
 state_coords = {
     "Lagos": (6.5244, 3.3792),
