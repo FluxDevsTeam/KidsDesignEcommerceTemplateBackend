@@ -1,11 +1,10 @@
 from django.db import transaction
 from django.db.models import Sum, F, Count, Case, When, IntegerField, Q
 from django.core.cache import cache
-from .models import AdminSettings, DeliverySettings, DeveloperSettings
-from .serializers import PatchOrderSerializer, DeveloperSettingsSerializer, DeliverySettingsSerializer, AdminSettingsSerializer
+from .models import OrganizationSettings, DeliverySettings, DeveloperSettings
+from .serializers import PatchOrderSerializer, DeveloperSettingsSerializer, DeliverySettingsSerializer, OrganizationSettingsSerializer
 from ..orders.serializers import OrderSerializer
 from ..orders.models import Order
-from rest_framework.permissions import IsAdminUser, AllowAny
 from rest_framework import viewsets, status, mixins
 from .pagination import CustomPagination
 from .utils import swagger_helper, initiate_refund, notify_user_for_shipped_order, notify_user_for_delivered_order
@@ -85,8 +84,8 @@ class OrderDashboard(viewsets.ModelViewSet):
 class ApiAdminOrder(viewsets.ModelViewSet):
     http_method_names = ["get", "patch", "head", "options"]
     pagination_class = CustomPagination
-    # permission_classes = [IsAdminUser]
-    permission_classes = [AllowAny]
+    queryset = Order.objects.all()
+    permission_classes = [IsAdminUser]
     filterset_class = OrderFilter
     ordering_fields = ['order_date', 'total_amount', 'delivery_date']
     ordering = ['-order_date', '-created_at']
@@ -96,9 +95,6 @@ class ApiAdminOrder(viewsets.ModelViewSet):
         if self.request.method == "GET":
             return OrderSerializer
         return PatchOrderSerializer
-
-    def get_queryset(self):
-        return Order.objects.all()
 
     @swagger_helper("Admin Order", "Admin Orders page")
     def list(self, *args, **kwargs):
@@ -121,8 +117,7 @@ class ApiAdminOrder(viewsets.ModelViewSet):
             total_orders=Count('id'),
             delivered_orders=Count(Case(When(status="DELIVERED", then=1), output_field=IntegerField())),
             returned_orders=Count(Case(When(status="REFUNDED", then=1), output_field=IntegerField())),
-            pending_orders=Count(
-                Case(When(~Q(status__in=["DELIVERED", "REFUNDED", "CANCELLED"]), then=1), output_field=IntegerField()))
+            pending_orders=Count(Case(When(~Q(status__in=["DELIVERED", "REFUNDED", "CANCELLED"]), then=1), output_field=IntegerField()))
         )
 
         delivered_orders = queryset.filter(status="DELIVERED")
@@ -168,19 +163,17 @@ class ApiAdminOrder(viewsets.ModelViewSet):
                 with transaction.atomic():
                     order_items = order.orderitem_order.select_related('product').all()
                     product_ids = set()
-
                     for item in order_items:
-                        product_size = ProductSize.objects.filter(
-                            product=item.product,
-                            size=item.size
-                        ).select_for_update().first()
-
+                        product_size = ProductSize.objects.filter(product=item.product,size=item.size).select_for_update().first()
                         if product_size:
-                            product_size.quantity += item.quantity
-                            product_size.save()
-                            product_ids.add(product_size.product.id)
+                            if not product_size.product.unlimited:
+                                product_ids.add(product_size.product.id)
+                            else:
+                                product_size.quantity += item.quantity
+                                product_size.save()
+                                product_ids.add(product_size.product.id)
                         else:
-                            return Response({"error": "Product size not found."}, status=status.HTTP_400_BAD_REQUEST)
+                            return Response({"error": "Product not found."}, status=status.HTTP_400_BAD_REQUEST)
 
                     cache.delete_pattern("product_list:*")
                     for product_id in product_ids:
@@ -210,15 +203,16 @@ class ApiAdminOrder(viewsets.ModelViewSet):
         return Response(response_serializer.data)
 
 
-class ApiAdminSettings(mixins.UpdateModelMixin, viewsets.GenericViewSet):
-    serializer_class = AdminSettingsSerializer
+class ApiOrganizationSettings(mixins.UpdateModelMixin, viewsets.GenericViewSet):
+    serializer_class = OrganizationSettingsSerializer
     http_method_names = ["get", "patch", "head", "options"]
+    permission_classes = [IsAdminUser]
 
     def get_queryset(self):
-        return AdminSettings.objects.all()
+        return OrganizationSettings.objects.all()
 
     def get_object(self):
-        instance, created = AdminSettings.objects.get_or_create(id=1)
+        instance, created = OrganizationSettings.objects.get_or_create(id=1)
         return instance
 
     @swagger_helper("Admin", "Admin settings page")
@@ -233,8 +227,9 @@ class ApiAdminSettings(mixins.UpdateModelMixin, viewsets.GenericViewSet):
 
 
 class ApiDeliverySettings(mixins.UpdateModelMixin, viewsets.GenericViewSet):
-    serializer_class = AdminSettingsSerializer
+    serializer_class = DeliverySettingsSerializer
     http_method_names = ["get", "patch", "head", "options"]
+    permission_classes = [IsAdminUser]
 
     def get_queryset(self):
         return DeliverySettings.objects.all()
@@ -257,6 +252,7 @@ class ApiDeliverySettings(mixins.UpdateModelMixin, viewsets.GenericViewSet):
 class ApiDeveloperSettings(mixins.UpdateModelMixin, viewsets.GenericViewSet):
     serializer_class = DeveloperSettingsSerializer
     http_method_names = ["get", "patch", "head", "options"]
+    permission_classes = [IsAdminUser]
 
     def get_queryset(self):
         return DeveloperSettings.objects.all()
