@@ -2,7 +2,7 @@ from django.urls import path, include
 
 
 urlpatterns = [
-    path('ecommerce_admin/', include('apps.ecommerce_admin.urls')),
+    path('admin/', include('apps.ecommerce_admin.urls')),
     path('cart/', include('apps.cart.urls')),
     path('orders/', include(('apps.orders.urls', 'orders'), namespace='orders')),
     path('payment/', include(('apps.payment.urls', 'payment'), namespace='payment')),
