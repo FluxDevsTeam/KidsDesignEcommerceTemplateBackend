@@ -2,7 +2,7 @@ from rest_framework.permissions import BasePermission
 from .models import Cart
 
 
-class IsAuthenticatedOrCartItemOwner(BasePermission):
+class IsAuthenticatedAndCartItemOwner(BasePermission):
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False

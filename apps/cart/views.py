@@ -1,15 +1,19 @@
 import json
+
+from django.conf import settings
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.core.cache import cache
 from .models import Cart, CartItem
-from .permissions import IsAuthenticatedOrCartItemOwner
+from .permissions import IsAuthenticatedAndCartItemOwner
 from .serializers import CartSerializer, CartItemSerializer, CartItemSerializerView, CartSerializerView, PatchCartSerializer
 from rest_framework import viewsets, status
 from .pagination import CustomPagination
 from .utils import swagger_helper
 from ..products.models import Product, ProductSize
+
+TIMEOUT = int(settings.CACHE_TIMEOUT)
 
 
 class ApiCart(viewsets.ModelViewSet):
@@ -29,7 +33,7 @@ class ApiCart(viewsets.ModelViewSet):
 
     @swagger_helper("Cart", "cart")
     def list(self, request, *args, **kwargs):
-        cache_timeout = 600
+        cache_timeout = TIMEOUT
         cache_params = dict(request.query_params)
         cache_key = f"cart_list:{request.user.id}:{json.dumps(cache_params, sort_keys=True)}"
         cached_response = cache.get(cache_key)
@@ -48,7 +52,7 @@ class ApiCart(viewsets.ModelViewSet):
 
     @swagger_helper("Cart", "cart")
     def retrieve(self, request, *args, **kwargs):
-        cache_timeout = 600
+        cache_timeout = TIMEOUT
         cache_key = f"cart_detail:{request.user.id}:{kwargs['pk']}"
         cached_response = cache.get(cache_key)
         if cached_response:
@@ -84,7 +88,7 @@ class ApiCart(viewsets.ModelViewSet):
 class ApiCartItem(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
     pagination_class = CustomPagination
-    permission_classes = [IsAuthenticatedOrCartItemOwner]
+    permission_classes = [IsAuthenticatedAndCartItemOwner]
 
     def get_serializer_class(self):
         if self.request.method == "GET":
@@ -96,7 +100,7 @@ class ApiCartItem(viewsets.ModelViewSet):
 
     @swagger_helper("CartItem", "cart item")
     def list(self, request, *args, **kwargs):
-        cache_timeout = 600
+        cache_timeout = TIMEOUT
         cache_params = dict(request.query_params)
         cache_key = f"cart_item_list:{request.user.id}:{self.kwargs.get('cart_pk')}:{json.dumps(cache_params, sort_keys=True)}"
         cached_response = cache.get(cache_key)
@@ -124,7 +128,7 @@ class ApiCartItem(viewsets.ModelViewSet):
             return Response({"error": "This item is already in your cart."}, status=status.HTTP_400_BAD_REQUEST)
 
         database_quantity = size.quantity
-        if database_quantity < 1:
+        if not product.unlimited and database_quantity < 1:
             return Response({"error": "The selected size is out of stock."}, status=status.HTTP_400_BAD_REQUEST)
 
         if quantity > database_quantity > 0:
@@ -140,7 +144,7 @@ class ApiCartItem(viewsets.ModelViewSet):
 
     @swagger_helper("CartItem", "cart item")
     def retrieve(self, request, *args, **kwargs):
-        cache_timeout = 600
+        cache_timeout = TIMEOUT
         cache_key = f"cart_item_detail:{request.user.id}:{kwargs['pk']}"
         cached_response = cache.get(cache_key)
         if cached_response:
@@ -165,18 +169,19 @@ class ApiCartItem(viewsets.ModelViewSet):
                 return Response({"error": "Quantity must be a valid number."}, status=status.HTTP_400_BAD_REQUEST)
 
         size = get_object_or_404(ProductSize, id=size_id) if size_id else original_size
+        product = get_object_or_404(Product, id=size.product.id)
 
         response_messages = []
         updated = False
 
         if size != original_size:
-            if size.quantity <= 0:
+            if not product.unlimited and size.quantity <= 0:
                 return Response({"error": "The selected size is out of stock."}, status=status.HTTP_400_BAD_REQUEST)
 
             if quantity is None:
                 quantity = original_quantity
 
-            if quantity > size.quantity:
+            if not product.unlimited and quantity > size.quantity:
                 cart_item.quantity = size.quantity
                 response_messages.append(f"Requested quantity exceeds stock for selected size. Quantity adjusted to {size.quantity}.")
             else:
@@ -186,9 +191,9 @@ class ApiCartItem(viewsets.ModelViewSet):
             response_messages.append(f"Size updated to {size.size}.")
 
         if quantity and quantity != cart_item.quantity:
-            if cart_item.quantity <= 0:
+            if not product.unlimited and cart_item.quantity <= 0:
                 return Response({"error": "The selected size is out of stock."}, status=status.HTTP_400_BAD_REQUEST)
-            if quantity > size.quantity:
+            if not product.unlimited and quantity > size.quantity:
                 cart_item.quantity = size.quantity
                 response_messages.append(f"Not enough stock. Requested {quantity}, but only {size.quantity} left. Quantity updated to {size.quantity}.")
             else:
