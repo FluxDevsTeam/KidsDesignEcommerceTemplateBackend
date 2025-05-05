@@ -10,7 +10,7 @@ from .pagination import CustomPagination
 from .permissions import IsAdminOrReadOnly
 from .serializers import ProductCategorySerializer, ProductSubCategorySerializer, ProductSerializer, \
     ProductSizeSerializer, ProductViewSerializer, ProductSubCategoryViewSerializer, ProductCategoryDetailSerializer, \
-    ProductSizeViewSerializer
+    ProductSizeViewSerializer, ProductDetailViewSerializer
 from .models import Product, ProductSubCategory, ProductCategory, ProductSize
 from rest_framework import viewsets, status
 from .utils import swagger_helper
@@ -189,6 +189,8 @@ class ApiProduct(viewsets.ModelViewSet):
     ordering = ["top_selling_items", "latest_item"]
 
     def get_serializer_class(self):
+        if self.action == "retrieve":
+            return ProductDetailViewSerializer
         if self.request.method == "GET":
             return ProductViewSerializer
         return ProductSerializer

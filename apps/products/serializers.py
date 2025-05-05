@@ -59,23 +59,28 @@ class ProductViewSerializer(serializers.ModelSerializer):
     total_quantity = serializers.SerializerMethodField()
     price = serializers.SerializerMethodField()
     undiscounted_price = serializers.SerializerMethodField()
+    default_size_id = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
-        fields = ["id", "name", "description", "total_quantity", "sub_category", "colour", "image1", "image2", "image3", "undiscounted_price", "price", "is_available", "latest_item",
+        fields = ["id", "name", "description", "total_quantity", "sub_category", "colour", "image1", "image2", "image3", "undiscounted_price", "price", "default_size_id", "is_available", "latest_item",
                   "latest_item_position", "dimensional_size", "weight", "top_selling_items", "top_selling_position", "date_created", "date_updated", "unlimited", "production_days"]
         read_only_fields = ["id", "date_created", "date_updated"]
 
     def get_total_quantity(self, obj):
-        return obj.sizes.aggregate(total=Sum("quantity"))["total"] or 0
+        return obj.sizes.aggregate(total=Sum("quantity"))["total"] or None
 
     def get_price(self, obj):
         min_price_size = obj.sizes.filter(price__gt=0).order_by("price").first()
-        return min_price_size.price if min_price_size else 0
+        return min_price_size.price if min_price_size else None
 
     def get_undiscounted_price(self, obj):
         min_price_size = obj.sizes.filter(price__gt=0).order_by("price").first()
-        return min_price_size.undiscounted_price if min_price_size and min_price_size.undiscounted_price is not None else 0
+        return min_price_size.undiscounted_price if min_price_size and min_price_size.undiscounted_price is not None else None
+
+    def get_default_size_id(self, obj):
+        min_price_size = obj.sizes.filter(price__gt=0).order_by("price").first()
+        return min_price_size.id if min_price_size and min_price_size.id is not None else None
 
 
 class ProductSimpleViewSerializer(serializers.ModelSerializer):
@@ -121,3 +126,33 @@ class SimpleProductSizeSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductSize
         fields = ["id", "size", "quantity", "undiscounted_price", "price"]
+
+
+class ProductDetailViewSerializer(serializers.ModelSerializer):
+    sub_category = ProductSubCategoryViewSerializer()
+    total_quantity = serializers.SerializerMethodField()
+    price = serializers.SerializerMethodField()
+    undiscounted_price = serializers.SerializerMethodField()
+    default_size_id = serializers.SerializerMethodField()
+    sizes = SimpleProductSizeSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Product
+        fields = ["id", "name", "description", "total_quantity", "sub_category", "colour", "image1", "image2", "image3", "undiscounted_price", "price", "default_size_id", "is_available", "latest_item",
+                  "latest_item_position", "dimensional_size", "weight", "top_selling_items", "top_selling_position", "date_created", "date_updated", "unlimited", "production_days", "sizes"]
+        read_only_fields = ["id", "date_created", "date_updated"]
+
+    def get_total_quantity(self, obj):
+        return obj.sizes.aggregate(total=Sum("quantity"))["total"] or None
+
+    def get_price(self, obj):
+        min_price_size = obj.sizes.filter(price__gt=0).order_by("price").first()
+        return min_price_size.price if min_price_size else None
+
+    def get_undiscounted_price(self, obj):
+        min_price_size = obj.sizes.filter(price__gt=0).order_by("price").first()
+        return min_price_size.undiscounted_price if min_price_size and min_price_size.undiscounted_price is not None else None
+
+    def get_default_size_id(self, obj):
+        min_price_size = obj.sizes.filter(price__gt=0).order_by("price").first()
+        return min_price_size.id if min_price_size and min_price_size.id is not None else None
