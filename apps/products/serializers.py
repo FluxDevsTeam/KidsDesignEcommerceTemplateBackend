@@ -104,10 +104,10 @@ class ProductSimpleViewSerializer(serializers.ModelSerializer):
 class ProductSizeSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductSize
-        fields = ["id", "product", "size", "quantity", "undiscounted_price", "price"]
+        fields = ["id", "size", "quantity", "undiscounted_price", "price"]
 
 
-class ProductSizeProductSerializer(serializers.ModelSerializer):
+class ProductSizeDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = ["id", "name", "image1", "unlimited"]
@@ -115,7 +115,7 @@ class ProductSizeProductSerializer(serializers.ModelSerializer):
 
 
 class ProductSizeViewSerializer(serializers.ModelSerializer):
-    product = ProductSizeProductSerializer()
+    product = ProductSizeDetailSerializer()
 
     class Meta:
         model = ProductSize
