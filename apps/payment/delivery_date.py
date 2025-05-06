@@ -44,13 +44,16 @@ def group_states_by_proximity(warehouse_city, available_states):
     return zones
 
 
-def calculate_delivery_dates(selected_state):
+def calculate_delivery_dates(cart):
+    selected_state = cart.state
     if selected_state.lower() not in [state.lower() for state in AVAILABLE_STATES]:
         return f"Currently not delivering to {selected_state}"
 
     zones = group_states_by_proximity(WAREHOUSE_CITY, AVAILABLE_STATES)
     today = datetime.date.today()
-
+    # get the start date from average of all the cart items production_days
+    for item in cart.cartitem_cart.filter(product__production_days__gt=0):
+        print(item.product.production_days)
     selected_zone = None
     if selected_state.lower() == WAREHOUSE_CITY.lower():
         selected_zone = "same_state"

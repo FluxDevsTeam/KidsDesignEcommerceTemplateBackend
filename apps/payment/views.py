@@ -49,7 +49,7 @@ class PaymentSummaryViewSet(viewsets.ViewSet):
                 if not item.product.unlimited and item.size.quantity < item.quantity:
                     return Response({"error": f"Insufficient stock for {item.product.name}"}, status=400)
 
-            estimated_delivery = calculate_delivery_dates(cart.state)
+            estimated_delivery = calculate_delivery_dates(cart)
             cart.estimated_delivery = estimated_delivery
             cart.save()
 
@@ -83,7 +83,6 @@ class PaymentInitiateViewSet(viewsets.ModelViewSet):
             input_serializer = PaymentCartSerializer(cart, data=request.data, partial=True)
             if not input_serializer.is_valid():
                 return Response({"error": "Invalid payment data", "details": input_serializer.errors}, status=400)
-
             cart.delivery_fee = calculate_delivery_fee(cart)
             cart.save()
 
