@@ -2,14 +2,6 @@ from rest_framework import serializers
 from ..cart.models import Cart, CartItem
 
 
-class PaymentCartItemSerializer(serializers.ModelSerializer):
-    price = serializers.DecimalField(source="product.price", max_digits=10, decimal_places=2, read_only=True)
-
-    class Meta:
-        model = CartItem
-        fields = ["quantity", "price"]
-
-
 class PaymentCartSerializer(serializers.ModelSerializer):
     subtotal = serializers.SerializerMethodField()
     total = serializers.SerializerMethodField()
@@ -20,7 +12,7 @@ class PaymentCartSerializer(serializers.ModelSerializer):
         fields = ["delivery_fee", "subtotal", "total", "provider"]
 
     def get_subtotal(self, obj):
-        return sum(item.product.price * item.quantity for item in obj.cartitem_cart.all())
+        return sum(item.size.price * item.quantity for item in obj.cartitem_cart.all())
 
     def get_total(self, obj):
         subtotal = self.get_subtotal(obj)
