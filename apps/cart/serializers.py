@@ -15,7 +15,7 @@ class CartSerializer(serializers.ModelSerializer):
 class PatchCartSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cart
-        fields = ["first_name", "last_name", "email", "state", "city", "delivery_address", "phone_number", "estimated_delivery"]
+        fields = ["first_name", "last_name", "email", "state", "city", "delivery_address", "phone_number"]
 
 
 class SimpleCartSerializerView(serializers.ModelSerializer):
