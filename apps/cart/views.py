@@ -131,7 +131,7 @@ class ApiCartItem(viewsets.ModelViewSet):
         if not product.unlimited and database_quantity < 1:
             return Response({"error": "The selected size is out of stock."}, status=status.HTTP_400_BAD_REQUEST)
 
-        if quantity > database_quantity > 0:
+        if not product.unlimited and quantity > database_quantity > 0:
             quantity = database_quantity
 
         serializer = self.get_serializer(data=request.data)
