@@ -1,5 +1,4 @@
 from django.contrib.auth import get_user_model
-from django.conf import settings
 import random
 import datetime
 from django.utils import timezone
@@ -21,12 +20,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from .models import EmailChangeRequest, PasswordChangeRequest, ForgotPasswordRequest, NameChangeRequest
 from django.utils.timezone import now
-from .tasks import is_celery_healthy, send_auth_success_email, send_email_synchronously, send_generic_email_task
-import logging
+from .tasks import is_celery_healthy, send_email_synchronously, send_generic_email_task
 from django.conf import settings
 
 User = get_user_model()
-logger = logging.getLogger(__name__)
+
 
 frontend_url = f"{settings.SITE_URL}/change-password"
 
@@ -60,7 +58,6 @@ class ForgotPasswordViewSet(viewsets.ModelViewSet):
         ForgotPasswordRequest.objects.create(user=user)
 
         if not is_celery_healthy():
-            logger.warning("Celery is not healthy. Sending reset link email synchronously.")
             send_email_synchronously(
                 user_email=email,
                 email_type="reset_link",
@@ -115,7 +112,6 @@ class ForgotPasswordViewSet(viewsets.ModelViewSet):
         otp = random.randint(100000, 999999)
 
         if not is_celery_healthy():
-            logger.warning("Celery is not healthy. Sending OTP email synchronously.")
             send_email_synchronously(
                 user_email=email,
                 email_type="otp",
@@ -175,7 +171,6 @@ class ForgotPasswordViewSet(viewsets.ModelViewSet):
         access_token = str(refresh.access_token)
 
         if not is_celery_healthy():
-            logger.warning("Celery is not healthy. Sending confirmation email synchronously.")
             send_email_synchronously(
                 user_email=user.email,
                 email_type="confirmation",
@@ -220,7 +215,6 @@ class ForgotPasswordViewSet(viewsets.ModelViewSet):
         forgot_password_request.save()
 
         if not is_celery_healthy():
-            logger.warning("Celery is not healthy. Sending OTP email synchronously.")
             send_email_synchronously(
                 user_email=email,
                 email_type="otp",
@@ -292,7 +286,6 @@ class UserProfileViewSet(viewsets.ModelViewSet):
             EmailChangeRequest.objects.create(user=user, new_email=new_email, otp=otp)
 
         if not is_celery_healthy():
-            logger.warning("Celery is not healthy. Sending OTP email synchronously.")
             send_email_synchronously(
                 user_email=new_email,
                 email_type="otp",
@@ -334,7 +327,6 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         email_change_request.save()
 
         if not is_celery_healthy():
-            logger.warning("Celery is not healthy. Sending OTP email synchronously.")
             send_email_synchronously(
                 user_email=email_change_request.new_email,
                 email_type="otp",
@@ -382,7 +374,6 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         email_change_request.delete()
 
         if not is_celery_healthy():
-            logger.warning("Celery is not healthy. Sending confirmation email synchronously.")
             send_email_synchronously(
                 user_email=user.email,
                 email_type="confirmation",
@@ -455,7 +446,6 @@ class UserProfileViewSet(viewsets.ModelViewSet):
         name_change_request.delete()
 
         if not is_celery_healthy():
-            logger.warning("Celery is not healthy. Sending confirmation email synchronously.")
             send_email_synchronously(
                 user_email=user.email,
                 email_type="confirmation",
@@ -518,7 +508,6 @@ class PasswordChangeRequestViewSet(viewsets.ModelViewSet):
         hashed_new_password = make_password(new_password)
 
         if not is_celery_healthy():
-            logger.warning("Celery is not healthy. Sending OTP email synchronously.")
             send_email_synchronously(
                 user_email=user.email,
                 email_type="otp",
@@ -558,7 +547,6 @@ class PasswordChangeRequestViewSet(viewsets.ModelViewSet):
         password_change_request.save()
 
         if not is_celery_healthy():
-            logger.warning("Celery is not healthy. Sending OTP email synchronously.")
             send_email_synchronously(
                 user_email=user.email,
                 email_type="otp",
@@ -615,7 +603,6 @@ class PasswordChangeRequestViewSet(viewsets.ModelViewSet):
                 raise AuthenticationFailed('Refresh token is invalid or expired.')
 
         if not is_celery_healthy():
-            logger.warning("Celery is not healthy. Sending confirmation email synchronously.")
             send_email_synchronously(
                 user_email=user.email,
                 email_type="confirmation",
@@ -666,7 +653,6 @@ class UserSignupViewSet(viewsets.ModelViewSet):
                 user.save()
 
                 if not is_celery_healthy():
-                    logger.warning("Celery is not healthy. Sending OTP email synchronously.")
                     send_email_synchronously(
                         user_email=email,
                         email_type="otp",
@@ -704,7 +690,6 @@ class UserSignupViewSet(viewsets.ModelViewSet):
         )
 
         if not is_celery_healthy():
-            logger.warning("Celery is not healthy. Sending emails synchronously.")
             send_email_synchronously(
                 user_email=email,
                 email_type="otp",
@@ -754,7 +739,6 @@ class UserSignupViewSet(viewsets.ModelViewSet):
         user.save()
 
         if not is_celery_healthy():
-            logger.warning("Celery is not healthy. Sending confirmation email synchronously.")
             send_email_synchronously(
                 user_email=email,
                 email_type="confirmation",
@@ -802,7 +786,6 @@ class UserSignupViewSet(viewsets.ModelViewSet):
         user.save()
 
         if not is_celery_healthy():
-            logger.warning("Celery is not healthy. Sending OTP email synchronously.")
             send_email_synchronously(
                 user_email=email,
                 email_type="otp",
@@ -855,7 +838,6 @@ class UserLoginViewSet(viewsets.ModelViewSet):
         access_token = str(refresh.access_token)
 
         if not is_celery_healthy():
-            logger.warning("Celery is not healthy. Sending confirmation email synchronously.")
             send_email_synchronously(
                 user_email=email,
                 email_type="confirmation",
