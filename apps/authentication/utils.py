@@ -1,7 +1,4 @@
 import threading
-import time
-
-from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
 from django.core.mail import send_mail
 from django.conf import settings
