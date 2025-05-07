@@ -91,8 +91,8 @@ class DeliverySettings(models.Model):
 class DeveloperSettings(models.Model):
     singleton = models.BooleanField(default=True, unique=True, editable=False)
     brand_name = models.CharField(max_length=200, default="Shop.co")
-    contact_us = models.CharField(max_length=200, default="https://ecommercetemplateweb.netlify.app/terms-of-service")
-    terms_of_service = models.CharField(max_length=200, default="https://ecommercetemplateweb.netlify.app/contact-us")
+    contact_us = models.CharField(max_length=200, default="https://ecommercetemplateweb.netlify.app/contact-us")
+    terms_of_service = models.CharField(max_length=200, default="https://ecommercetemplateweb.netlify.app/terms-of-service")
     backend_base_route = models.CharField(max_length=200, default="https://ecommercetemplate.pythonanywhere.com/")
     frontend_base_route = models.CharField(max_length=200, default="https://ecommercetemplateweb.netlify.app/")
     order_route_frontend = models.CharField(max_length=200, default="https://ecommercetemplate.pythonanywhere.com/orders")
