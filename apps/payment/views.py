@@ -282,7 +282,7 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
                     }
                 )
 
-            return redirect(f"{settings.SITE_URL}/order/{order.id}")
+            return redirect(f"{settings.SITE_URL}/orders/{order.id}")
 
         except Exception as e:
             return redirect(f"{settings.SITE_URL}/cart/error/?data=Order-processing-failed-Please-contact-support")
