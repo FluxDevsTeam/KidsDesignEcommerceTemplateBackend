@@ -51,6 +51,7 @@ def initiate_flutterwave_payment(confirm_token, amount, user):
         }, status=200)
 
     except requests.exceptions.RequestException as err:
+        print(err)
         return Response({"error": "Payment service unavailable. Please try again later."}, status=503)
     except Exception as e:
         return Response({"error": "Payment processing failed. Please try again."}, status=500)
