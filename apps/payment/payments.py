@@ -9,7 +9,6 @@ webhook_url = settings.WEBHOOK_URL
 
 
 def initiate_flutterwave_payment(confirm_token, amount, user):
-    print(amount)
     try:
         flutterwave_key = settings.PAYMENT_PROVIDERS["flutterwave"]["secret_key"]
         url = "https://api.flutterwave.com/v3/payments"
@@ -52,20 +51,8 @@ def initiate_flutterwave_payment(confirm_token, amount, user):
         }, status=200)
 
     except requests.exceptions.RequestException as err:
-        print(err)
-        print("here")
-        print("here")
-        print("here")
-        print("here")
-        print("here")
         return Response({"error": "Payment service unavailable. Please try again later."}, status=503)
     except Exception as e:
-        print(e)
-        print("here1")
-        print("here")
-        print("here")
-        print("here")
-        print("here")
         return Response({"error": "Payment processing failed. Please try again."}, status=500)
 
 

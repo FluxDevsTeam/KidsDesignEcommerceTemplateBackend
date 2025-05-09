@@ -58,13 +58,6 @@ class PaymentSummaryViewSet(viewsets.ViewSet):
             return Response(data)
 
         except Exception as e:
-            print(e)
-            print("here")
-            print("here")
-            print("here")
-            print("here")
-            print("here")
-
             return Response({"error": "Could not generate payment summary. Please try again."}, status=500)
 
 
@@ -262,9 +255,9 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
                 )
 
             cart.cartitem_cart.all().delete()
-            cache.delete(f"cart_item_list:{user.id}:*")
-            cache.delete(f"cart_item_detail:{user.id}:{cart.id}")
-            cache.delete(f"cart_list:{user.id}:*")
+            cache.delete_pattern(f"cart_item_list:{user.id}:*")
+            cache.delete_pattern(f"cart_item_detail:{user.id}:{cart.id}")
+            cache.delete_pattern(f"cart_list:{user.id}:*")
 
             admin_email = settings.ADMIN_EMAIL
             if not is_celery_healthy():
@@ -482,9 +475,9 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
                 )
 
             cart.cartitem_cart.all().delete()
-            cache.delete(f"cart_item_list:{user.id}:*")
-            cache.delete(f"cart_item_detail:{user.id}:{cart.id}")
-            cache.delete(f"cart_list:{user.id}:*")
+            cache.delete_pattern(f"cart_item_list:{user.id}:*")
+            cache.delete_pattern(f"cart_item_detail:{user.id}:{cart.id}")
+            cache.delete_pattern(f"cart_list:{user.id}:*")
 
             admin_email = settings.ADMIN_EMAIL
             if not is_celery_healthy():
