@@ -58,6 +58,7 @@ class PaymentSummaryViewSet(viewsets.ViewSet):
             return Response(data)
 
         except Exception as e:
+            print(e)
             print("here")
             print("here")
             print("here")
