@@ -45,20 +45,20 @@ STATE_CHOICES = (
 # had to set default for everything so the application doesn't crash and for better understanding as it is a template
 class OrganizationSettings(models.Model):
     singleton = models.BooleanField(default=True, unique=True, editable=False)
-    available_states = models.JSONField(default=list)
+    available_states = models.JSONField(default=list, help_text='["Ogun", "Lagos"]')
     warehouse_state = models.CharField(max_length=50, choices=STATE_CHOICES, default="Lagos")
     phone_number = models.CharField(max_length=20, default="+0123456789")
     customer_support_email = models.EmailField(default="suskidee@gmail.com")
     admin_email = models.EmailField(default="suskidee@gmail.com")
     brand_logo = models.ImageField(upload_to="brand_logo/", null=True, blank=True)
-    facebook = models.CharField(max_length=100, null=True, blank=True)
-    instagram = models.CharField(max_length=100, null=True, blank=True)
-    twitter = models.CharField(max_length=100, null=True, blank=True)
-    linkedin = models.CharField(max_length=100, null=True, blank=True)
-    tiktok = models.CharField(max_length=100, null=True, blank=True)
+    facebook = models.URLField(max_length=100, null=True, blank=True)
+    instagram = models.URLField(max_length=100, null=True, blank=True)
+    twitter = models.URLField(max_length=100, null=True, blank=True)
+    linkedin = models.URLField(max_length=100, null=True, blank=True)
+    tiktok = models.URLField(max_length=100, null=True, blank=True)
 
     def __str__(self):
-        return "organization settings"
+        return f"organization settings: {self.admin_email}"
 
     def clean(self):
         if not isinstance(self.available_states, list):
@@ -91,12 +91,12 @@ class DeliverySettings(models.Model):
 class DeveloperSettings(models.Model):
     singleton = models.BooleanField(default=True, unique=True, editable=False)
     brand_name = models.CharField(max_length=200, default="Shop.co")
-    contact_us = models.CharField(max_length=200, default="https://ecommercetemplateweb.netlify.app/contact-us")
-    terms_of_service = models.CharField(max_length=200, default="https://ecommercetemplateweb.netlify.app/terms-of-service")
-    backend_base_route = models.CharField(max_length=200, default="https://ecommercetemplate.pythonanywhere.com/")
-    frontend_base_route = models.CharField(max_length=200, default="https://ecommercetemplateweb.netlify.app/")
-    order_route_frontend = models.CharField(max_length=200, default="https://ecommercetemplate.pythonanywhere.com/orders")
-    payment_failed_url = models.CharField(max_length=200, default="https://ecommercetemplate.pythonanywhere.com/order_failed")
+    contact_us = models.URLField(max_length=200, default="https://ecommercetemplateweb.netlify.app/contact-us")
+    terms_of_service = models.URLField(max_length=200, default="https://ecommercetemplateweb.netlify.app/terms-of-service")
+    backend_base_route = models.URLField(max_length=200, default="https://ecommercetemplate.pythonanywhere.com/")
+    frontend_base_route = models.URLField(max_length=200, default="https://ecommercetemplateweb.netlify.app/")
+    order_route_frontend = models.URLField(max_length=200, default="https://ecommercetemplate.pythonanywhere.com/orders")
+    payment_failed_url = models.URLField(max_length=200, default="https://ecommercetemplate.pythonanywhere.com/order_failed")
 
     def __str__(self):
         return "developer settings"
