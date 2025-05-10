@@ -63,7 +63,7 @@ class ApiWishlist(ModelViewSet):
     def destroy(self, *args, **kwargs):
         response = super().destroy(*args, **kwargs)
         cache.delete_pattern(f"wishlist_list:{self.request.user.id}:*")
-        cache.delete_pattern(f"wishlist_detail:{self.request.user.id}:{kwargs["pk"]}")
+        cache.delete_pattern(f"wishlist_detail:{self.request.user.id}:{kwargs['pk']}")
         return response
 
     def perform_create(self, serializer):
