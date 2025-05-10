@@ -20,12 +20,9 @@ organization = SimpleLazyObject(lambda: {
     'tiktok': getattr(organization_settings, 'tiktok', None),
 })
 
-
 SUPPORT_PHONE_NUMBER = organization['support_phone_number']
 SUPPORT_EMAIL = organization['support_email']
 BRAND_LOGO = organization['brand_logo'] #  to be implemented when we have url leading directly to brand logo
-print(BRAND_LOGO.url if BRAND_LOGO else None )
-
 FB_LINK = organization['facebook']
 IG_LINK = organization['instagram']
 X_LINK = organization['x']
