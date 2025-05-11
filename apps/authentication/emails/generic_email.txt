@@ -1,6 +1,6 @@
 {{ subject }}
 
-Dear  {% if brand_name %} {{brand_name}} {% else %} Shop.co {% endif %}   User,
+Dear {% if brand_name %} {{brand_name}} {% else %} Shop.co {% endif %} User,
 
 {{ message }}
 

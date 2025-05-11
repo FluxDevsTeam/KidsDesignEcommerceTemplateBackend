@@ -176,13 +176,13 @@
           {% if otp %}
           <p>Your OTP is: <span class="otp">{{ otp }}</span>. It expires in 5 minutes.</p>
           {% endif %}
+
           {% if link %}
-          <p>Click the link below to proceed:</p>
-          <a href="{{ link }}" class="button">{{ link_text|default:"Take Action" }}</a>
+            <p>Click the link below to proceed:</p>
+            <a href="{{ link }}" class="button">{{ link_text|default:"Take Action" }}</a>
           {% endif %}
           
           {% if support_email or support_phone_number %}
-            
             <table class="support-box" width="100%">
                 <tr>
                   <td>
@@ -200,6 +200,7 @@
                 </tr>
               </table>
           {% endif %}
+
         </td>
       </tr>
       <tr>
