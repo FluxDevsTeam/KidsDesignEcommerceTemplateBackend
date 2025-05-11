@@ -15,7 +15,6 @@ Phone Number: {{ phone_number }}
 Please review the refund details and take any necessary actions.
 View Refund: {{ site_url }}/admin/refunds/{{ transaction_id }}
 
-
 Best regards,
 The {{brand_name}}Team
 
