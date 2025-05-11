@@ -28,25 +28,26 @@ Best regards,
 The {{brand_name}}Team
 
 {% if social_true %}
-Connect with us:
-{% if fb_link %}
-Facebook: {{ fb_link }}
-{% endif %}
+  Connect with us:
+    {% if fb_link %}
+    Facebook: {{ fb_link }}
+    {% endif %}
 
-{% if x_link %}
-X (Twitter): {{ x_link }}
-{% endif %}
+  {% if x_link %}
+  X (Twitter): {{ x_link }}
+  {% endif %}
 
-{% if ig_link %}
-Instagram: {{ ig_link }}
-{% endif %}
+  {% if ig_link %}
+  Instagram: {{ ig_link }}
+  {% endif %}
 
-{% if linkedin_link %}
-LinkedIn: {{ linkedin_link }}
-{% endif %}
+  {% if linkedin_link %}
+  LinkedIn: {{ linkedin_link }}
+  {% endif %}
 
-{% if tiktok_link %}
-TikTok: {{ tiktok_link }}
+  {% if tiktok_link %}
+    TikTok: {{ tiktok_link }}
+  {% endif %}
 {% endif %}
 
 {{ current_year }} {% if brand_name %} {{brand_name}} {% else %} Shop.co {% endif %} All rights reserved.
