@@ -35,10 +35,9 @@ developer = SimpleLazyObject(lambda: {
     'brand_name': getattr(developer_settings, 'brand_name', None),
     'terms_of_service': getattr(developer_settings, 'terms_of_service', None)
 })
+
 BRAND_NAME = developer['brand_name']
 TERMS_OF_SERVICE = developer['terms_of_service']
-
-print(BRAND_NAME, TERMS_OF_SERVICE )
 
 def send_generic_email(user_email, email_type, subject, action, message, otp=None, link=None, link_text=None):
     try:
@@ -72,6 +71,7 @@ def send_generic_email(user_email, email_type, subject, action, message, otp=Non
 
         }
 
+
         html_template_path = os.path.join(settings.BASE_DIR, 'apps', 'authentication', 'emails', 'generic_email.html')
         txt_template_path = os.path.join(settings.BASE_DIR, 'apps', 'authentication', 'emails', 'generic_email.txt')
 
@@ -96,7 +96,9 @@ def send_generic_email(user_email, email_type, subject, action, message, otp=Non
             html_message=html_message,
             fail_silently=False,
         )
+  
     except FileNotFoundError as e:
         raise
     except Exception as e:
+        print(f"Error during template rendering: {e}")
         raise
