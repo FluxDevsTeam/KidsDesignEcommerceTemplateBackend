@@ -1,6 +1,6 @@
 Dear Admin,
 
-A new order (#{{ order_id }}) has been successfully placed on Shop.co.
+A new order (#{{ order_id }}) has been successfully placed on {% if brand_name %} {{brand_name}} {% else %} Shop.co {% endif %}.
 
 Order Details:
 Order Number: #{{ order_id }}
@@ -16,8 +16,40 @@ Phone Number: {{ phone_number }}
 Please review the order details and ensure timely fulfillment.
 View Order: {{ site_url }}/admin/orders/{{ order_id }}
 
-Best regards,
-The Shop.co Team
+{% if support_phone_number or support_email %}
+We Are Here to Help
+Have questions? Our support team is available anytime.
 
-{{ current_year }} Shop.co. All rights reserved.
-Privacy Policy: {{ site_url }}/privacy | Terms of Service: {{ site_url }}/terms
+{% if support_email %} {{support_email}} for email support {% endif %} {% if support_phone_number %} | {{support_phone_number}} {% endif %}
+
+{% endif %}
+
+
+Best regards,
+The {{brand_name}}Team
+
+{% if social_true %}
+  Connect with us:
+    {% if fb_link %}
+    Facebook: {{ fb_link }}
+    {% endif %}
+
+  {% if x_link %}
+  X (Twitter): {{ x_link }}
+  {% endif %}
+
+  {% if ig_link %}
+  Instagram: {{ ig_link }}
+  {% endif %}
+
+  {% if linkedin_link %}
+  LinkedIn: {{ linkedin_link }}
+  {% endif %}
+
+  {% if tiktok_link %}
+    TikTok: {{ tiktok_link }}
+  {% endif %}
+{% endif %}
+
+{{ current_year }} {% if brand_name %} {{brand_name}} {% else %} Shop.co {% endif %} All rights reserved.
+Privacy Policy: {{ site_url }}/privacy | Terms of Service: {{terms_of_service}}

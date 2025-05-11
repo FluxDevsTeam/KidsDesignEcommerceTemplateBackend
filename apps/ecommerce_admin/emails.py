@@ -11,7 +11,6 @@ from ..ecommerce_admin.models import OrganizationSettings, DeveloperSettings
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 organization_settings = SimpleLazyObject(lambda: OrganizationSettings.objects.first())
-
 organization = SimpleLazyObject(lambda: {
     'support_phone_number': getattr(organization_settings, 'phone_number', None),
     'support_email': getattr(organization_settings, 'customer_support_email', None),

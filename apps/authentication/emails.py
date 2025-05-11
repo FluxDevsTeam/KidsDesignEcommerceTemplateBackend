@@ -4,8 +4,8 @@ from django.core.mail import send_mail
 from django.template import Template, Context
 from datetime import datetime
 
-from ..ecommerce_admin.models import OrganizationSettings, DeveloperSettings
 from django.utils.functional import SimpleLazyObject
+from ..ecommerce_admin.models import OrganizationSettings, DeveloperSettings
 
 
 organization_settings =  SimpleLazyObject(lambda: OrganizationSettings.objects.first())

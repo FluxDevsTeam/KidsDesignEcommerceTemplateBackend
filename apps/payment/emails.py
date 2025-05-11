@@ -4,9 +4,46 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.template import Template, Context
 from datetime import datetime
+from django.utils.functional import SimpleLazyObject
+from ..ecommerce_admin.models import OrganizationSettings, DeveloperSettings
+
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 admin_email = settings.ADMIN_EMAIL
+
+
+organization_settings = SimpleLazyObject(
+    lambda: OrganizationSettings.objects.first())
+organization = SimpleLazyObject(lambda: {
+    'support_phone_number': getattr(organization_settings, 'phone_number', None),
+    'support_email': getattr(organization_settings, 'customer_support_email', None),
+    'brand_logo': getattr(organization_settings, 'brand_logo', None),
+    'facebook': getattr(organization_settings, 'facebook', None),
+    'instagram': getattr(organization_settings, 'instagram', None),
+    'x': getattr(organization_settings, 'twitter', None),
+    'linkedin': getattr(organization_settings, 'linkedin', None),
+    'tiktok': getattr(organization_settings, 'tiktok', None),
+})
+
+SUPPORT_PHONE_NUMBER = organization['support_phone_number']
+SUPPORT_EMAIL = organization['support_email'] # to be implemented when we have url leading directly to brand logo
+BRAND_LOGO = organization['brand_logo']
+FB_LINK = organization['facebook']
+IG_LINK = organization['instagram']
+X_LINK = organization['x']
+LINKEDIN_LINK = organization['linkedin']
+TIKTOK_LINK = organization['tiktok']
+
+
+developer_settings = SimpleLazyObject(
+    lambda: DeveloperSettings.objects.first())
+developer = SimpleLazyObject(lambda: {
+    'brand_name': getattr(developer_settings, 'brand_name', None),
+    'terms_of_service': getattr(developer_settings, 'terms_of_service', None)
+})
+
+BRAND_NAME = developer['brand_name']
+TERMS_OF_SERVICE = developer['terms_of_service']
 
 
 def format_estimated_delivery(dates):
@@ -30,6 +67,18 @@ def order_confirmation_email(order_id, user, total_amount, order_date, estimated
         'current_year': datetime.now().year,
         'estimated_delivery': formatted_delivery,
         'order_date': order_date,
+
+        'support_email': SUPPORT_EMAIL,
+        'support_phone_number': SUPPORT_PHONE_NUMBER,
+        'brand_name': BRAND_NAME,
+        'brand_logo': BRAND_LOGO,
+        'terms_of_service': TERMS_OF_SERVICE,
+        'social_true': any((FB_LINK, IG_LINK, X_LINK, X_LINK, LINKEDIN_LINK, TIKTOK_LINK)),
+        'fb_link': FB_LINK,
+        'ig_link': IG_LINK,
+        'x_link': X_LINK,
+        'linkedin_link': LINKEDIN_LINK,
+        'tiktok_link': TIKTOK_LINK
     }
 
     html_template_path = os.path.join(BASE_DIR, 'emails', 'order_confirmation.html')
@@ -68,6 +117,18 @@ def admin_order_confirmation_email(order_id, user, total_amount, order_date, est
         'current_year': datetime.now().year,
         'estimated_delivery': formatted_delivery,
         'order_date': order_date,
+
+        'support_email': SUPPORT_EMAIL,
+        'support_phone_number': SUPPORT_PHONE_NUMBER,
+        'brand_name': BRAND_NAME,
+        'brand_logo': BRAND_LOGO,
+        'terms_of_service': TERMS_OF_SERVICE,
+        'social_true': any((FB_LINK, IG_LINK, X_LINK, X_LINK, LINKEDIN_LINK, TIKTOK_LINK)),
+        'fb_link': FB_LINK,
+        'ig_link': IG_LINK,
+        'x_link': X_LINK,
+        'linkedin_link': LINKEDIN_LINK,
+        'tiktok_link': TIKTOK_LINK
     }
 
     html_template_path = os.path.join(BASE_DIR, 'emails', 'admin_order_confirmation.html')
@@ -103,6 +164,18 @@ def manual_refund_notification_email(provider, amount, user, transaction_id, rea
         'reason': reason,
         'site_url': settings.SITE_URL,
         'current_year': datetime.now().year,
+
+        'support_email': SUPPORT_EMAIL,
+        'support_phone_number': SUPPORT_PHONE_NUMBER,
+        'brand_name': BRAND_NAME,
+        'brand_logo': BRAND_LOGO,
+        'terms_of_service': TERMS_OF_SERVICE,
+        'social_true': any((FB_LINK, IG_LINK, X_LINK, X_LINK, LINKEDIN_LINK, TIKTOK_LINK)),
+        'fb_link': FB_LINK,
+        'ig_link': IG_LINK,
+        'x_link': X_LINK,
+        'linkedin_link': LINKEDIN_LINK,
+        'tiktok_link': TIKTOK_LINK
     }
 
     html_template_path = os.path.join(BASE_DIR, 'emails', 'manual_refund_notification.html')
@@ -135,6 +208,18 @@ def user_refund_notification_email(user, amount, provider, transaction_id, curre
         'currency': currency,
         'site_url': settings.SITE_URL,
         'current_year': datetime.now().year,
+
+        'support_email': SUPPORT_EMAIL,
+        'support_phone_number': SUPPORT_PHONE_NUMBER,
+        'brand_name': BRAND_NAME,
+        'brand_logo': BRAND_LOGO,
+        'terms_of_service': TERMS_OF_SERVICE,
+        'social_true': any((FB_LINK, IG_LINK, X_LINK, X_LINK, LINKEDIN_LINK, TIKTOK_LINK)),
+        'fb_link': FB_LINK,
+        'ig_link': IG_LINK,
+        'x_link': X_LINK,
+        'linkedin_link': LINKEDIN_LINK,
+        'tiktok_link': TIKTOK_LINK
     }
 
     html_template_path = os.path.join(BASE_DIR, 'emails', 'user_refund_notification.html')
@@ -170,6 +255,18 @@ def admin_refund_notification_email(user, amount, provider, transaction_id, curr
         'currency': currency,
         'site_url': settings.SITE_URL,
         'current_year': datetime.now().year,
+
+        'support_email': SUPPORT_EMAIL,
+        'support_phone_number': SUPPORT_PHONE_NUMBER,
+        'brand_name': BRAND_NAME,
+        'brand_logo': BRAND_LOGO,
+        'terms_of_service': TERMS_OF_SERVICE,
+        'social_true': any((FB_LINK, IG_LINK, X_LINK, X_LINK, LINKEDIN_LINK, TIKTOK_LINK)),
+        'fb_link': FB_LINK,
+        'ig_link': IG_LINK,
+        'x_link': X_LINK,
+        'linkedin_link': LINKEDIN_LINK,
+        'tiktok_link': TIKTOK_LINK
     }
 
     html_template_path = os.path.join(BASE_DIR, 'emails', 'admin_refund_notification.html')

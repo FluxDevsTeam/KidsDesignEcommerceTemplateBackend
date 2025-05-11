@@ -160,6 +160,18 @@ def refund_initiated_notification_email(order_id, user_id, first_name, last_name
         'provider': provider,
         'site_url': settings.ORDER_URL,
         'current_year': datetime.now().year,
+
+        'support_email': SUPPORT_EMAIL,
+        'support_phone_number': SUPPORT_PHONE_NUMBER,
+        'brand_name': BRAND_NAME,
+        'brand_logo': BRAND_LOGO,
+        'terms_of_service': TERMS_OF_SERVICE,
+        'social_true': any((FB_LINK, IG_LINK, X_LINK, X_LINK, LINKEDIN_LINK, TIKTOK_LINK)),
+        'fb_link': FB_LINK,
+        'ig_link': IG_LINK,
+        'x_link': X_LINK,
+        'linkedin_link': LINKEDIN_LINK,
+        'tiktok_link': TIKTOK_LINK
     }
 
     html_template_path = os.path.join(BASE_DIR, 'emails', 'refund_initiated_notification.html')

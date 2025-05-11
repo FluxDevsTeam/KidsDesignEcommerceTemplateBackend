@@ -1,121 +1,356 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>New Order Placed - Shop.co</title>
-</head>
-<body style="margin: 0; padding: 10px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica', 'Arial', sans-serif; line-height: 1.6; color: #333333; background-color: #f4f4f4;">
-    <div style="padding: 10px;">
-        <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);">
-            <!-- Header -->
-            <tr>
-                <td bgcolor="#008080" style="width: 100%; background: #008080; background: linear-gradient(135deg, #008080 0%, #00a3a3 100%); color: #ffffff; padding: 30px 20px; text-align: center;">
-                    <img src="https://tse4.mm.bing.net/th/id/OIP.rcKRRDLHGEu5lWcn6vbKcAHaHa?rs=1&pid=ImgDetMain" alt="Shop.co Logo" width="80" height="80" style="width: 80px; height: 80px; border-radius: 50%; display: block; margin: 0 auto 15px;">
-                    <h1 style="font-size: 28px; font-weight: 700; letter-spacing: 0.5px; margin: 0;">New Order Placed</h1>
-                    <p style="font-size: 16px; margin: 10px 0 0; opacity: 0.9;">Shop.co Admin Notification</p>
-                </td>
-            </tr>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>
+      New Order Placed - {% if brand_name %} {{ brand_name }} {% else %} Shop.co
+      {% endif %}
+    </title>
 
-            <!-- Content -->
-            <tr>
-                <td style="padding: 30px; background: #f9f9f9;">
-                    <h2 style="font-size: 22px; font-weight: 600; color: #008080; margin-bottom: 15px;">Dear Admin,</h2>
-                    <p style="font-size: 16px; color: #555555; margin-bottom: 15px;">A new order (#{{ order_id|escape }}) has been successfully placed on <a href="{{ site_url }}" style="color: #008080; text-decoration: none; font-weight: 500;">Shop.co</a>. Below are the details of the purchase.</p>
-
-                    <!-- Order Highlights -->
-                    <table cellpadding="0" cellspacing="0" width="100%" style="background: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #008080; margin-bottom: 20px;">
-                        <tr>
-                            <td style="font-size: 16px; color: #555555; padding: 5px 0;">
-                                <strong style="color: #008080;">Order Number:</strong> #{{ order_id|escape }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="font-size: 16px; color: #555555; padding: 5px 0;">
-                                <strong style="color: #008080;">Total Amount:</strong> {{ currency|escape }} {{ total_amount|escape }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="font-size: 16px; color: #555555; padding: 5px 0;">
-                                <strong style="color: #008080;">Order Date:</strong> {{ order_date|escape }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="font-size: 16px; color: #555555; padding: 5px 0;">
-                                <strong style="color: #008080;">Estimated Delivery:</strong> {{ estimated_delivery|escape }}
-                            </td>
-                        </tr>
-                    </table>
-
-                    <!-- User Information -->
-                    <h2 style="font-size: 20px; font-weight: 600; color: #008080; margin-bottom: 15px;">Customer Information</h2>
-                    <table cellpadding="0" cellspacing="0" width="100%" style="background: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #008080; margin-bottom: 20px;">
-                        <tr>
-                            <td style="font-size: 16px; color: #555555; padding: 5px 0;">
-                                <strong style="color: #008080;">Name:</strong> {{ first_name|escape }} {{ last_name|escape }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="font-size: 16px; color: #555555; padding: 5px 0;">
-                                <strong style="color: #008080;">Email:</strong> {{ user_email|escape }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="font-size: 16px; color: #555555; padding: 5px 0;">
-                                <strong style="color: #008080;">Phone Number:</strong> {{ phone_number|escape }}
-                            </td>
-                        </tr>
-                    </table>
-
-                    <!-- Call to Action -->
-                    <p style="font-size: 16px; color: #555555; margin-bottom: 15px;">Please review the order details and ensure timely fulfillment.</p>
-                    <a href="{{ site_url }}/admin/orders/{{ order_id|escape }}" style="display: inline-block; padding: 12px 30px; background: #008080; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px; border-radius: 50px; text-align: center; border: 2px solid #008080;">View Order</a>
-                </td>
-            </tr>
-
-            <!-- Footer -->
-            <tr>
-                <td style="text-align: center; font-size: 12px; color: #6b7280; padding: 20px; background: #f8fafc; border-top: 1px solid #e5e7eb;">
-                    <p style="margin-bottom: 8px;">Best regards,<br><a href="{{ site_url }}" style="color: #008080; text-decoration: none; font-weight: 500;">The Shop.co Team</a></p>
-                    <p style="margin-top: 15px;">{{ current_year|escape }} Shop.co. All rights reserved.</p>
-                    <p><a href="{{ site_url }}/privacy" style="color: #008080; text-decoration: none;">Privacy Policy</a> | <a href="{{ site_url }}/terms" style="color: #008080; text-decoration: none;">Terms of Service</a></p>
-                </td>
-            </tr>
-        </table>
-    </div>
-
-    <!-- Responsive Design -->
     <style>
-        @media screen and (max-width: 600px) {
-            body { padding: 10px; }
-            div[style*="padding: 10px"] { padding: 10px !important; }
-            table[max-width="600px"] { margin: 10px auto; max-width: 100%; width: 100%; }
-            td[style*="padding: 30px 20px"] { padding: 20px 15px !important; }
-            img[alt="Shop.co Logo"] { width: 40px !important; height: 40px !important; }
-            h1 { font-size: 22px; }
-            p[style*="font-size: 16px; margin: 10px"] { font-size: 14px; }
-            td[style*="padding: 30px"] { padding: 20px !important; background: #ffffff !important; }
-            h2 { font-size: 20px; }
-            p[style*="font-size: 16px; color: #555555"],
-            td[style*="font-size: 16px; color: #555555"] { font-size: 14px; }
-            a[style*="padding: 12px 30px"] { padding: 10px 25px !important; font-size: 14px !important; }
+      body {
+        margin: 0;
+        padding: 10px;
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          "Helvetica", "Arial", sans-serif;
+        line-height: 1.6;
+        color: #333;
+        background-color: #f4f4f4;
+      }
+      .container {
+        padding: 10px;
+      }
+      .email-wrapper {
+        max-width: 600px;
+        margin: auto;
+        background: #fff;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      }
+      .header {
+        background: linear-gradient(135deg, #008080 0%, #00a3a3 100%);
+        color: #fff;
+        text-align: center;
+        padding: 30px 20px;
+      }
+      .logo {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: block;
+        margin: 0 auto 15px;
+      }
+      .header-title {
+        font-size: 28px;
+        font-weight: 700;
+        margin: 0;
+      }
+      .header-subtitle {
+        font-size: 16px;
+        margin: 10px 0 0;
+        opacity: 0.9;
+      }
+      .content {
+        padding: 30px;
+        background: #f9f9f9;
+      }
+      .section-title {
+        font-size: 22px;
+        font-weight: 600;
+        color: #008080;
+        margin-bottom: 15px;
+      }
+      .text {
+        font-size: 16px;
+        color: #555;
+        margin-bottom: 15px;
+      }
+      .highlight-box {
+        background: #f8fafc;
+        padding: 15px;
+        border-radius: 8px;
+        border-left: 4px solid #008080;
+        margin-bottom: 20px;
+      }
+      .highlight-text {
+        font-size: 16px;
+        color: #555;
+        padding: 5px 0;
+      }
+      .highlight-text strong {
+        color: #008080;
+      }
+      .cta-button {
+        display: inline-block;
+        padding: 12px 30px;
+        background: #008080;
+        color: #fff;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 16px;
+        border-radius: 50px;
+        text-align: center;
+        border: 2px solid #008080;
+      }
+
+      .support-box {
+        background: #f8fafc;
+        padding: 20px;
+        border-radius: 8px;
+        text-align: center;
+        margin-top: 20px;
+      }
+
+      .support-box h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: #008080;
+        margin-bottom: 10px;
+      }
+
+      .support-box p {
+        font-size: 14px;
+        color: #555;
+        margin-bottom: 10px;
+      }
+
+      .support-box a {
+        color: #008080;
+        text-decoration: none;
+        font-weight: 500;
+      }
+
+      .footer {
+        text-align: center;
+        font-size: 12px;
+        color: #6b7280;
+        padding: 20px;
+        background: #f8fafc;
+        border-top: 1px solid #e5e7eb;
+      }
+      .footer a {
+        color: #008080;
+        text-decoration: none;
+        font-weight: 500;
+      }
+
+      @media screen and (max-width: 600px) {
+        .content,
+        .header {
+          padding: 20px 15px !important;
         }
-        @media screen and (min-width: 601px) {
-            body { padding: 0; }
-            div[style*="padding: 10px"] { padding: 10px !important; }
-            table[max-width="600px"] { max-width: 100%; width: 800px; margin: 10px auto; }
-            td[style*="width: 100%; background"] { width: 100% !important; background: #008080 !important; background: linear-gradient(135deg, #008080 0%, #00a3a3 100%) !important; }
-            td[style*="padding: 30px 20px"] { padding: 30px 20px; }
-            img[alt="Shop.co Logo"] { width: 80px !important; height: 80px !important; margin: 0 auto 10px !important; border-radius: 50% !important; }
-            h1 { font-size: 26px; }
-            p[style*="font-size: 16px; margin: 10px"] { font-size: 15px; }
-            td[style*="padding: 30px"] { padding: 30px; background: #f9f9f9; }
-            h2 { font-size: 20px; }
-            p[style*="font-size: 16px; color: #555555"],
-            td[style*="font-size: 16px; color: #555555"] { font-size: 15px; }
-            a[style*="padding: 12px 30px"] { padding: 12px 30px; font-size: 15px; }
+        .logo {
+          width: 40px !important;
+          height: 40px !important;
         }
+        .header-title {
+          font-size: 22px !important;
+        }
+        .text,
+        .highlight-text {
+          font-size: 14px !important;
+        }
+        .cta-button {
+          padding: 10px 25px !important;
+          font-size: 14px !important;
+        }
+      }
     </style>
-</body>
+  </head>
+
+  <body>
+    <div class="container">
+      <table
+        class="email-wrapper"
+        width="100%"
+        cellpadding="0"
+        cellspacing="0"
+        border="0"
+      >
+        <!-- Header -->
+        <tr>
+          <td class="header">
+            <img
+              src="https://tse4.mm.bing.net/th/id/OIP.rcKRRDLHGEu5lWcn6vbKcAHaHa?rs=1&pid=ImgDetMain"
+              alt="{% if brand_name %} {{ brand_name }} {% else %} Shop.co {% endif %} Logo"
+              class="logo"
+            />
+            <h1 class="header-title">New Order Placed</h1>
+            <p class="header-subtitle">
+              {% if brand_name %} {{ brand_name }} {% else %} Shop.co {% endif
+              %} Admin Notification
+            </p>
+          </td>
+        </tr>
+
+        <!-- Content -->
+        <tr>
+          <td class="content">
+            <h2 class="section-title">Dear Admin,</h2>
+            <p class="text">
+              A new order (#{{ order_id|escape }}) has been successfully placed
+              on
+              <a
+                href="{{ site_url }}"
+                style="color: #008080; text-decoration: none"
+                >Shop.co</a
+              >. Below are the details of the purchase.
+            </p>
+
+            <!-- Order Highlights -->
+            <table class="highlight-box" width="100%">
+              <tr>
+                <td class="highlight-text">
+                  <strong>Order Number:</strong> #{{ order_id|escape }}
+                </td>
+              </tr>
+              <tr>
+                <td class="highlight-text">
+                  <strong>Total Amount:</strong> {{ currency|escape }} {{
+                  total_amount|escape }}
+                </td>
+              </tr>
+              <tr>
+                <td class="highlight-text">
+                  <strong>Order Date:</strong> {{ order_date|escape }}
+                </td>
+              </tr>
+              <tr>
+                <td class="highlight-text">
+                  <strong>Estimated Delivery:</strong> {{
+                  estimated_delivery|escape }}
+                </td>
+              </tr>
+            </table>
+
+            <!-- Customer Info -->
+            <h2 class="section-title">Customer Information</h2>
+            <table class="highlight-box" width="100%">
+              <tr>
+                <td class="highlight-text">
+                  <strong>Name:</strong> {{ first_name|escape }} {{
+                  last_name|escape }}
+                </td>
+              </tr>
+              <tr>
+                <td class="highlight-text">
+                  <strong>Email:</strong> {{ user_email|escape }}
+                </td>
+              </tr>
+              <tr>
+                <td class="highlight-text">
+                  <strong>Phone Number:</strong> {{ phone_number|escape }}
+                </td>
+              </tr>
+            </table>
+
+            <!-- CTA -->
+            <p class="text">
+              Please review the order details and ensure timely fulfillment.
+            </p>
+            <a
+              href="{{ site_url }}/admin/orders/{{ order_id|escape }}"
+              class="cta-button"
+              >View Order</a
+            >
+
+            {% if support_email or support_phone_number %}
+            <table class="support-box" width="100%">
+              <tr>
+                <td>
+                  <h3>We Are Here to Help</h3>
+                  <p>Have questions? Our support team is available anytime.</p>
+                  <p>
+                    {% if support_email %}
+                    <a href="mailto:{{ support_email }}"
+                      >support@{{ brand_name }}</a
+                    >
+                    {% endif %} {% if support_phone_number %} |
+                    <a href="tel:{{ support_phone_number }}"
+                      >{{ support_phone_number }}</a
+                    >
+                    {% endif %}
+                  </p>
+                </td>
+              </tr>
+            </table>
+            {% endif %}
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td class="footer">
+            <p>
+              Best regards,<br />
+              <a href="{{ site_url }}"
+                >The {% if brand_name %} {{ brand_name }} {% else %} Shop.co {%
+                endif %} Team</a
+              >
+            </p>
+            {% if social_true %}
+            <p>Connect with us:</p>
+            <table align="center" class="social-icons">
+              <tr>
+                {% if fb_link %}
+                <td>
+                  <a href="{{ fb_link }}"
+                    ><img
+                      src="https://cdn-icons-png.flaticon.com/64/5968/5968764.png"
+                      alt="Facebook"
+                  /></a>
+                </td>
+                {% endif %} {% if x_link %}
+                <td>
+                  <a href="{{ x_link }}"
+                    ><img
+                      src="https://cdn-icons-png.flaticon.com/64/733/733635.png"
+                      alt="Twitter/X"
+                  /></a>
+                </td>
+                {% endif %} {% if ig_link %}
+                <td>
+                  <a href="{{ ig_link }}"
+                    ><img
+                      src="https://cdn-icons-png.flaticon.com/64/2111/2111463.png"
+                      alt="Instagram"
+                  /></a>
+                </td>
+                {% endif %} {% if linkedin_link %}
+                <td>
+                  <a href="{{ linkedin_link }}"
+                    ><img
+                      src="https://cdn-icons-png.flaticon.com/64/3536/3536505.png"
+                      alt="LinkedIn"
+                  /></a>
+                </td>
+                {% endif %} {% if tiktok_link %}
+                <td>
+                  <a href="{{ tiktok_link }}"
+                    ><img
+                      src="https://cdn-icons-png.flaticon.com/64/3046/3046121.png"
+                      alt="TikTok"
+                  /></a>
+                </td>
+                {% endif %}
+              </tr>
+            </table>
+            {% endif %}
+            <p>
+              {{ current_year|escape }} {% if brand_name %} {{ brand_name }} {%
+              else %} Shop.co {% endif %} All rights reserved.
+            </p>
+            <p>
+              <a href="{{ site_url }}/privacy">Privacy Policy</a>
+              {% if terms_of_service %} |
+              <a href="{{ terms_of_service }}">Terms of Service</a>{% endif %}
+            </p>
+          </td>
+        </tr>
+      </table>
+    </div>
+  </body>
 </html>

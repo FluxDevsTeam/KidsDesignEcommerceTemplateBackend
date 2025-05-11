@@ -1,6 +1,6 @@
 Dear Admin,
 
-A refund has been successfully processed on Shop.co.
+A refund has been successfully processed on {% if brand_name %} {{brand_name}} {% else %} Shop.co {% endif %}.
 
 Refund Details:
 Transaction ID: {{ transaction_id }}
@@ -15,8 +15,32 @@ Phone Number: {{ phone_number }}
 Please review the refund details and take any necessary actions.
 View Refund: {{ site_url }}/admin/refunds/{{ transaction_id }}
 
-Best regards,
-The Shop.co Team
 
-{{ current_year }} Shop.co. All rights reserved.
-Privacy Policy: {{ site_url }}/privacy | Terms of Service: {{ site_url }}/terms
+Best regards,
+The {{brand_name}}Team
+
+{% if social_true %}
+  Connect with us:
+    {% if fb_link %}
+    Facebook: {{ fb_link }}
+    {% endif %}
+
+  {% if x_link %}
+  X (Twitter): {{ x_link }}
+  {% endif %}
+
+  {% if ig_link %}
+  Instagram: {{ ig_link }}
+  {% endif %}
+
+  {% if linkedin_link %}
+  LinkedIn: {{ linkedin_link }}
+  {% endif %}
+
+  {% if tiktok_link %}
+    TikTok: {{ tiktok_link }}
+  {% endif %}
+{% endif %}
+
+{{ current_year }} {% if brand_name %} {{brand_name}} {% else %} Shop.co {% endif %} All rights reserved.
+Privacy Policy: {{ site_url }}/privacy | Terms of Service: {{terms_of_service}}
