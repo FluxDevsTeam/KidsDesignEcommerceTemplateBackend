@@ -32,8 +32,8 @@ class OrderDashboard(viewsets.ModelViewSet):
     def retrieve(self, *args, **kwargs):
         year = date.today().year
         query = self.get_queryset()
-        total_sales_this_year = query.filter(delivery_date__year__gte=year).count()
-        total_payments_this_year = query.filter(delivery_date__year__gte=year).aggregate(total=Sum("total_amount"))["total"] or 0.00
+        total_sales_this_year = query.filter(order_date__year__gte=year).count()
+        total_payments_this_year = query.filter(order_date__year__gte=year).aggregate(total=Sum("total_amount"))["total"] or 0.00
         total_products = Product.objects.filter(is_available=True).count()
         total_users = User.objects.filter(is_verified=True).count()
 
@@ -46,10 +46,7 @@ class OrderDashboard(viewsets.ModelViewSet):
         end_date = date(next_year, next_month, 1) - timedelta(days=1)
 
         monthly_query = query.filter(delivery_date__range=(start_date, end_date)).annotate(
-            month=TruncMonth('delivery_date')
-        ).values('month').annotate(
-            total_payments=Sum('total_amount')
-        ).order_by('month')
+            month=TruncMonth('delivery_date')).values('month').annotate(total_payments=Sum('total_amount')).order_by('month')
 
         monthly_data = []
         current_date = start_date

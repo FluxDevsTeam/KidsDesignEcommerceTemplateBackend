@@ -1,14 +1,11 @@
-from rest_framework.response import Response
-from ..ecommerce_admin.models import DeliverySettings
-from django.utils.functional import SimpleLazyObject
 from .utils import AVAILABLE_STATES, state_coords, calculate_distance, WAREHOUSE_CITY
 from ..cart.models import CartItem
+from .variables import fee_per_km, base_fee, weight_fee, size_fee
 
-delivery = SimpleLazyObject(lambda: DeliverySettings.objects.first())
-FEE_PER_KM = SimpleLazyObject(lambda: delivery.fee_per_km)
-BASE_FEE = SimpleLazyObject(lambda: delivery.base_fee)
-WEIGHT_FEE = SimpleLazyObject(lambda: delivery.weigh_fee)
-SIZE_FEE = SimpleLazyObject(lambda: delivery.size_fee)
+FEE_PER_KM = fee_per_km
+BASE_FEE = base_fee
+WEIGHT_FEE = weight_fee
+SIZE_FEE = size_fee
 
 # Quantity thresholds for different pricing tiers
 QUANTITY_THRESHOLDS = [
@@ -43,15 +40,15 @@ SIZE_CATEGORIES = {
 def get_weight_fee(weight, quantity):
     if weight not in WEIGHT_CATEGORIES:
         return 0
-    weight_fee = WEIGHT_FEE * WEIGHT_CATEGORIES[weight] * quantity
-    return weight_fee
+    weight_fee_calc = WEIGHT_FEE * WEIGHT_CATEGORIES[weight] * quantity
+    return weight_fee_calc
 
 
 def get_size_fee(size, quantity):
     if size not in SIZE_CATEGORIES:
         return 0
-    size_fee = SIZE_FEE * SIZE_CATEGORIES[size] * quantity
-    return size_fee
+    size_fee_calc = SIZE_FEE * SIZE_CATEGORIES[size] * quantity
+    return size_fee_calc
 
 
 def get_item_fee(quantity):
@@ -85,11 +82,11 @@ def calculate_delivery_fee(cart):
         distance = calculate_distance(warehouse_coord, state_coord)
         delivery_fee = BASE_FEE + (distance * FEE_PER_KM)
 
-        weight_fee = get_weight_fee(weight, item.quantity)
+        weight_fee_calc = get_weight_fee(weight, item.quantity)
 
-        size_fee = get_size_fee(size, quantity)
+        size_fee_calc = get_size_fee(size, quantity)
 
-        item_fee = get_item_fee(quantity) * quantity
+        item_fee_calc = get_item_fee(quantity) * quantity
 
-        total_delivery_fee.append(delivery_fee + weight_fee + size_fee + item_fee)
+        total_delivery_fee.append(delivery_fee + weight_fee_calc + size_fee_calc + item_fee_calc)
     return round(sum(total_delivery_fee))

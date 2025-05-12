@@ -21,12 +21,11 @@ from rest_framework.response import Response
 from .models import EmailChangeRequest, PasswordChangeRequest, ForgotPasswordRequest, NameChangeRequest
 from django.utils.timezone import now
 from .tasks import is_celery_healthy, send_email_synchronously, send_generic_email_task
-from django.conf import settings
+from django.utils.functional import SimpleLazyObject
+from ..ecommerce_admin.models import DeveloperSettings
+
 
 User = get_user_model()
-
-
-frontend_url = f"{settings.SITE_URL}/change-password"
 
 
 class ForgotPasswordViewSet(viewsets.ModelViewSet):
@@ -53,7 +52,9 @@ class ForgotPasswordViewSet(viewsets.ModelViewSet):
         if not user:
             return Response({"data": "No user found with this email."}, status=status.HTTP_400_BAD_REQUEST)
 
-        reset_url = f"{frontend_url}?email={email}"
+        frontend_base_route = SimpleLazyObject(lambda: DeveloperSettings.objects.first().frontend_base_route)
+
+        reset_url = f"{frontend_base_route}/change-password/?email={email}"
         ForgotPasswordRequest.objects.filter(user=user).delete()
         ForgotPasswordRequest.objects.create(user=user)
 

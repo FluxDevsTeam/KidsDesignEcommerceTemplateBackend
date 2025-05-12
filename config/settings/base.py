@@ -171,9 +171,7 @@ JAZZMIN_UI_TWEAKS = {
 CELERY_BROKER_URL = 'redis://localhost:6379/0'
 CELERY_RESULT_BACKEND = 'redis://localhost:6379/2'
 BASE_ROUTE = os.getenv("BASE_ROUTE")
-PAYMENT_IMAGE_URL = os.getenv("PAYMENT_IMAGE_URL")
 SITE_URL = os.getenv("SITE_URL")
-WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")
 CACHE_TIMEOUT = os.getenv("CACHE_TIMEOUT")
 

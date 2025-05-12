@@ -19,6 +19,7 @@ djangorestframework==3.15.2
 djangorestframework_simplejwt==5.5.0
 drf-nested-routers==0.94.1
 drf-yasg==1.21.10
+gunicorn==21.2.0
 idna==3.10
 inflection==0.5.1
 kombu==5.5.2
@@ -26,6 +27,7 @@ mysqlclient==2.2.7
 packaging==24.2
 pillow==11.1.0
 prompt_toolkit==3.0.50
+psycopg2-binary==2.9.9
 PyJWT==2.9.0
 python-dateutil==2.9.0.post0
 python-dotenv==1.0.1

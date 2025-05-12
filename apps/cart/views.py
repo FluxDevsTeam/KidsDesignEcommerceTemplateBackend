@@ -211,7 +211,7 @@ class ApiCartItem(viewsets.ModelViewSet):
 
     @swagger_helper("CartItem", "cart item")
     def destroy(self, request, *args, **kwargs):
-        response = super().destroy(*args, **kwargs)
+        response = super().destroy(request, *args, **kwargs)
         cache.delete_pattern(f"cart_item_list:{request.user.id}:*")
         cache.delete_pattern(f"cart_item_detail:{request.user.id}:{kwargs['pk']}")
         cache.delete_pattern(f"cart_list:{request.user.id}:*")
