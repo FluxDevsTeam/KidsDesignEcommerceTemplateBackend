@@ -2,10 +2,10 @@ import uuid
 import requests
 from rest_framework.response import Response
 from django.conf import settings
-
-base_url = settings.BASE_ROUTE
-image_url = settings.PAYMENT_IMAGE_URL
-webhook_url = settings.WEBHOOK_URL
+from .variables import backend_base_route, brand_logo
+base_url = backend_base_route
+image_url = brand_logo
+webhook_url = f"{backend_base_route}/api/v1/payment/webhook/"
 
 
 def initiate_flutterwave_payment(confirm_token, amount, user):
