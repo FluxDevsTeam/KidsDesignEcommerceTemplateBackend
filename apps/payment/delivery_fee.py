@@ -1,14 +1,11 @@
-from rest_framework.response import Response
-from ..ecommerce_admin.models import DeliverySettings
-from django.utils.functional import SimpleLazyObject
 from .utils import AVAILABLE_STATES, state_coords, calculate_distance, WAREHOUSE_CITY
 from ..cart.models import CartItem
+from .variables import fee_per_km, base_fee, weight_fee, size_fee
 
-delivery = SimpleLazyObject(lambda: DeliverySettings.objects.first())
-FEE_PER_KM = SimpleLazyObject(lambda: delivery.fee_per_km)
-BASE_FEE = SimpleLazyObject(lambda: delivery.base_fee)
-WEIGHT_FEE = SimpleLazyObject(lambda: delivery.weigh_fee)
-SIZE_FEE = SimpleLazyObject(lambda: delivery.size_fee)
+FEE_PER_KM = fee_per_km
+BASE_FEE = base_fee
+WEIGHT_FEE = weight_fee
+SIZE_FEE = size_fee
 
 # Quantity thresholds for different pricing tiers
 QUANTITY_THRESHOLDS = [
