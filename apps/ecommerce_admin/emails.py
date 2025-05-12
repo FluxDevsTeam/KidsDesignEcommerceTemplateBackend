@@ -14,6 +14,7 @@ organization_settings = SimpleLazyObject(lambda: OrganizationSettings.objects.fi
 organization = SimpleLazyObject(lambda: {
     'support_phone_number': getattr(organization_settings, 'phone_number', None),
     'support_email': getattr(organization_settings, 'customer_support_email', None),
+    'admin_email': getattr(organization_settings, 'admin_email', None),
     'brand_logo': getattr(organization_settings, 'brand_logo', None),
     'facebook': getattr(organization_settings, 'facebook', None),
     'instagram': getattr(organization_settings, 'instagram', None),
@@ -24,6 +25,7 @@ organization = SimpleLazyObject(lambda: {
 
 SUPPORT_PHONE_NUMBER = organization['support_phone_number']
 SUPPORT_EMAIL = organization['support_email'] # to be implemented when we have url leading directly to brand logo
+ADMIN_EMAIL = organization['admin_email']
 BRAND_LOGO = organization['brand_logo']
 FB_LINK = organization['facebook']
 IG_LINK = organization['instagram']
@@ -88,7 +90,7 @@ def refund_confirmation_email(order_id, user_email, first_name, total_amount, re
         plain_message = txt_template.render(Context(context))
 
         send_mail(
-            subject=f"Ecommerce App Template - Refund Confirmation",
+            subject="Ecommerce App Template - Refund Confirmation",
             message=plain_message,
             from_email=settings.EMAIL_HOST_USER,
             recipient_list=[user_email],
