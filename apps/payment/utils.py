@@ -3,16 +3,14 @@ from math import radians, sin, cos, sqrt, atan2
 from datetime import timedelta
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils.timezone import now
-from django.utils.functional import SimpleLazyObject
 import requests
 from django.conf import settings
 from .tasks import is_celery_healthy, send_refund_email_synchronously, send_manual_refund_notification_email, \
     send_user_refund_email_synchronously, send_user_refund_notification_email
-from ..ecommerce_admin.models import OrganizationSettings
+from .variables import warehouse_city, available_states, admin_email
 
-organisation_settings = SimpleLazyObject(lambda: OrganizationSettings.objects.first())
-AVAILABLE_STATES = SimpleLazyObject(lambda: organisation_settings.available_states)
-WAREHOUSE_CITY = SimpleLazyObject(lambda: organisation_settings.warehouse_state)
+AVAILABLE_STATES = available_states
+WAREHOUSE_CITY = warehouse_city
 
 state_coords = {
     "Lagos": (6.5244, 3.3792),
@@ -135,7 +133,6 @@ def initiate_refund(provider, amount, user, transaction_id):
 
 
 def notify_admin_for_manual_refund(provider, amount, user, transaction_id):
-    admin_email = settings.ADMIN_EMAIL
     if not is_celery_healthy():
         send_refund_email_synchronously(
             provider=provider,
@@ -159,7 +156,6 @@ def notify_admin_for_manual_refund(provider, amount, user, transaction_id):
 
 
 def notify_user_for_successful_refund(provider, amount, user, transaction_id):
-    admin_email = settings.ADMIN_EMAIL
     currency = settings.PAYMENT_CURRENCY
 
     if not is_celery_healthy():
