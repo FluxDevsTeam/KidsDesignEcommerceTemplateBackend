@@ -23,7 +23,7 @@ from django.contrib.auth import get_user_model
 from .delivery_date import calculate_delivery_dates
 from .utils import generate_confirm_token, swagger_helper, initiate_refund
 from ..products.models import Product, ProductSize
-
+from .variables import order_route_frontend, frontend_base_route, backend_base_route, payment_failed_url, admin_email
 User = get_user_model()
 
 
@@ -123,7 +123,7 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
             transaction_id = request.query_params.get("transaction_id") or tx_ref
 
             if not all([tx_ref, amount, provider, token]):
-                return redirect(f"{settings.SITE_URL}/cart/error/?data=Invalid-request-parameters")
+                return redirect(f"{payment_failed_url}/?data=Invalid-request-parameters")
 
             try:
                 decoded = AccessToken(token)
@@ -131,11 +131,11 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
                 cart = get_object_or_404(Cart.objects.select_for_update(), id=cart_id_from_token)
                 user = cart.user
             except Exception as e:
-                return redirect(f"{settings.SITE_URL}/cart/error/?data=Invalid-token-or-cart")
+                return redirect(f"{payment_failed_url}/?data=Invalid-token-or-cart")
 
             existing_order = Order.objects.filter(tx_ref=tx_ref).first()
             if existing_order:
-                return redirect(f"{settings.SITE_URL}/order/{existing_order.id}")
+                return redirect(f"{order_route_frontend}/{existing_order.id}")
 
             provider_config = settings.PAYMENT_PROVIDERS[provider]
             url = provider_config["verify_url"].format(transaction_id)
@@ -148,7 +148,7 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
                 verification_response = requests.get(url, headers=headers, timeout=10)
                 verification_response.raise_for_status()
             except requests.exceptions.RequestException as err:
-                return redirect(f"{settings.SITE_URL}/cart/error/?data=Payment-verification-failed")
+                return redirect(f"{payment_failed_url}/?data=Payment-verification-failed")
 
             response_data = verification_response.json()
             expected_currency = settings.PAYMENT_CURRENCY
@@ -172,12 +172,12 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
                 )
 
             if not verification_success:
-                return redirect(f"{settings.SITE_URL}/cart/error/?data=Payment-verification-failed")
+                return redirect(f"{payment_failed_url}/?data=Payment-verification-failed")
 
             serializer = PaymentCartSerializer(cart)
             server_total = serializer.data["total"]
             if abs(Decimal(str(server_total)) - Decimal(str(amount))) > Decimal("0.01"):
-                return redirect(f"{settings.SITE_URL}/cart/error/?data=Payment-amount-mismatch")
+                return redirect(f"{payment_failed_url}/?data=Payment-amount-mismatch")
 
             # Check and deduct stock with lock
             cart_items = cart.cartitem_cart.select_related('size', 'product').all()
@@ -195,11 +195,11 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
                     )
                     if refund_result is True:
                         print("Refund initiated due to insufficient stock")
-                        return redirect(f"{settings.SITE_URL}/cart/?error=Insufficient-stock-Refund-initiated")
+                        return redirect(f"{payment_failed_url}/?data=Insufficient-stock-Refund-initiated")
                     elif refund_result == "admin":
-                        return redirect(f"{settings.SITE_URL}/cart/?error=Insufficient-stock-Admin-notified")
+                        return redirect(f"{payment_failed_url}/?data=Insufficient-stock-Admin-notified")
                     else:
-                        return redirect(f"{settings.SITE_URL}/cart/error/?data=Insufficient-stock-Refund-failed-please-contact-support")
+                        return redirect(f"{payment_failed_url}/?data=Insufficient-stock-Refund-failed-please-contact-support")
 
             # Deduct stock
             for item in cart_items:
@@ -238,7 +238,7 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
             except IntegrityError:
                 existing_order = Order.objects.filter(tx_ref=tx_ref).first()
                 if existing_order:
-                    return redirect(f"{settings.SITE_URL}/order/{existing_order.id}")
+                    return redirect(f"{order_route_frontend}/{existing_order.id}")
                 raise
 
             for item in cart.cartitem_cart.all():
@@ -259,7 +259,6 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
             cache.delete_pattern(f"cart_item_detail:{user.id}:{cart.id}")
             cache.delete_pattern(f"cart_list:{user.id}:*")
 
-            admin_email = settings.ADMIN_EMAIL
             if not is_celery_healthy():
                 send_email_synchronously(
                     order_id=str(order.id),
@@ -282,10 +281,10 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
                     }
                 )
 
-            return redirect(f"{settings.SITE_URL}/orders/{order.id}")
+            return redirect(f"{order_route_frontend}/{order.id}")
 
         except Exception as e:
-            return redirect(f"{settings.SITE_URL}/cart/error/?data=Order-processing-failed-Please-contact-support")
+            return redirect(f"{payment_failed_url}/?data=Order-processing-failed-Please-contact-support")
 
 
 class PaymentWebhookViewSet(viewsets.ViewSet):
@@ -479,7 +478,6 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
             cache.delete_pattern(f"cart_item_detail:{user.id}:{cart.id}")
             cache.delete_pattern(f"cart_list:{user.id}:*")
 
-            admin_email = settings.ADMIN_EMAIL
             if not is_celery_healthy():
                 send_email_synchronously(
                     order_id=str(order.id),
