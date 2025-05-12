@@ -37,4 +37,3 @@ def swagger_helper(tags, model, description=None):
         return swagger_auto_schema(operation_id=f"{action_type} {model}", operation_description=description, tags=[tags])(func)
 
     return decorators
-

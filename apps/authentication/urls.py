@@ -1,7 +1,6 @@
 from django.urls import path
 from .views import (UserSignupViewSet, UserLoginViewSet, LogoutViewSet, UserProfileViewSet, PasswordChangeRequestViewSet, ForgotPasswordViewSet)
 
-
 urlpatterns = [
     # path('', include(router.urls)),
     path('signup/', UserSignupViewSet.as_view({'post': 'create'}), name='user_signup'),
