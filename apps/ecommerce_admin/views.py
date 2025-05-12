@@ -2,7 +2,8 @@ from django.db import transaction
 from django.db.models import Sum, F, Count, Case, When, IntegerField, Q
 from django.core.cache import cache
 from .models import OrganizationSettings, DeliverySettings, DeveloperSettings
-from .serializers import PatchOrderSerializer, DeveloperSettingsSerializer, DeliverySettingsSerializer, OrganizationSettingsSerializer
+from .serializers import PatchOrderSerializer, DeveloperSettingsSerializer, DeliverySettingsSerializer, \
+    OrganizationSettingsSerializer, OrganizationStatesSerializer
 from ..orders.serializers import OrderSerializer
 from ..orders.models import Order
 from rest_framework import viewsets, status, mixins
@@ -14,7 +15,7 @@ from django.utils import timezone
 from pytz import timezone as pytz_timezone
 from django.contrib.auth import get_user_model
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.permissions import IsAdminUser
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from apps.products.models import Product
 from django.db.models.functions import TruncMonth
@@ -267,3 +268,23 @@ class ApiDeveloperSettings(mixins.UpdateModelMixin, viewsets.GenericViewSet):
     @swagger_helper("Admin", "Admin developer settings page")
     def partial_update(self, request, *args, **kwargs):
         return super().update(request, *args, **kwargs)
+
+
+class ApiOrganizationStates(mixins.UpdateModelMixin, viewsets.GenericViewSet):
+    serializer_class = OrganizationStatesSerializer
+    http_method_names = ["get", "head", "options"]
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return OrganizationSettings.objects.all()
+
+    def get_object(self):
+        instance, created = OrganizationSettings.objects.get_or_create(id=1)
+        return instance
+
+    @swagger_helper("Admin", "States list page")
+    def list(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+

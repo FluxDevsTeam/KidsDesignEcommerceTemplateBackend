@@ -19,6 +19,12 @@ class OrganizationSettingsSerializer(serializers.ModelSerializer):
         fields = ["available_states", "warehouse_state", "phone_number", "customer_support_email", "admin_email", "brand_logo", "facebook", "twitter", "linkedin", "tiktok"]
 
 
+class OrganizationStatesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrganizationSettings
+        fields = ["available_states"]
+
+
 class DeliverySettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = DeliverySettings
