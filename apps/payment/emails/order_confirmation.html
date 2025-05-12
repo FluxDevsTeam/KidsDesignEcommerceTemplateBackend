@@ -106,26 +106,32 @@
             border: 2px solid #008080;
         }
 
-        .customer-support {
+        .support-box {
             background: #f8fafc;
             padding: 20px;
             border-radius: 8px;
             text-align: center;
             margin-top: 20px;
-        }
-
-        .customer-support h3 {
+          }
+      
+          .support-box h3 {
             font-size: 18px;
             font-weight: 600;
             color: #008080;
             margin-bottom: 10px;
-        }
-
-        .customer-support p {
+          }
+      
+          .support-box p {
             font-size: 14px;
-            color: #555555;
+            color: #555;
             margin-bottom: 10px;
-        }
+          }
+      
+          .support-box a {
+            color: #008080;
+            text-decoration: none;
+            font-weight: 500;
+          }
 
         .footer {
             text-align: center;
@@ -276,7 +282,7 @@
 
                     <!-- Customer Support -->
                     {% if support_email or support_phone_number %}
-                    <table class="customer-support" width="100%">
+                    <table class="support-box" width="100%">
                         <tr>
                           <td>
                             <h3>We Are Here to Help</h3>

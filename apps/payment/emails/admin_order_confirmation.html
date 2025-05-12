@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <title>
-      New Order Placed - {% if brand_name %} {{ brand_name }} {% else %} Shop.co
-      {% endif %}
+      New Order Placed - {% if brand_name %} {{ brand_name }} {% else %} Shop.co {% endif %}
     </title>
 
     <style>
@@ -180,8 +179,7 @@
             />
             <h1 class="header-title">New Order Placed</h1>
             <p class="header-subtitle">
-              {% if brand_name %} {{ brand_name }} {% else %} Shop.co {% endif
-              %} Admin Notification
+              {% if brand_name %} {{ brand_name }} {% else %} Shop.co {% endif %} Admin Notification
             </p>
           </td>
         </tr>
@@ -196,7 +194,7 @@
               <a
                 href="{{ site_url }}"
                 style="color: #008080; text-decoration: none"
-                >Shop.co</a
+                >{% if brand_name %} {{ brand_name }} {% else %} Shop.co {% endif %}</a
               >. Below are the details of the purchase.
             </p>
 
@@ -287,8 +285,7 @@
             <p>
               Best regards,<br />
               <a href="{{ site_url }}"
-                >The {% if brand_name %} {{ brand_name }} {% else %} Shop.co {%
-                endif %} Team</a
+                >The {% if brand_name %} {{ brand_name }} {% else %} Shop.co {% endif %} Team</a
               >
             </p>
             {% if social_true %}
@@ -340,8 +337,8 @@
             </table>
             {% endif %}
             <p>
-              {{ current_year|escape }} {% if brand_name %} {{ brand_name }} {%
-              else %} Shop.co {% endif %} All rights reserved.
+              {{ current_year|escape }} {% if brand_name %} {{ brand_name }} 
+              {% else %} Shop.co {% endif %} All rights reserved.
             </p>
             <p>
               <a href="{{ site_url }}/privacy">Privacy Policy</a>

@@ -235,14 +235,20 @@
       <a class="button" href="{{ site_url }}/order/{{ order_id|escape }}">View Order Details</a>
 
       <!-- Support -->
+      {% if support_email or support_phone_number %}
       <div class="support-box">
         <h3>We Are Here to Help</h3>
         <p>Have questions about your refund? Our support team is available anytime.</p>
         <p>
-          <a href="mailto:support@shop.co">support@shop.co</a> |
-          <a href="tel:+1234567890">+1 (234) 567-890</a>
+          {% if support_email %}
+          <a href="mailto:{{ support_email }}">support@{{ brand_name }}</a>
+          {% endif %}
+          {% if support_phone_number %} |
+          <a href="tel:{{ support_phone_number }}">{{ support_phone_number }}</a>
+          {% endif %}
         </p>
       </div>
+      {% endif %}
     </div>
 
     <!-- Footer -->
@@ -276,7 +282,6 @@
     <p>
         {{ current_year|escape }} {% if brand_name %} {{ brand_name }} {% else %} Shop.co {% endif %} All rights reserved.
     </p>
-
     <p>
         <a href="{{ site_url }}/privacy">Privacy Policy</a>
         {% if terms_of_service %} | <a href="{{ terms_of_service }}">Terms of Service</a>{% endif %}

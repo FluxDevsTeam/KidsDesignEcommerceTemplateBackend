@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <title>
-      Refund Successfully Processed - {% if brand_name %} {{brand_name}} {% else
-      %} Shop.co {% endif %}
+      Refund Successfully Processed - {% if brand_name %} {{brand_name}} {% else %} Shop.co {% endif %}
     </title>
     <style>
       body {
@@ -233,8 +232,7 @@
               <a
                 href="{{ site_url }}"
                 style="color: #008080; text-decoration: none; font-weight: 500"
-                >S{% if brand_name %} {{brand_name}} {% else
-                    %} Shop.co {% endif %}</a
+                >S{% if brand_name %} {{brand_name}} {% else %} Shop.co {% endif %}</a
               >. This is because a customer paid for a goods that was out of
               stock. This typically occurs when 2 users proceed to payment for
               the last item in stock. Refund has been made automatically. Below
@@ -316,8 +314,7 @@
             <p>
               Best regards,<br />
               <a href="{{ site_url }}"
-                >The {% if brand_name %} {{ brand_name }} {% else %} Shop.co {%
-                endif %} Team</a
+                >The {% if brand_name %} {{ brand_name }} {% else %} Shop.co {% endif %} Team</a
               >
             </p>
             {% if social_true %}
@@ -369,8 +366,8 @@
             </table>
             {% endif %}
             <p>
-              {{ current_year|escape }} {% if brand_name %} {{ brand_name }} {%
-              else %} Shop.co {% endif %} All rights reserved.
+              {{ current_year|escape }} {% if brand_name %} {{ brand_name }} 
+              {% else %} Shop.co {% endif %} All rights reserved.
             </p>
             <p>
               <a href="{{ site_url }}/privacy">Privacy Policy</a>
