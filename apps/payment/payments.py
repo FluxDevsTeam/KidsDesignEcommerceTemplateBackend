@@ -3,9 +3,19 @@ import requests
 from rest_framework.response import Response
 from django.conf import settings
 from .variables import backend_base_route, brand_logo
-base_url = backend_base_route
-image_url = brand_logo
-webhook_url = f"{backend_base_route}/api/v1/payment/webhook/"
+
+
+# had to make them functions so it wot crash when i newly create project
+def get_base_url():
+    return backend_base_route
+
+
+def get_image_url():
+    return brand_logo
+
+
+def get_webhook_url():
+    return f"{get_base_url()}/api/v1/payment/webhook/"
 
 
 def initiate_flutterwave_payment(confirm_token, amount, user):
@@ -17,6 +27,8 @@ def initiate_flutterwave_payment(confirm_token, amount, user):
         last_name = user.last_name or ""
         phone_no = user.phone_number or ""
         reference = str(uuid.uuid4())
+        base_url = get_base_url()
+        image_url = get_image_url()
         data = {
             "tx_ref": reference,
             "amount": str(amount),
@@ -65,6 +77,8 @@ def initiate_paystack_payment(confirm_token, amount, user):
         last_name = user.last_name or ""
         phone_no = user.phone_number or ""
         reference = str(uuid.uuid4())
+        base_url = get_base_url()
+        image_url = get_image_url()
         data = {
             "amount": int(amount * 100),
             "email": user.email,

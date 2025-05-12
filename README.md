@@ -8,6 +8,7 @@ This is a robust and scalable Django-based API template for building an ecommerc
 
 - [Features](#features)
 - [Project Structure](#project-structure)
+- [Codebase](#codebase)
 - [Installation](#installation)
 - [Environment Variables](#environment-variables)
 - [Usage](#usage)
@@ -49,14 +50,23 @@ This is a robust and scalable Django-based API template for building an ecommerc
 │   └── wishlist/
 ├── config/
 │   ├── settings/
+│   │   ├── base.py
+│   │   ├── development.py
+│   │   ├── production.py
+│   │   └── staging.py
 │   ├── asgi.py
 │   ├── schemas.py
 │   ├── urls.py
 │   └── wsgi.py
 ├── deployment/
-│   ├── docker-compose.yml
-│   └── Dockerfile
+│   ├── prod/
+│   │   ├── Dockerfile
+│   │   └── docker-compose.yml
+│   └── staging/
+│       ├── Dockerfile
+│       └── docker-compose.yml
 ├── media/
+├── static/
 ├── .env
 ├── .env.examples
 ├── .gitignore
@@ -67,6 +77,54 @@ This is a robust and scalable Django-based API template for building an ecommerc
 ├── README.md
 └── requirements.txt
 ```
+
+---
+
+## Codebase
+
+### Architecture
+
+The project follows a modular architecture with the following key components:
+
+- **Apps**: Standalone Django applications with specific functionality
+  - `authentication`: Custom user model and JWT authentication
+  - `products`: Product catalog and inventory management
+  - `cart`: Shopping cart implementation
+  - `orders`: Order processing and management
+  - `payment`: Payment gateway integrations
+  - `wishlist`: User wishlist functionality
+
+### Development Practices
+
+- **Code Style**: Following PEP 8 standards with Black formatter
+- **Type Hints**: Using Python type hints for better code clarity
+- **Testing**: Unit tests with pytest and coverage reporting
+- **Documentation**: Docstrings and OpenAPI/Swagger documentation
+- **Version Control**: Git with feature branch workflow
+- **CI/CD**: GitHub Actions for automated testing and deployment
+
+### Key Technologies
+
+- **Backend Framework**: Django & Django REST Framework
+- **Database**: PostgreSQL (Production/Staging), SQLite (Development)
+- **Caching**: Redis for session and query caching
+- **Cache Backend**: Redis for high-performance caching and session storage
+- **Task Queue**: Celery for background tasks
+- **API Documentation**: drf-spectacular for OpenAPI/Swagger
+- **Container**: Docker and Docker Compose
+- **Development Tools**: 
+  - Black (code formatting)
+  - isort (import sorting)
+  - flake8 (linting)
+  - pytest (testing)
+
+### Environment Configuration
+
+The project uses environment-specific settings:
+- `config/settings/base.py`: Base settings
+- `config/settings/development.py`: Local development
+- `config/settings/staging.py`: Staging environment
+- `config/settings/production.py`: Production environment
 
 ---
 
@@ -130,6 +188,10 @@ DEBUG=True
 EMAIL=your-email
 PASSWORD=your-email-app-password
 FLW_SEC_KEY=your-flutterwave-secret-key
+
+# Redis configuration
+REDIS_HOST=redis
+REDIS_PORT=6379
 
 # For production/staging only
 NAME=db-name
