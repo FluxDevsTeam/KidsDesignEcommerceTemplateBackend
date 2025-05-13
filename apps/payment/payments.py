@@ -19,6 +19,8 @@ def get_webhook_url():
 
 
 def initiate_flutterwave_payment(confirm_token, amount, user):
+    print(get_base_url())
+    print(get_image_url())
     try:
         flutterwave_key = settings.PAYMENT_PROVIDERS["flutterwave"]["secret_key"]
         url = "https://api.flutterwave.com/v3/payments"
@@ -29,6 +31,8 @@ def initiate_flutterwave_payment(confirm_token, amount, user):
         reference = str(uuid.uuid4())
         base_url = get_base_url()
         image_url = get_image_url()
+        print(base_url)
+        print(image_url)
         data = {
             "tx_ref": reference,
             "amount": str(amount),
