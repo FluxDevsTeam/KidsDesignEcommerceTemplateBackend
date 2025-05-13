@@ -25,10 +25,6 @@ def initiate_flutterwave_payment(confirm_token, amount, user):
         image = get_image_url()
         base = get_base_url()
         image_path = f"{base}/media/{image}"
-        print(image_path)
-        print(image_path)
-        print(image_path)
-        print(image_path)
         flutterwave_key = settings.PAYMENT_PROVIDERS["flutterwave"]["secret_key"]
         url = "https://api.flutterwave.com/v3/payments"
         headers = {"Authorization": f"Bearer {flutterwave_key}"}
@@ -82,10 +78,6 @@ def initiate_paystack_payment(confirm_token, amount, user):
         image = get_image_url()
         base = get_base_url()
         image_path = f"{base}/media/{image}"
-        print(image_path)
-        print(image_path)
-        print(image_path)
-        print(image_path)
         paystack_key = settings.PAYMENT_PROVIDERS['paystack']['secret_key']
         headers = {"Authorization": f"Bearer {paystack_key}", "Content-Type": "application/json"}
         url = "https://api.paystack.co/transaction/initialize"
