@@ -4,7 +4,6 @@ from rest_framework.response import Response
 from django.conf import settings
 from .variables import backend_base_route, brand_logo
 import os
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 # had to make them functions so it wot crash when i newly create project
@@ -21,13 +20,15 @@ def get_webhook_url():
 
 
 def initiate_flutterwave_payment(confirm_token, amount, user):
-    image = get_image_url()
-    image_path = os.path.join(BASE_DIR, image)
-    print(image_path)
-    print(image_path)
-    print(image_path)
-    print(image_path)
+
     try:
+        image = get_image_url()
+        base = get_base_url()
+        image_path = f"{base}/media/{image}"
+        print(image_path)
+        print(image_path)
+        print(image_path)
+        print(image_path)
         flutterwave_key = settings.PAYMENT_PROVIDERS["flutterwave"]["secret_key"]
         url = "https://api.flutterwave.com/v3/payments"
         headers = {"Authorization": f"Bearer {flutterwave_key}"}
@@ -35,7 +36,7 @@ def initiate_flutterwave_payment(confirm_token, amount, user):
         last_name = user.last_name or ""
         phone_no = user.phone_number or ""
         reference = str(uuid.uuid4())
-        base_url = get_base_url()
+        base_url = base
         image_url = image_path
         data = {
             "tx_ref": reference,
@@ -79,7 +80,8 @@ def initiate_flutterwave_payment(confirm_token, amount, user):
 def initiate_paystack_payment(confirm_token, amount, user):
     try:
         image = get_image_url()
-        image_path = os.path.join(BASE_DIR, image)
+        base = get_base_url()
+        image_path = f"{base}/media/{image}"
         print(image_path)
         print(image_path)
         print(image_path)
@@ -91,7 +93,7 @@ def initiate_paystack_payment(confirm_token, amount, user):
         last_name = user.last_name or ""
         phone_no = user.phone_number or ""
         reference = str(uuid.uuid4())
-        base_url = get_base_url()
+        base_url = base
         image_url = image_path
         data = {
             "amount": int(amount * 100),
