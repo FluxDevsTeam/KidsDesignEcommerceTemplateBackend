@@ -196,8 +196,11 @@ CELERY_WORKER_CONCURRENCY = 1
 # payment configurations
 
 PAYMENT_CURRENCY = os.getenv("PAYMENT_CURRENCY", "NGN")
+
 ORDER_URL = os.getenv("ORDER_URL", "http://127.0.0.1:8000/api/v1/orders/")
+
 PAYMENT_SUCCESS_URL = os.getenv("PAYMENT_SUCCESS_URL", "http:/127.0.0.1:8000/api/v1/payment/success/")
+
 PAYMENT_PROVIDERS = {
     "flutterwave": {
         "verify_url": "https://api.flutterwave.com/v3/transactions/{}/verify",

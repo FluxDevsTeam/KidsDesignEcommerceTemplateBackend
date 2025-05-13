@@ -5,6 +5,11 @@ import requests
 from django.utils import timezone
 from .tasks import (send_manual_refund_notification_email, send_refund_initiated_notification_email, is_celery_healthy,
                     send_refund_email_synchronously, send_refund_initiated_email_synchronously,refund_confirmation_email)
+from django.utils.functional import SimpleLazyObject
+from ..ecommerce_admin.models import OrganizationSettings, DeveloperSettings
+
+ADMIN_EMAIL = SimpleLazyObject(
+    lambda: getattr(OrganizationSettings.objects.first(), 'admin_email', None ))
 
 
 def swagger_helper(tags, model):
@@ -61,7 +66,7 @@ def initiate_refund(order, is_admin=False):
 
 
 def notify_admin_for_manual_refund(order):
-    admin_email = settings.ADMIN_EMAIL
+    admin_email = ADMIN_EMAIL
     user_id = order.user.id
     first_name = order.first_name or ''
     last_name = order.last_name or ''
@@ -99,7 +104,7 @@ def notify_admin_for_manual_refund(order):
 
 
 def notify_admin_for_refund_initiated(order):
-    admin_email = settings.ADMIN_EMAIL
+    admin_email = ADMIN_EMAIL
     user_id = order.user.id
     first_name = order.first_name or ''
     last_name = order.last_name or ''
