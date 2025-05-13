@@ -19,6 +19,13 @@ def get_webhook_url():
 
 
 def initiate_flutterwave_payment(confirm_token, amount, user):
+    print("1")
+    print("1")
+    print("1")
+    print("1")
+    print("1")
+    print("1")
+    print("1")
     print(get_base_url())
     print(get_image_url())
     try:
@@ -69,6 +76,11 @@ def initiate_flutterwave_payment(confirm_token, amount, user):
     except requests.exceptions.RequestException as err:
         return Response({"error": "Payment service unavailable. Please try again later."}, status=503)
     except Exception as e:
+        print(e)
+        print(e)
+        print(e)
+        print(e)
+        print(e)
         return Response({"error": "Payment processing failed. Please try again."}, status=500)
 
 
