@@ -3,6 +3,8 @@ import requests
 from rest_framework.response import Response
 from django.conf import settings
 from .variables import backend_base_route, brand_logo
+import os
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 # had to make them functions so it wot crash when i newly create project
@@ -23,11 +25,13 @@ def initiate_flutterwave_payment(confirm_token, amount, user):
     print("1")
     print("1")
     print("1")
+    image = get_image_url()
+    image_path = os.path.join(BASE_DIR, 'image')
+    print(image_path)
     print("1")
     print("1")
     print("1")
-    print(get_base_url())
-    print(get_image_url())
+    print("1")
     try:
         flutterwave_key = settings.PAYMENT_PROVIDERS["flutterwave"]["secret_key"]
         url = "https://api.flutterwave.com/v3/payments"
@@ -37,9 +41,7 @@ def initiate_flutterwave_payment(confirm_token, amount, user):
         phone_no = user.phone_number or ""
         reference = str(uuid.uuid4())
         base_url = get_base_url()
-        image_url = get_image_url()
-        print(base_url)
-        print(image_url)
+        image_url = image_path
         data = {
             "tx_ref": reference,
             "amount": str(amount),
@@ -76,11 +78,6 @@ def initiate_flutterwave_payment(confirm_token, amount, user):
     except requests.exceptions.RequestException as err:
         return Response({"error": "Payment service unavailable. Please try again later."}, status=503)
     except Exception as e:
-        print(e)
-        print(e)
-        print(e)
-        print(e)
-        print(e)
         return Response({"error": "Payment processing failed. Please try again."}, status=500)
 
 

@@ -79,10 +79,7 @@ class PaymentInitiateViewSet(viewsets.ModelViewSet):
             for item in cart.cartitem_cart.all():
                 if not item.product.unlimited and item.size.quantity < item.quantity:
                     return Response({"error": f"Insufficient stock for {item.product.name}"}, status=400)
-            print("2")
-            print("2")
-            print("2")
-            print("2")
+
             input_serializer = PaymentCartSerializer(cart, data=request.data, partial=True)
             if not input_serializer.is_valid():
                 return Response({"error": "Invalid payment data", "details": input_serializer.errors}, status=400)
@@ -98,13 +95,6 @@ class PaymentInitiateViewSet(viewsets.ModelViewSet):
 
             token = generate_confirm_token(request.user, str(cart.id))
 
-            print("0")
-            print("0")
-            print("0")
-            print("0")
-            print("0")
-            print("0")
-            print("0")
             if provider == "flutterwave":
                 response = initiate_flutterwave_payment(token, total_amount, request.user)
             elif provider == "paystack":
