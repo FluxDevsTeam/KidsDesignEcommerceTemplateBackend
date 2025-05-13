@@ -21,17 +21,12 @@ def get_webhook_url():
 
 
 def initiate_flutterwave_payment(confirm_token, amount, user):
-    print("1")
-    print("1")
-    print("1")
-    print("1")
     image = get_image_url()
-    image_path = os.path.join(BASE_DIR, 'image')
+    image_path = os.path.join(BASE_DIR, image)
     print(image_path)
-    print("1")
-    print("1")
-    print("1")
-    print("1")
+    print(image_path)
+    print(image_path)
+    print(image_path)
     try:
         flutterwave_key = settings.PAYMENT_PROVIDERS["flutterwave"]["secret_key"]
         url = "https://api.flutterwave.com/v3/payments"
@@ -83,6 +78,12 @@ def initiate_flutterwave_payment(confirm_token, amount, user):
 
 def initiate_paystack_payment(confirm_token, amount, user):
     try:
+        image = get_image_url()
+        image_path = os.path.join(BASE_DIR, image)
+        print(image_path)
+        print(image_path)
+        print(image_path)
+        print(image_path)
         paystack_key = settings.PAYMENT_PROVIDERS['paystack']['secret_key']
         headers = {"Authorization": f"Bearer {paystack_key}", "Content-Type": "application/json"}
         url = "https://api.paystack.co/transaction/initialize"
@@ -91,7 +92,7 @@ def initiate_paystack_payment(confirm_token, amount, user):
         phone_no = user.phone_number or ""
         reference = str(uuid.uuid4())
         base_url = get_base_url()
-        image_url = get_image_url()
+        image_url = image_path
         data = {
             "amount": int(amount * 100),
             "email": user.email,
