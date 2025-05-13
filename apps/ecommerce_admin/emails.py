@@ -100,50 +100,53 @@ def refund_confirmation_email(order_id, user_email, first_name, total_amount, re
 
 
 def refund_initiated_notification_email(order_id, user_id, first_name, last_name, phone_no, transaction_id, amount, provider, admin_email):
-    context = {
-        'order_id': order_id,
-        'user_id': user_id,
-        'first_name': first_name,
-        'last_name': last_name,
-        'phone_no': phone_no,
-        'transaction_id': transaction_id,
-        'amount': amount,
-        'provider': provider,
-        'site_url': settings.ORDER_URL,
-        'current_year': datetime.now().year,
+    try:
+        context = {
+            'order_id': order_id,
+            'user_id': user_id,
+            'first_name': first_name,
+            'last_name': last_name,
+            'phone_no': phone_no,
+            'transaction_id': transaction_id,
+            'amount': amount,
+            'provider': provider,
+            'site_url': settings.ORDER_URL,
+            'current_year': datetime.now().year,
 
-        'support_email': SUPPORT_EMAIL,
-        'support_phone_number': SUPPORT_PHONE_NUMBER,
-        'brand_name': BRAND_NAME,
-        'brand_logo': BRAND_LOGO,
-        'terms_of_service': TERMS_OF_SERVICE,
-        'social_true': any((FB_LINK, IG_LINK, X_LINK, X_LINK, LINKEDIN_LINK, TIKTOK_LINK)),
-        'fb_link': FB_LINK,
-        'ig_link': IG_LINK,
-        'x_link': X_LINK,
-        'linkedin_link': LINKEDIN_LINK,
-        'tiktok_link': TIKTOK_LINK
-    }
+            'support_email': SUPPORT_EMAIL,
+            'support_phone_number': SUPPORT_PHONE_NUMBER,
+            'brand_name': BRAND_NAME,
+            'brand_logo': BRAND_LOGO,
+            'terms_of_service': TERMS_OF_SERVICE,
+            'social_true': any((FB_LINK, IG_LINK, X_LINK, X_LINK, LINKEDIN_LINK, TIKTOK_LINK)),
+            'fb_link': FB_LINK,
+            'ig_link': IG_LINK,
+            'x_link': X_LINK,
+            'linkedin_link': LINKEDIN_LINK,
+            'tiktok_link': TIKTOK_LINK
+        }
 
-    html_template_path = os.path.join(BASE_DIR, 'emails', 'refund_initiated_notification.html')
-    txt_template_path = os.path.join(BASE_DIR, 'emails', 'refund_initiated_notification.txt')
+        html_template_path = os.path.join(BASE_DIR, 'emails', 'refund_initiated_notification.html')
+        txt_template_path = os.path.join(BASE_DIR, 'emails', 'refund_initiated_notification.txt')
 
-    with open(html_template_path, 'r', encoding='utf-8') as f:
-        html_template = Template(f.read())
-    html_message = html_template.render(Context(context))
+        with open(html_template_path, 'r', encoding='utf-8') as f:
+            html_template = Template(f.read())
+        html_message = html_template.render(Context(context))
 
-    with open(txt_template_path, 'r', encoding='utf-8') as f:
-        txt_template = Template(f.read())
-    plain_message = txt_template.render(Context(context))
+        with open(txt_template_path, 'r', encoding='utf-8') as f:
+            txt_template = Template(f.read())
+        plain_message = txt_template.render(Context(context))
 
-    send_mail(
-        subject=f"Ecommerce App Template - Refund Initiated",
-        message=plain_message,
-        from_email=settings.EMAIL_HOST_USER,
-        recipient_list=[admin_email],
-        html_message=html_message,
-        fail_silently=False,
-    )
+        send_mail(
+            subject=f"Ecommerce App Template - Refund Initiated",
+            message=plain_message,
+            from_email=settings.EMAIL_HOST_USER,
+            recipient_list=[admin_email],
+            html_message=html_message,
+            fail_silently=False,
+        )
+    except Exception as e:
+        pass
 
 
 def order_shipped_email(order_id, user_email, first_name, estimated_delivery):
