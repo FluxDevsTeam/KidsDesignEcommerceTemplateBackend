@@ -51,9 +51,10 @@ def calculate_delivery_dates(cart):
 
     zones = group_states_by_proximity(WAREHOUSE_CITY, AVAILABLE_STATES)
     today = datetime.date.today()
-    # get the start date from average of all the cart items production_days
-    for item in cart.cartitem_cart.filter(product__production_days__gt=0):
-        print(item.product.production_days)
+    total_production_days = sum(item.product.production_days for item in cart.cartitem_cart.all())
+
+    start_date = today + datetime.timedelta(days=total_production_days)
+
     selected_zone = None
     if selected_state.lower() == WAREHOUSE_CITY.lower():
         selected_zone = "same_state"
@@ -68,7 +69,7 @@ def calculate_delivery_dates(cart):
 
     delivery_gap_start, delivery_gap_end = ZONE_DELIVERY_GAPS[selected_zone.lower()]
 
-    first_delivery_date = get_weekday_delivery_dates(today, delivery_gap_start)
-    last_delivery_date = get_weekday_delivery_dates(today, delivery_gap_end)
+    first_delivery_date = get_weekday_delivery_dates(start_date, delivery_gap_start)
+    last_delivery_date = get_weekday_delivery_dates(start_date, delivery_gap_end)
 
     return [first_delivery_date, last_delivery_date]

@@ -93,8 +93,8 @@ class DeveloperSettings(models.Model):
     brand_name = models.CharField(max_length=200)  # default="Shop.co"
     contact_us = models.URLField(max_length=200) #default="https://ecommercetemplateweb.netlify.app/contact-us"
     terms_of_service = models.URLField(max_length=200) # default="https://ecommercetemplateweb.netlify.app/terms-of-service"
-    backend_base_route = models.URLField(max_length=200) # default="https://ecommercetemplate.pythonanywhere.com/"
-    frontend_base_route = models.URLField(max_length=200) # default="https://ecommercetemplateweb.netlify.app/"
+    backend_base_route = models.URLField(max_length=200) # default="https://ecommercetemplate.pythonanywhere.com"
+    frontend_base_route = models.URLField(max_length=200) # default="https://ecommercetemplateweb.netlify.app"
     order_route_frontend = models.URLField(max_length=200) #  default="https://ecommercetemplate.pythonanywhere.com/orders"
     payment_failed_url = models.URLField(max_length=200) # default="https://ecommercetemplate.pythonanywhere.com/order_failed"
 
