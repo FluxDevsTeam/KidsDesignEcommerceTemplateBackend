@@ -37,9 +37,13 @@ SIZE_MAPPING = {
 
 def get_volumetric_weight(weight_choice, size_choice):
     if not weight_choice or not size_choice:
-        return 0
-    actual_weight = WEIGHT_MAPPING.get(weight_choice, 0)
-    dimensions = SIZE_MAPPING.get(size_choice, (0, 0, 0))
+        raise ValueError("Weight or size choice missing for product")
+    actual_weight = WEIGHT_MAPPING.get(weight_choice)
+    if actual_weight is None:
+        raise ValueError(f"Invalid weight choice: {weight_choice}")
+    dimensions = SIZE_MAPPING.get(size_choice)
+    if dimensions is None:
+        raise ValueError(f"Invalid size choice: {size_choice}")
     length, width, height = dimensions
     dimensional_weight = (length * width * height) / DIM_FACTOR
     return max(actual_weight, dimensional_weight)
@@ -53,31 +57,42 @@ def get_distance_rate(distance):
 
 
 def get_quantity_factor(total_quantity):
+    if total_quantity <= 0:
+        raise ValueError("Total quantity must be positive")
     return 1 - 0.3 * (1 - 1 / (1 + 0.1 * total_quantity))
 
 
 def calculate_delivery_fee(cart):
     selected_state = cart.state
-    if selected_state.lower() not in [state.lower() for state in AVAILABLE_STATES]:
-        return 0
+    if not selected_state or selected_state.lower() not in [state.lower() for state in AVAILABLE_STATES]:
+        raise ValueError(f"Invalid or missing delivery state: {selected_state}")
+
     state_coord_lower = {key.lower(): value for key, value in state_coords.items()}
     warehouse_coord = state_coord_lower.get(WAREHOUSE_CITY.lower())
     state_coord = state_coord_lower.get(selected_state.lower())
-    if not warehouse_coord or not state_coord:
-        return 0
+
+    if not warehouse_coord:
+        raise ValueError(f"Warehouse coordinates not found for {WAREHOUSE_CITY}")
+    if not state_coord:
+        raise ValueError(f"Coordinates not found for state: {selected_state}")
+
     distance = calculate_distance(warehouse_coord, state_coord)
     cart_items = cart.items.all()
     if not cart_items:
-        return 0
+        raise ValueError("Cart is empty")
+
     total_volumetric_weight = 0
     total_quantity = 0
     for item in cart_items:
         weight_choice = item.product.weight
         size_choice = item.product.dimensional_size
         quantity = item.quantity
+        if quantity <= 0:
+            raise ValueError(f"Invalid quantity for product {item.product.name}: {quantity}")
         volumetric_weight = get_volumetric_weight(weight_choice, size_choice)
         total_volumetric_weight += volumetric_weight * quantity
         total_quantity += quantity
+
     quantity_factor = get_quantity_factor(total_quantity)
     rate_per_kg = get_distance_rate(distance)
     distance_fee = total_volumetric_weight * rate_per_kg * quantity_factor
