@@ -51,7 +51,7 @@ def calculate_delivery_dates(cart):
 
     zones = group_states_by_proximity(WAREHOUSE_CITY, AVAILABLE_STATES)
     today = datetime.date.today()
-    total_production_days = sum(item.product.production_days for item in cart.cartitem_cart.all())
+    total_production_days = sum(item.product.production_days * item.quantity for item in cart.cartitem_cart.all())
 
     start_date = today + datetime.timedelta(days=total_production_days)
 
