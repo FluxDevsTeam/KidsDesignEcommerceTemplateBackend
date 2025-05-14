@@ -99,7 +99,7 @@ def calculate_delivery_fee(cart):
 
         # Get cart items
         try:
-            cart_items = cart.items.all()
+            cart_items = cart.cartitem_cart.all()  # Fixed: Use correct related_name
             print(f"Number of cart items: {len(cart_items)}")
         except AttributeError as e:
             logger.error(f"Error accessing cart items: {str(e)}")
