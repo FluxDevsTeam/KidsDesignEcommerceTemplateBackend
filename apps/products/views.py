@@ -317,32 +317,43 @@ class ApiProduct(viewsets.ModelViewSet):
 
         products = Product.objects.select_related('sub_category__category')
         latest_prioritized = products.filter(Q(latest_item=True) & Q(latest_item_position__isnull=False)).order_by('latest_item_position')
-        random_others = products.exclude(id__in=latest_prioritized.values_list('id', flat=True)).order_by('?')[:max(0, 20 - latest_prioritized.count())]
-        latest_products = list(latest_prioritized) + list(random_others)
+        latest_prioritized = latest_prioritized[:28]
+        latest_prioritized_list = list(latest_prioritized)
+        remaining_slots = max(0, 28 - len(latest_prioritized_list))
+        if remaining_slots > 0:
+            random_others = products.exclude(id__in=[item.id for item in latest_prioritized_list]).order_by('?')[:remaining_slots]
+        else:
+            random_others = []
+        latest_products = latest_prioritized_list + list(random_others)
 
         top_selling_prioritized = products.filter(Q(top_selling_items=True) & Q(top_selling_position__isnull=False)).order_by('top_selling_position')
-        other_latest = products.exclude(id__in=top_selling_prioritized.values_list('id', flat=True)).order_by('?')[:max(0, 20 - top_selling_prioritized.count())]
-        top_selling_products = list(top_selling_prioritized) + list(other_latest)
+        top_selling_prioritized = top_selling_prioritized[:28]
+        top_selling_prioritized_list = list(top_selling_prioritized)
+        remaining_slots = max(0, 28 - len(top_selling_prioritized_list))
+        if remaining_slots > 0:
+            other_latest = products.exclude(id__in=[item.id for item in top_selling_prioritized_list]).order_by('?')[:remaining_slots]
+        else:
+            other_latest = []
+        top_selling_products = top_selling_prioritized_list + list(other_latest)
 
-        latest_paginator = self.pagination_class()
-        top_selling_paginator = self.pagination_class()
-        latest_paginator.page_query_param = 'page_latest'
-        top_selling_paginator.page_query_param = 'page_top'
+        paginator = self.pagination_class()
 
-        default_page_size = 16
-        if 'page_size' not in request.query_params:
-            latest_paginator.page_size = default_page_size
-            top_selling_paginator.page_size = default_page_size
+        if 'page_size' in request.query_params:
+            page_size = int(request.query_params['page_size'])
+        else:
+            page_size = 28
 
-        latest_page = latest_paginator.paginate_queryset(latest_products, request, view=self)
-        top_selling_page = top_selling_paginator.paginate_queryset(top_selling_products, request, view=self)
+        paginator.page_size = page_size
+
+        latest_page = paginator.paginate_queryset(latest_products, request, view=self)
+        top_selling_page = paginator.paginate_queryset(top_selling_products, request, view=self)
 
         latest_serializer = self.get_serializer(latest_page, many=True)
         top_selling_serializer = self.get_serializer(top_selling_page, many=True)
 
         response_data = {
-            "latest_items": latest_paginator.get_paginated_response(latest_serializer.data).data,
-            "top_selling_items": top_selling_paginator.get_paginated_response(top_selling_serializer.data).data
+            "latest_items": paginator.get_paginated_response(latest_serializer.data).data,
+            "top_selling_items": paginator.get_paginated_response(top_selling_serializer.data).data
         }
         cache.set(cache_key, response_data, cache_timeout)
         return Response(response_data)
