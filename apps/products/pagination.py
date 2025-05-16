@@ -1,11 +1,22 @@
 from rest_framework.pagination import PageNumberPagination
 from drf_yasg import openapi
+from rest_framework.response import Response
 
 
 class CustomPagination(PageNumberPagination):
     page_size_query_param = "page_size"
     max_page_size = 100
 
+    def get_paginated_response(self, data):
+        page_size = self.page_size
+        total_items = len(self.page.object_list)
+        count = min(page_size, total_items)
+        return Response({
+            'count': count,
+            'next': self.get_next_link(),
+            'previous': self.get_previous_link(),
+            'results': data
+        })
 
 PAGINATION_PARAMS = [
     openapi.Parameter(
@@ -95,21 +106,9 @@ PRODUCT_PAGINATION_PARAMS = [
 
 HOMEPAGE_PAGINATION_PARAMS = [
     openapi.Parameter(
-        'page',
+        'page_size',
         openapi.IN_QUERY,
-        description="Page number",
-        type=openapi.TYPE_INTEGER
-    ),
-    openapi.Parameter(
-        'page_latest',
-        openapi.IN_QUERY,
-        description="Items per page (max: 100)",
-        type=openapi.TYPE_INTEGER
-    ),
-    openapi.Parameter(
-        'page_top',
-        openapi.IN_QUERY,
-        description="Items per page (max: 100)",
+        description="Items per page (default: 10, max: 100)",
         type=openapi.TYPE_INTEGER
     ),
 ]
