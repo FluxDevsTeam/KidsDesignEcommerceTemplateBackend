@@ -317,23 +317,13 @@ class ApiProduct(viewsets.ModelViewSet):
 
         products = Product.objects.select_related('sub_category__category')
         latest_prioritized = products.filter(Q(latest_item=True) & Q(latest_item_position__isnull=False)).order_by('latest_item_position')
-        latest_prioritized = latest_prioritized[:28]
         latest_prioritized_list = list(latest_prioritized)
-        remaining_slots = max(0, 28 - len(latest_prioritized_list))
-        if remaining_slots > 0:
-            random_others = products.exclude(id__in=[item.id for item in latest_prioritized_list]).order_by('?')[:remaining_slots]
-        else:
-            random_others = []
+        random_others = products.exclude(id__in=[item.id for item in latest_prioritized_list]).order_by('?')
         latest_products = latest_prioritized_list + list(random_others)
 
         top_selling_prioritized = products.filter(Q(top_selling_items=True) & Q(top_selling_position__isnull=False)).order_by('top_selling_position')
-        top_selling_prioritized = top_selling_prioritized[:28]
         top_selling_prioritized_list = list(top_selling_prioritized)
-        remaining_slots = max(0, 28 - len(top_selling_prioritized_list))
-        if remaining_slots > 0:
-            other_latest = products.exclude(id__in=[item.id for item in top_selling_prioritized_list]).order_by('?')[:remaining_slots]
-        else:
-            other_latest = []
+        other_latest = products.exclude(id__in=[item.id for item in top_selling_prioritized_list]).order_by('?')
         top_selling_products = top_selling_prioritized_list + list(other_latest)
 
         paginator = self.pagination_class()
@@ -341,7 +331,7 @@ class ApiProduct(viewsets.ModelViewSet):
         if 'page_size' in request.query_params:
             page_size = int(request.query_params['page_size'])
         else:
-            page_size = 28
+            page_size = 16
 
         paginator.page_size = page_size
 
