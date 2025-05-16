@@ -329,6 +329,11 @@ class ApiProduct(viewsets.ModelViewSet):
         latest_paginator.page_query_param = 'page_latest'
         top_selling_paginator.page_query_param = 'page_top'
 
+        default_page_size = 16
+        if 'page_size' not in request.query_params:
+            latest_paginator.page_size = default_page_size
+            top_selling_paginator.page_size = default_page_size
+
         latest_page = latest_paginator.paginate_queryset(latest_products, request, view=self)
         top_selling_page = top_selling_paginator.paginate_queryset(top_selling_products, request, view=self)
 
