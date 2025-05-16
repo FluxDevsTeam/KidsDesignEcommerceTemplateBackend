@@ -91,3 +91,25 @@ PRODUCT_PAGINATION_PARAMS = [
         type=openapi.TYPE_BOOLEAN
     ),
 ]
+
+
+HOMEPAGE_PAGINATION_PARAMS = [
+    openapi.Parameter(
+        'page',
+        openapi.IN_QUERY,
+        description="Page number",
+        type=openapi.TYPE_INTEGER
+    ),
+    openapi.Parameter(
+        'page_latest',
+        openapi.IN_QUERY,
+        description="Items per page (max: 100)",
+        type=openapi.TYPE_INTEGER
+    ),
+    openapi.Parameter(
+        'page_top',
+        openapi.IN_QUERY,
+        description="Items per page (max: 100)",
+        type=openapi.TYPE_INTEGER
+    ),
+]
