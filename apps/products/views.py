@@ -331,7 +331,7 @@ class ApiProduct(viewsets.ModelViewSet):
         if 'page_size' in request.query_params:
             page_size = int(request.query_params['page_size'])
         else:
-            page_size = 16
+            page_size = 12
 
         paginator.page_size = page_size
 
