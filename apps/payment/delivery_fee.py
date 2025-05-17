@@ -45,6 +45,7 @@ SIZE_MAPPING = {
     'XXL': 5.0
 }
 
+
 def calculate_delivery_fee(cart):
     try:
         selected_state = cart.state

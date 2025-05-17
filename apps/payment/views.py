@@ -213,7 +213,7 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
                         cache.delete_pattern("search_suggestions:*")
                         cache.delete_pattern("product_suggestions:*")
                         cache.delete_pattern("product_homepage:*")
-                cache.delete_pattern("product_size_list:*")
+                cache.delete_pattern(f"product_size_list:{product_size.product.id}:*")
                 cache.delete_pattern(f"product_size_detail:{product_size.id}")
                 product_size.save()
 
@@ -432,7 +432,7 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
                         cache.delete_pattern("search_suggestions:*")
                         cache.delete_pattern("product_suggestions:*")
                         cache.delete_pattern("product_homepage:*")
-                cache.delete_pattern("product_size_list:*")
+                cache.delete_pattern(f"product_size_list:{product_size.product.id}:*")
                 cache.delete_pattern(f"product_size_detail:{product_size.id}")
                 product_size.save()
 

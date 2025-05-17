@@ -571,9 +571,10 @@ class ApiProductSize(viewsets.ModelViewSet):
 
     @swagger_helper(tags="ProductSize", model="Product size")
     def list(self, request, *args, **kwargs):
+        item_pk = self.kwargs.get('item_pk')
         cache_timeout = TIMEOUT
         cache_params = dict(request.query_params)
-        cache_key = f"product_size_list:{json.dumps(cache_params, sort_keys=True)}"
+        cache_key = f"product_size_list:{item_pk}:{json.dumps(cache_params, sort_keys=True)}"
         cached_response = cache.get(cache_key)
         if cached_response:
             return Response(cached_response)
@@ -597,7 +598,8 @@ class ApiProductSize(viewsets.ModelViewSet):
     @swagger_helper(tags="ProductSize", model="Product size")
     def create(self, *args, **kwargs):
         response = super().create(*args, **kwargs)
-        cache.delete_pattern("product_size_list:*")
+        item_pk = self.kwargs.get('item_pk')
+        cache.delete_pattern(f"product_size_list:{item_pk}:*")
         cache.delete_pattern("product_size_detail:*")
         cache.delete_pattern("product_list:*")
         cache.delete_pattern("product_detail:*")
@@ -610,7 +612,8 @@ class ApiProductSize(viewsets.ModelViewSet):
     @swagger_helper(tags="ProductSize", model="Product size")
     def partial_update(self, *args, **kwargs):
         response = super().partial_update(*args, **kwargs)
-        cache.delete_pattern("product_size_list:*")
+        item_pk = self.kwargs.get('item_pk')
+        cache.delete_pattern(f"product_size_list:{item_pk}:*")
         cache.delete_pattern(f"product_size_detail:{kwargs['pk']}")
         cache.delete_pattern("product_list:*")
         cache.delete_pattern("product_detail:*")
@@ -623,7 +626,8 @@ class ApiProductSize(viewsets.ModelViewSet):
     @swagger_helper(tags="ProductSize", model="Product size")
     def destroy(self, *args, **kwargs):
         response = super().destroy(*args, **kwargs)
-        cache.delete_pattern("product_size_list:*")
+        item_pk = self.kwargs.get('item_pk')
+        cache.delete_pattern(f"product_size_list:{item_pk}:*")
         cache.delete_pattern(f"product_size_detail:{kwargs['pk']}")
         cache.delete_pattern("product_list:*")
         cache.delete_pattern("product_detail:*")
