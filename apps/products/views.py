@@ -41,8 +41,7 @@ class ApiProductCategory(viewsets.ModelViewSet):
         cache_timeout = TIMEOUT
         cache_params = dict(request.query_params)
         cache_key = f"category_list:{json.dumps(cache_params, sort_keys=True)}"
-        cached_response = cache.get(cache_key)
-        if cached_response:
+        if cached_response := cache.get(cache_key):
             return Response(cached_response)
 
         response = super().list(request, *args, **kwargs)
@@ -53,8 +52,7 @@ class ApiProductCategory(viewsets.ModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         cache_timeout = TIMEOUT
         cache_key = f"category_detail:{kwargs['pk']}"
-        cached_response = cache.get(cache_key)
-        if cached_response:
+        if cached_response := cache.get(cache_key):
             return Response(cached_response)
 
         response = super().retrieve(request, *args, **kwargs)
@@ -69,6 +67,8 @@ class ApiProductCategory(viewsets.ModelViewSet):
         cache.delete_pattern("subcategory_list:*")
         cache.delete_pattern("subcategory_detail:*")
         cache.delete_pattern("product_list:*")
+        cache.delete_pattern("product_detail:*")
+        cache.delete_pattern("product_size_list:*")
         cache.delete_pattern("search:*")
         cache.delete_pattern("search_suggestions:*")
         cache.delete_pattern("product_suggestions:*")
@@ -83,6 +83,8 @@ class ApiProductCategory(viewsets.ModelViewSet):
         cache.delete_pattern("subcategory_list:*")
         cache.delete_pattern("subcategory_detail:*")
         cache.delete_pattern("product_list:*")
+        cache.delete_pattern("product_detail:*")
+        cache.delete_pattern("product_size_list:*")
         cache.delete_pattern("search:*")
         cache.delete_pattern("search_suggestions:*")
         cache.delete_pattern("product_suggestions:*")
@@ -97,6 +99,8 @@ class ApiProductCategory(viewsets.ModelViewSet):
         cache.delete_pattern("subcategory_list:*")
         cache.delete_pattern("subcategory_detail:*")
         cache.delete_pattern("product_list:*")
+        cache.delete_pattern("product_detail:*")
+        cache.delete_pattern("product_size_list:*")
         cache.delete_pattern("search:*")
         cache.delete_pattern("search_suggestions:*")
         cache.delete_pattern("product_suggestions:*")
@@ -122,8 +126,7 @@ class ApiProductSubCategory(viewsets.ModelViewSet):
         cache_timeout = TIMEOUT
         cache_params = dict(request.query_params)
         cache_key = f"subcategory_list:{json.dumps(cache_params, sort_keys=True)}"
-        cached_response = cache.get(cache_key)
-        if cached_response:
+        if cached_response := cache.get(cache_key):
             return Response(cached_response)
 
         response = super().list(request, *args, **kwargs)
@@ -134,8 +137,7 @@ class ApiProductSubCategory(viewsets.ModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         cache_timeout = TIMEOUT
         cache_key = f"subcategory_detail:{kwargs['pk']}"
-        cached_response = cache.get(cache_key)
-        if cached_response:
+        if cached_response := cache.get(cache_key):
             return Response(cached_response)
 
         response = super().retrieve(request, *args, **kwargs)
@@ -148,6 +150,8 @@ class ApiProductSubCategory(viewsets.ModelViewSet):
         cache.delete_pattern("subcategory_list:*")
         cache.delete_pattern("subcategory_detail:*")
         cache.delete_pattern("product_list:*")
+        cache.delete_pattern("product_detail:*")
+        cache.delete_pattern("product_size_list:*")
         cache.delete_pattern("search:*")
         cache.delete_pattern("search_suggestions:*")
         cache.delete_pattern("product_suggestions:*")
@@ -160,6 +164,8 @@ class ApiProductSubCategory(viewsets.ModelViewSet):
         cache.delete_pattern("subcategory_list:*")
         cache.delete_pattern(f"subcategory_detail:{kwargs['pk']}")
         cache.delete_pattern("product_list:*")
+        cache.delete_pattern("product_detail:*")
+        cache.delete_pattern("product_size_list:*")
         cache.delete_pattern("search:*")
         cache.delete_pattern("search_suggestions:*")
         cache.delete_pattern("product_suggestions:*")
@@ -172,6 +178,8 @@ class ApiProductSubCategory(viewsets.ModelViewSet):
         cache.delete_pattern("subcategory_list:*")
         cache.delete_pattern(f"subcategory_detail:{kwargs['pk']}")
         cache.delete_pattern("product_list:*")
+        cache.delete_pattern("product_detail:*")
+        cache.delete_pattern("product_size_list:*")
         cache.delete_pattern("search:*")
         cache.delete_pattern("search_suggestions:*")
         cache.delete_pattern("product_suggestions:*")
@@ -200,8 +208,7 @@ class ApiProduct(viewsets.ModelViewSet):
         cache_timeout = TIMEOUT
         cache_params = dict(request.query_params)
         cache_key = f"product_list:{json.dumps(cache_params, sort_keys=True)}"
-        cached_response = cache.get(cache_key)
-        if cached_response:
+        if cached_response := cache.get(cache_key):
             return Response(cached_response)
 
         response = super().list(request, *args, **kwargs)
@@ -212,8 +219,7 @@ class ApiProduct(viewsets.ModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         cache_timeout = TIMEOUT
         cache_key = f"product_detail:{kwargs['pk']}"
-        cached_response = cache.get(cache_key)
-        if cached_response:
+        if cached_response := cache.get(cache_key):
             return Response(cached_response)
 
         response = super().retrieve(request, *args, **kwargs)
@@ -224,6 +230,8 @@ class ApiProduct(viewsets.ModelViewSet):
     def create(self, *args, **kwargs):
         response = super().create(*args, **kwargs)
         cache.delete_pattern("product_list:*")
+        cache.delete_pattern("product_detail:*")
+        cache.delete_pattern("product_size_list:*")
         cache.delete_pattern("search:*")
         cache.delete_pattern("search_suggestions:*")
         cache.delete_pattern("cart_list:*")
@@ -280,6 +288,7 @@ class ApiProduct(viewsets.ModelViewSet):
 
             cache.delete_pattern("product_list:*")
             cache.delete_pattern(f"product_detail:{kwargs['pk']}")
+            cache.delete_pattern(f"product_size_list:{kwargs['pk']}:*")
             cache.delete_pattern("search:*")
             cache.delete_pattern("search_suggestions:*")
             cache.delete_pattern("cart_list:*")
@@ -296,6 +305,7 @@ class ApiProduct(viewsets.ModelViewSet):
         response = super().destroy(*args, **kwargs)
         cache.delete_pattern("product_list:*")
         cache.delete_pattern(f"product_detail:{kwargs['pk']}")
+        cache.delete_pattern(f"product_size_list:{kwargs['pk']}:*")
         cache.delete_pattern("search:*")
         cache.delete_pattern("search_suggestions:*")
         cache.delete_pattern("cart_list:*")
@@ -575,8 +585,7 @@ class ApiProductSize(viewsets.ModelViewSet):
         cache_timeout = TIMEOUT
         cache_params = dict(request.query_params)
         cache_key = f"product_size_list:{item_pk}:{json.dumps(cache_params, sort_keys=True)}"
-        cached_response = cache.get(cache_key)
-        if cached_response:
+        if cached_response := cache.get(cache_key):
             return Response(cached_response)
 
         response = super().list(request, *args, **kwargs)
@@ -587,8 +596,7 @@ class ApiProductSize(viewsets.ModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         cache_timeout = TIMEOUT
         cache_key = f"product_size_detail:{kwargs['pk']}"
-        cached_response = cache.get(cache_key)
-        if cached_response:
+        if cached_response := cache.get(cache_key):
             return Response(cached_response)
 
         response = super().retrieve(request, *args, **kwargs)
@@ -600,7 +608,7 @@ class ApiProductSize(viewsets.ModelViewSet):
         response = super().create(*args, **kwargs)
         item_pk = self.kwargs.get('item_pk')
         cache.delete_pattern(f"product_size_list:{item_pk}:*")
-        cache.delete_pattern("product_size_detail:*")
+        cache.delete_pattern(f"product_detail:{item_pk}")
         cache.delete_pattern("product_list:*")
         cache.delete_pattern("product_detail:*")
         cache.delete_pattern("search:*")
@@ -615,6 +623,8 @@ class ApiProductSize(viewsets.ModelViewSet):
         item_pk = self.kwargs.get('item_pk')
         cache.delete_pattern(f"product_size_list:{item_pk}:*")
         cache.delete_pattern(f"product_size_detail:{kwargs['pk']}")
+        cache.delete_pattern(f"product_size_list:{item_pk}:*")
+        cache.delete_pattern(f"product_detail:{item_pk}")
         cache.delete_pattern("product_list:*")
         cache.delete_pattern("product_detail:*")
         cache.delete_pattern("search:*")
@@ -625,10 +635,11 @@ class ApiProductSize(viewsets.ModelViewSet):
 
     @swagger_helper(tags="ProductSize", model="Product size")
     def destroy(self, *args, **kwargs):
-        response = super().destroy(*args, **kwargs)
         item_pk = self.kwargs.get('item_pk')
-        cache.delete_pattern(f"product_size_list:{item_pk}:*")
+        response = super().destroy(*args, **kwargs)
         cache.delete_pattern(f"product_size_detail:{kwargs['pk']}")
+        cache.delete_pattern(f"product_size_list:{item_pk}:*")
+        cache.delete_pattern(f"product_detail:{item_pk}")
         cache.delete_pattern("product_list:*")
         cache.delete_pattern("product_detail:*")
         cache.delete_pattern("search:*")

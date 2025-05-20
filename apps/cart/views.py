@@ -96,7 +96,7 @@ class ApiCartItem(viewsets.ModelViewSet):
         return CartItemSerializer
 
     def get_queryset(self):
-        return CartItem.objects.filter(cart=self.kwargs.get("cart_pk"), cart__user=self.request.user)
+        return CartItem.objects.filter(cart=self.kwargs.get("cart_pk"), cart__user=self.request.user).order_by("-id")
 
     @swagger_helper("CartItem", "cart item")
     def list(self, request, *args, **kwargs):
