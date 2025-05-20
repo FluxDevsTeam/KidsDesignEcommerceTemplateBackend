@@ -1,30 +1,37 @@
 import math
 from .utils import AVAILABLE_STATES, state_coords, calculate_distance, WAREHOUSE_CITY
+from .variables import fee_per_km, base_fee, weight_fee, size_fee
 
-FEE_PER_KM = 0.01
-BASE_FEE = 2000
-WEIGHT_FEE = 1000
-SIZE_FEE = 1000
+FEE_PER_KM = fee_per_km
+BASE_FEE = base_fee
+WEIGHT_FEE = weight_fee
+SIZE_FEE = size_fee
+
+# FEE_PER_KM = 100
+# BASE_FEE = 1500
+# WEIGHT_FEE = 1000
+# SIZE_FEE = 1000
 
 DISTANCE_TIERS = [
     (1, 0),
-    (150, 1.8),
-    (400, 1.55),
-    (800, 1.8),
-    (float('inf'), 2.2)
+    (150, 0.019),
+    (400, 0.016),
+    (800, 0.014),
+    (float('inf'), 0.0125)
 ]
 
 QUANTITY_TIERS_LIGHT = [
-    (5, 1.0),
-    (10, 0.6),
-    (float('inf'), 0.5)
+    (5, 1.2),
+    (10, 1.15),
+    (20, 1.1),
+    (float('inf'), 1.0)
 ]
 
 QUANTITY_TIERS_HEAVY = [
-    (150, [(5, 1.0), (10, 0.9), (float('inf'), 0.85)]),
-    (400, [(5, 1.0), (10, 0.95), (float('inf'), 0.9)]),
-    (800, [(5, 1.0), (10, 1.0), (float('inf'), 1.0)]),
-    (float('inf'), [(5, 1.0), (10, 1.5), (float('inf'), 2.0)])
+    (150, [(5, 1.3), (10, 1.8), (20, 2.5), (float('inf'), 4.0)]),
+    (400, [(5, 1.3), (10, 1.9), (20, 2.7), (float('inf'), 4.5)]),
+    (800, [(5, 1.3), (10, 2.0), (20, 2.9), (float('inf'), 5.8)]),
+    (float('inf'), [(5, 1.3), (10, 2.2), (20, 3.2), (float('inf'), 8.5)])
 ]
 
 WEIGHT_MAPPING = {
@@ -45,6 +52,12 @@ SIZE_MAPPING = {
     'XXL': 5.0
 }
 
+def is_valid_pair(weight, size):
+    weight_values = [0.5, 1.0, 2.0, 3.0, 4.0, 5.0]
+    size_values = [0.5, 1.0, 2.0, 3.0, 4.0, 5.0]
+    weight_idx = weight_values.index(WEIGHT_MAPPING[weight])
+    size_idx = size_values.index(SIZE_MAPPING[size])
+    return abs(weight_idx - size_idx) <= 1
 
 def calculate_delivery_fee(cart):
     try:
@@ -69,7 +82,8 @@ def calculate_delivery_fee(cart):
 
         total_fee = BASE_FEE
         rate_per_unit_base = 0
-        light_item_scaling = 0.2 if distance < 150 else 0.025
+        light_item_scaling = 0.4 if distance < 150 else 0.5
+
         for threshold, multiplier in DISTANCE_TIERS:
             if distance < threshold:
                 rate_per_unit_base = FEE_PER_KM * multiplier
@@ -86,11 +100,14 @@ def calculate_delivery_fee(cart):
         for item in cart_items:
             product = item.product
             quantity = item.quantity
-            if quantity <= 0:
+            if quantity <= 0 or not isinstance(quantity, int):
                 raise ValueError(f"Invalid quantity for product {product.name}: {quantity}")
 
             weight_choice = product.weight
             size_choice = product.dimensional_size
+            if not is_valid_pair(weight_choice, size_choice):
+                raise ValueError(f"Invalid weight-size pair: {weight_choice}, {size_choice}")
+
             weight_multiplier = WEIGHT_MAPPING.get(weight_choice)
             size_multiplier = SIZE_MAPPING.get(size_choice)
             if weight_multiplier is None or size_multiplier is None:
@@ -99,10 +116,6 @@ def calculate_delivery_fee(cart):
             weight_fee = WEIGHT_FEE * weight_multiplier
             size_fee = SIZE_FEE * size_multiplier
             item_multiplier = weight_fee + size_fee
-
-            if item_multiplier >= 4000:
-                item_multiplier *= 4.66667
-
             item_fee = item_multiplier * quantity
 
             quantity_multiplier = 1.0
@@ -124,8 +137,12 @@ def calculate_delivery_fee(cart):
             item_fee *= quantity_multiplier
 
             rate_per_unit = rate_per_unit_base * min(item_multiplier / 1000, 5)
+            if item_multiplier >= 4000 and quantity >= 20:
+                rate_per_unit *= (1 + 0.21 * (quantity / 20))
+            elif item_multiplier < 4000 and quantity >= 5:
+                rate_per_unit *= (1 + 0.18 * (quantity / 20))
 
-            if has_heavy_item and item_multiplier <= 1000 and quantity < 10:
+            if has_heavy_item and item_multiplier < 4000 and quantity < 10:
                 item_fee *= light_item_scaling
                 distance_fee = item_fee * rate_per_unit * distance * light_item_scaling
             else:
@@ -133,7 +150,7 @@ def calculate_delivery_fee(cart):
 
             total_fee += item_fee + distance_fee
 
-        return round(total_fee)
+        return round(total_fee, -2)
 
     except ValueError as e:
         raise
