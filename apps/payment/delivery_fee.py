@@ -1,12 +1,7 @@
+import decimal
 from decimal import Decimal, ROUND_HALF_UP
-
+from ..ecommerce_admin.models import DeliverySettings
 from .utils import AVAILABLE_STATES, state_coords, calculate_distance, WAREHOUSE_CITY
-from .variables import fee_per_km, base_fee, weight_fee, size_fee
-
-FEE_PER_KM = fee_per_km
-BASE_FEE = base_fee
-WEIGHT_FEE = weight_fee
-SIZE_FEE = size_fee
 
 # FEE_PER_KM = Decimal('100')
 # BASE_FEE = Decimal('1500')
@@ -64,6 +59,35 @@ def is_valid_pair(weight, size):
 
 def calculate_delivery_fee(cart):
     try:
+        delivery_settings = DeliverySettings.objects.first()
+        if not delivery_settings:
+            raise ValueError("No DeliverySettings record found in the database")
+
+        print(f"DeliverySettings: singleton={delivery_settings.singleton}, "
+              f"fee_per_km={delivery_settings.fee_per_km}, type={type(delivery_settings.fee_per_km)}, "
+              f"base_fee={delivery_settings.base_fee}, type={type(delivery_settings.base_fee)}, "
+              f"weigh_fee={delivery_settings.weigh_fee}, type={type(delivery_settings.weigh_fee)}, "
+              f"size_fee={delivery_settings.size_fee}, type={type(delivery_settings.size_fee)}")
+
+        def validate_decimal(value, field_name):
+            if value is None:
+                raise ValueError(f"{field_name} is None in DeliverySettings")
+            if not isinstance(value, (int, float, str, Decimal)):
+                raise ValueError(f"{field_name} has invalid type: {type(value)}")
+            try:
+                decimal_value = Decimal(str(value))
+                if decimal_value.is_nan() or not decimal_value.is_finite():
+                    raise ValueError(f"{field_name} is not a valid number: {value}")
+                return decimal_value
+            except (ValueError, decimal.InvalidOperation) as e:
+                raise ValueError(f"Invalid {field_name} in DeliverySettings: unable to convert to Decimal (value: {value}, error: {str(e)})")
+
+        # Assign constants
+        fee_per_km = validate_decimal(delivery_settings.fee_per_km, "fee_per_km")
+        base_fee = validate_decimal(delivery_settings.base_fee, "base_fee")
+        weight_fee = validate_decimal(delivery_settings.weigh_fee, "weigh_fee")
+        size_fee = validate_decimal(delivery_settings.size_fee, "size_fee")
+
         selected_state = cart.state
         if not selected_state or selected_state.lower() not in [state.lower() for state in AVAILABLE_STATES]:
             raise ValueError(f"Invalid or missing delivery state: {selected_state}")
@@ -83,20 +107,20 @@ def calculate_delivery_fee(cart):
         if not cart_items:
             raise ValueError("Cart is empty")
 
-        total_fee = Decimal(BASE_FEE)
+        total_fee = base_fee
         rate_per_unit_base = Decimal('0')
         light_item_scaling = Decimal('0.4') if distance < 150 else Decimal('0.5')
 
         for threshold, multiplier in DISTANCE_TIERS:
             if distance < threshold:
-                rate_per_unit_base = Decimal(FEE_PER_KM) * multiplier
+                rate_per_unit_base = fee_per_km * multiplier
                 break
         else:
-            rate_per_unit_base = Decimal(FEE_PER_KM) * DISTANCE_TIERS[-1][1]
+            rate_per_unit_base = fee_per_km * DISTANCE_TIERS[-1][1]
 
         has_heavy_item = any(
-            (Decimal(WEIGHT_FEE) * WEIGHT_MAPPING.get(item.product.weight, Decimal('0')) +
-             Decimal(SIZE_FEE )* SIZE_MAPPING.get(item.product.dimensional_size, Decimal('0'))) >= Decimal('4000')
+            (weight_fee * WEIGHT_MAPPING.get(item.product.weight, Decimal('0')) +
+             size_fee * SIZE_MAPPING.get(item.product.dimensional_size, Decimal('0'))) >= Decimal('4000')
             for item in cart_items
         )
 
@@ -116,9 +140,10 @@ def calculate_delivery_fee(cart):
             if weight_multiplier is None or size_multiplier is None:
                 raise ValueError(f"Invalid weight or size choice: {weight_choice}, {size_choice}")
 
-            weight_fee = Decimal(WEIGHT_FEE) * weight_multiplier
-            size_fee = Decimal(SIZE_FEE) * size_multiplier
-            item_multiplier = weight_fee + size_fee
+            weight_fee_item = weight_fee * weight_multiplier
+            size_fee_item = size_fee * size_multiplier
+
+            item_multiplier = weight_fee_item + size_fee_item
             item_fee = item_multiplier * Decimal(str(quantity))
 
             quantity_multiplier = Decimal('1.0')
