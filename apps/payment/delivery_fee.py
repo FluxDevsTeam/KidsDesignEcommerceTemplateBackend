@@ -184,3 +184,9 @@ def calculate_delivery_fee(cart):
         raise
     except Exception as e:
         raise ValueError(f"Unexpected error: {str(e)}")
+
+
+# second thing. when buying multiple products acctoss different size and weight, thwre should be a reduction in the price. does the code already do this?now combination of very heavy and very light items should mean that the very light item price shpuld be almost insignificant because the heavy fee amount would cover for it. but as we go up if it is between heavy to heavy products, then the reduction should be there too as they would be transpoeted together. dont reduce too much tho. it should be deived from the existing logic in the code to figure out ehat to do. anyway now you know all these make sure deviation is still not more than 8%. give me full updated code for all we have discussed containing full code of all the whole edge cases. also give me all 3 tables now also in all the tab;es add main value beside the calculated value
+# ComboQtyGroup 1 (Lagos)main valueDeviationdo this for all the tables. please double check and be very careful so there is no mistake. take your time
+# if there are any oher observations or suggestions again let me know aftr doing all i asked
+
