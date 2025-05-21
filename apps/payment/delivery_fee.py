@@ -52,12 +52,14 @@ SIZE_MAPPING = {
     'XXL': 5.0
 }
 
+
 def is_valid_pair(weight, size):
     weight_values = [0.5, 1.0, 2.0, 3.0, 4.0, 5.0]
     size_values = [0.5, 1.0, 2.0, 3.0, 4.0, 5.0]
     weight_idx = weight_values.index(WEIGHT_MAPPING[weight])
     size_idx = size_values.index(SIZE_MAPPING[size])
     return abs(weight_idx - size_idx) <= 1
+
 
 def calculate_delivery_fee(cart):
     try:

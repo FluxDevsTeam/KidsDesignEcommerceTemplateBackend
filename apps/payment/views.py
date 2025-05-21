@@ -58,7 +58,7 @@ class PaymentSummaryViewSet(viewsets.ViewSet):
             return Response(data)
 
         except Exception as e:
-            return Response({"error": "Could not generate payment summary. Please try again."}, status=500)
+            return Response({"error": f"Could not generate payment summary. Please try again.{e}"}, status=500)
 
 
 class PaymentInitiateViewSet(viewsets.ModelViewSet):
