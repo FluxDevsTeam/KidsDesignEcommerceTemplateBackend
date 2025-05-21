@@ -13,7 +13,7 @@ print(weight_fee)
 print(base_fee)
 print(size_fee)
 print(type(size_fee))
-print(type(Decimal(size_fee)))
+# print(type(Decimal(size_fee)))
 
 FEE_PER_KM = Decimal('100')
 BASE_FEE = Decimal('1500')
