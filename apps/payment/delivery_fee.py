@@ -2,15 +2,15 @@ import math
 from .utils import AVAILABLE_STATES, state_coords, calculate_distance, WAREHOUSE_CITY
 from .variables import fee_per_km, base_fee, weight_fee, size_fee
 
-FEE_PER_KM = fee_per_km
-BASE_FEE = base_fee
-WEIGHT_FEE = weight_fee
-SIZE_FEE = size_fee
+# FEE_PER_KM = fee_per_km
+# BASE_FEE = base_fee
+# WEIGHT_FEE = weight_fee
+# SIZE_FEE = size_fee
 
-# FEE_PER_KM = 100
-# BASE_FEE = 1500
-# WEIGHT_FEE = 1000
-# SIZE_FEE = 1000
+FEE_PER_KM = 100
+BASE_FEE = 1500
+WEIGHT_FEE = 1000
+SIZE_FEE = 1000
 
 DISTANCE_TIERS = [
     (1, 0),
