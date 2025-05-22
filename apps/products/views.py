@@ -30,6 +30,7 @@ class ApiProductCategory(viewsets.ModelViewSet):
     pagination_class = CustomPagination
     permission_classes = [IsAdminOrReadOnly]
     search_fields = ["name"]
+    ordering = ['name']
 
     def get_serializer_class(self):
         if self.action == "retrieve":
@@ -115,6 +116,7 @@ class ApiProductSubCategory(viewsets.ModelViewSet):
     permission_classes = [IsAdminOrReadOnly]
     filterset_fields = ["category"]
     search_fields = ["name"]
+    ordering = ['name']
 
     def get_serializer_class(self):
         if self.request.method == "GET":
@@ -326,14 +328,14 @@ class ApiProduct(viewsets.ModelViewSet):
             return Response(cached_response)
 
         products = Product.objects.select_related('sub_category__category')
-        latest_prioritized = products.filter(Q(latest_item=True) & Q(latest_item_position__isnull=False)).order_by('latest_item_position')
+        latest_prioritized = products.filter(Q(latest_item=True) & Q(latest_item_position__isnull=False), is_available=True).order_by('latest_item_position')
         latest_prioritized_list = list(latest_prioritized)
-        random_others = products.exclude(id__in=[item.id for item in latest_prioritized_list]).order_by('?')
+        random_others = products.exclude(id__in=[item.id for item in latest_prioritized_list]).order_by('?').filter(is_available=True)
         latest_products = latest_prioritized_list + list(random_others)
 
-        top_selling_prioritized = products.filter(Q(top_selling_items=True) & Q(top_selling_position__isnull=False)).order_by('top_selling_position')
+        top_selling_prioritized = products.filter(Q(top_selling_items=True) & Q(top_selling_position__isnull=False), is_available=True).order_by('top_selling_position')
         top_selling_prioritized_list = list(top_selling_prioritized)
-        other_latest = products.exclude(id__in=[item.id for item in top_selling_prioritized_list]).order_by('?')
+        other_latest = products.exclude(id__in=[item.id for item in top_selling_prioritized_list]).order_by('?').filter(is_available=True)
         top_selling_products = top_selling_prioritized_list + list(other_latest)
 
         paginator = self.pagination_class()
@@ -377,7 +379,8 @@ class ApiProduct(viewsets.ModelViewSet):
             Q(description__icontains=query) |
             Q(sizes__size__icontains=query) |
             Q(sub_category__name__icontains=query) |
-            Q(sub_category__category__name__icontains=query)
+            Q(sub_category__category__name__icontains=query),
+            is_available=True
         ).distinct()
 
         page = self.paginate_queryset(search_data)
@@ -412,7 +415,8 @@ class ApiProduct(viewsets.ModelViewSet):
             Q(name__icontains=query) & ~Q(name__istartswith=query) |
             Q(sub_category__name__icontains=query) & ~Q(sub_category__name__istartswith=query) |
             Q(sub_category__category__name__icontains=query) & ~Q(sub_category__category__name__istartswith=query) |
-            Q(sizes__size__icontains=query) & ~Q(sizes__size__istartswith=query)
+            Q(sizes__size__icontains=query) & ~Q(sizes__size__istartswith=query),
+            is_available=True
         ).values('name', 'sub_category__name', 'sub_category__category__name', 'sizes__size').distinct()[:40]
 
         starts_with = set()
@@ -448,7 +452,7 @@ class ApiProduct(viewsets.ModelViewSet):
 
         sub_category_id = request.query_params.get('sub_category_id')
         second_sub_category_id = request.query_params.get('second_sub_category_id')
-        products = Product.objects.select_related('sub_category__category')
+        products = Product.objects.select_related('sub_category__category').filter(is_available=True)
         max_items = 20
 
         ordering = [
