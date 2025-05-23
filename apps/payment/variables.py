@@ -14,7 +14,7 @@ brand_logo = SimpleLazyObject(lambda: organisation_settings.brand_logo)
 # delivery
 fee_per_km = SimpleLazyObject(lambda: delivery_settings.fee_per_km)
 base_fee = SimpleLazyObject(lambda: delivery_settings.base_fee)
-weight_fee = SimpleLazyObject(lambda: delivery_settings.weigh_fee)
+weight_fee = SimpleLazyObject(lambda: delivery_settings.weight_fee)
 size_fee = SimpleLazyObject(lambda: delivery_settings.size_fee)
 
 
@@ -22,3 +22,8 @@ backend_base_route = SimpleLazyObject(lambda: developer_settings.backend_base_ro
 frontend_base_route = SimpleLazyObject(lambda: developer_settings.frontend_base_route)
 order_route_frontend = SimpleLazyObject(lambda: developer_settings.order_route_frontend)
 payment_failed_url = SimpleLazyObject(lambda: developer_settings.payment_failed_url)
+
+# FEE_PER_KM = Decimal('150')
+# BASE_FEE = Decimal('4000')
+# WEIGHT_FEE = Decimal('1500')
+# SIZE_FEE = Decimal('1500')

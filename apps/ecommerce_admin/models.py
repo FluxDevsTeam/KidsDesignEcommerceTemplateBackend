@@ -77,7 +77,7 @@ class DeliverySettings(models.Model):
     singleton = models.BooleanField(default=True, unique=True, editable=False)
     fee_per_km = models.DecimalField(max_digits=10, decimal_places=2, default=5000)
     base_fee = models.DecimalField(max_digits=10, decimal_places=2, default=5000)
-    weigh_fee = models.DecimalField(max_digits=10, decimal_places=2, default=5000)
+    weight_fee = models.DecimalField(max_digits=10, decimal_places=2, default=5000)
     size_fee = models.DecimalField(max_digits=10, decimal_places=2, default=5000)
 
     def __str__(self):

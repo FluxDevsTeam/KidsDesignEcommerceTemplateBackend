@@ -1,19 +1,8 @@
 import decimal
 from decimal import Decimal, ROUND_HALF_UP
-from ..ecommerce_admin.models import DeliverySettings
-from .utils import AVAILABLE_STATES, state_coords, calculate_distance, WAREHOUSE_CITY
-
-# old
-# FEE_PER_KM = Decimal('100')
-# BASE_FEE = Decimal('1500')
-# WEIGHT_FEE = Decimal('1000')
-# SIZE_FEE = Decimal('1000')
-
-# new
-# FEE_PER_KM = Decimal('150')
-# BASE_FEE = Decimal('4000')
-# SIZE_FEE = Decimal('1500')
-# WEIGHT_FEE = Decimal('1500')
+from django.utils.functional import SimpleLazyObject
+from ..ecommerce_admin.models import DeliverySettings, OrganizationSettings
+from .utils import state_coords, calculate_distance
 
 DISTANCE_TIERS = [
     (1, Decimal('0'), 'Group 1'),
@@ -95,12 +84,48 @@ MAIN_VALUES = {
 }
 
 
+def get_delivery_settings():
+    delivery_settings = DeliverySettings.objects.first()
+    if not delivery_settings:
+        raise ValueError("No DeliverySettings record found in the database")
+
+    try:
+        return {
+            'fee_per_km': validate_decimal(delivery_settings.fee_per_km, "fee_per_km"),
+            'base_fee': validate_decimal(delivery_settings.base_fee, "base_fee"),
+            'weight_fee': validate_decimal(delivery_settings.weight_fee, "weight_fee"),
+            'size_fee': validate_decimal(delivery_settings.size_fee, "size_fee")
+        }
+    except AttributeError as e:
+        raise ValueError(f"Invalid DeliverySettings configuration: {str(e)}")
+
+
+def validate_decimal(value, field_name):
+    if isinstance(value, SimpleLazyObject):
+        value = value._wrapped if hasattr(value, '_wrapped') else value
+    if value is None:
+        raise ValueError(f"{field_name} is None in DeliverySettings")
+    if not isinstance(value, (int, float, str, Decimal)):
+        raise ValueError(f"{field_name} has invalid type: {type(value)}")
+    try:
+        decimal_value = Decimal(str(value))
+        if decimal_value.is_nan() or not decimal_value.is_finite():
+            raise ValueError(f"{field_name} is not a valid number: {value}")
+        return decimal_value
+    except (ValueError, decimal.InvalidOperation) as e:
+        raise ValueError(
+            f"Invalid {field_name} in DeliverySettings: unable to convert to Decimal (value: {value}, error: {str(e)})")
+
+
 def is_valid_pair(weight, size):
     weight_values = [Decimal('0.5'), Decimal('1.0'), Decimal('2.0'), Decimal('3.0'), Decimal('4.0'), Decimal('5.0')]
     size_values = [Decimal('0.5'), Decimal('1.0'), Decimal('2.0'), Decimal('3.0'), Decimal('4.0'), Decimal('5.0')]
-    weight_idx = weight_values.index(WEIGHT_MAPPING[weight])
-    size_idx = size_values.index(SIZE_MAPPING[size])
-    return abs(weight_idx - size_idx) <= 1
+    try:
+        weight_idx = weight_values.index(WEIGHT_MAPPING[weight])
+        size_idx = size_values.index(SIZE_MAPPING[size])
+        return abs(weight_idx - size_idx) <= 1
+    except (KeyError, ValueError):
+        raise ValueError(f"Invalid weight or size: weight={weight}, size={size}")
 
 
 def get_quantity_multiplier(quantity, item_multiplier):
@@ -113,88 +138,133 @@ def get_quantity_multiplier(quantity, item_multiplier):
         base_multiplier = QUANTITY_TIERS[-1][1]
     min_multiplier = Decimal('1500')
     max_multiplier = Decimal('15000')
-    scale = (item_multiplier - min_multiplier) / (max_multiplier - min_multiplier)
-    scale = max(Decimal('0'), min(Decimal('1'), scale))
-    return Decimal('1.0') + scale * (base_multiplier - Decimal('1.0'))
+    try:
+        scale = (item_multiplier - min_multiplier) / (max_multiplier - min_multiplier)
+        scale = max(Decimal('0'), min(Decimal('1'), scale))
+        return Decimal('1.0') + scale * (base_multiplier - Decimal('1.0'))
+    except decimal.InvalidOperation:
+        raise ValueError(
+            f"Invalid calculation in get_quantity_multiplier: quantity={quantity}, item_multiplier={item_multiplier}")
 
 
 def calculate_fee_for_pair(pair, quantity, distance, rate_per_unit_base):
     pair_multipliers = {
         'VL-VS': 1500, 'L-S': 3000, 'M-M': 6000, 'H-L': 9000, 'VH-VL': 12000, 'XXH-XXL': 15000
     }
-    item_multiplier = Decimal(str(pair_multipliers[pair]))
-    quantity_multiplier = get_quantity_multiplier(quantity, item_multiplier)
-    item_fee = item_multiplier * Decimal(str(quantity)) * quantity_multiplier
-    rate_per_unit = rate_per_unit_base * min(item_multiplier / Decimal('1000'), Decimal('5'))
-    distance_fee = min(item_fee * rate_per_unit * distance, Decimal('50000'))
-    return item_fee + distance_fee
+    try:
+        item_multiplier = Decimal(str(pair_multipliers[pair]))
+        quantity_multiplier = get_quantity_multiplier(quantity, item_multiplier)
+        item_fee = item_multiplier * Decimal(str(quantity)) * quantity_multiplier
+        rate_per_unit = rate_per_unit_base * min(item_multiplier / Decimal('1000'), Decimal('5'))
+        distance_fee = min(item_fee * rate_per_unit * distance, Decimal('50000'))
+        return item_fee + distance_fee
+    except (KeyError, decimal.InvalidOperation):
+        raise ValueError(
+            f"Invalid calculation in calculate_fee_for_pair: pair={pair}, quantity={quantity}, distance={distance}")
 
 
-def get_main_value(weight, size, quantity, group):
+def get_main_value(weight, size, quantity, group, weight_fee, size_fee):
     pair_multipliers = {
         (0.5, 0.5): 'VL-VS', (1.0, 1.0): 'L-S', (2.0, 2.0): 'M-M',
         (3.0, 3.0): 'H-L', (4.0, 4.0): 'VH-VL', (5.0, 5.0): 'XXH-XXL'
     }
-    standard_pair = pair_multipliers.get((WEIGHT_MAPPING[weight], SIZE_MAPPING[size]))
-    if standard_pair:
-        return Decimal(str(MAIN_VALUES[standard_pair][quantity][group]))
+    try:
+        if weight not in WEIGHT_MAPPING:
+            raise ValueError(f"Invalid weight: {weight}")
+        if size not in SIZE_MAPPING:
+            raise ValueError(f"Invalid size: {size}")
+        if group not in {'Group 1', 'Group 2', 'Group 3', 'Group 4', 'Group 5'}:
+            raise ValueError(f"Invalid group: {group}")
+        if not isinstance(quantity, (int, float)) or quantity <= 0:
+            raise ValueError(f"Invalid quantity: {quantity}")
 
-    item_multiplier = WEIGHT_FEE * WEIGHT_MAPPING[weight] + SIZE_FEE * SIZE_MAPPING[size]
-    standard_multipliers = sorted([1500, 3000, 6000, 9000, 12000, 15000])
-    lower_mult = max([m for m in standard_multipliers if m <= item_multiplier], default=1500)
-    upper_mult = min([m for m in standard_multipliers if m >= item_multiplier], default=15000)
-    lower_pair = {1500: 'VL-VS', 3000: 'L-S', 6000: 'M-M', 9000: 'H-L', 12000: 'VH-VL', 15000: 'XXH-XXL'}[lower_mult]
-    upper_pair = {1500: 'VL-VS', 3000: 'L-S', 6000: 'M-M', 9000: 'H-L', 12000: 'VH-VL', 15000: 'XXH-XXL'}[upper_mult]
+        standard_pair = pair_multipliers.get((WEIGHT_MAPPING[weight], SIZE_MAPPING[size]))
+        if standard_pair:
+            quantity_tiers = sorted(MAIN_VALUES[standard_pair].keys())
+            if quantity in quantity_tiers:
+                return Decimal(str(MAIN_VALUES[standard_pair][quantity][group]))
 
-    lower_fee = Decimal(str(MAIN_VALUES[lower_pair][quantity][group]))
-    upper_fee = Decimal(str(MAIN_VALUES[upper_pair][quantity][group]))
-    if lower_mult == upper_mult:
-        return lower_fee
-    fraction = (item_multiplier - lower_mult) / (upper_mult - lower_mult)
-    return lower_fee + fraction * (upper_fee - lower_fee)
+            lower_qty = max([q for q in quantity_tiers if q <= quantity], default=quantity_tiers[0])
+            upper_qty = min([q for q in quantity_tiers if q >= quantity], default=quantity_tiers[-1])
+
+            if lower_qty == upper_qty:
+                return Decimal(str(MAIN_VALUES[standard_pair][lower_qty][group]))
+
+            lower_fee = Decimal(str(MAIN_VALUES[standard_pair][lower_qty][group]))
+            upper_fee = Decimal(str(MAIN_VALUES[standard_pair][upper_qty][group]))
+            fraction = Decimal(str(quantity - lower_qty)) / Decimal(str(upper_qty - lower_qty))
+            return lower_fee + fraction * (upper_fee - lower_fee)
+
+        item_multiplier = weight_fee * WEIGHT_MAPPING[weight] + size_fee * SIZE_MAPPING[size]
+        standard_multipliers = sorted([1500, 3000, 6000, 9000, 12000, 15000])
+        lower_mult = max([m for m in standard_multipliers if m <= item_multiplier], default=1500)
+        upper_mult = min([m for m in standard_multipliers if m >= item_multiplier], default=15000)
+        lower_pair = {1500: 'VL-VS', 3000: 'L-S', 6000: 'M-M', 9000: 'H-L', 12000: 'VH-VL', 15000: 'XXH-XXL'}[
+            lower_mult]
+        upper_pair = {1500: 'VL-VS', 3000: 'L-S', 6000: 'M-M', 9000: 'H-L', 12000: 'VH-VL', 15000: 'XXH-XXL'}[
+            upper_mult]
+
+        quantity_tiers = sorted(MAIN_VALUES[lower_pair].keys())
+        lower_qty = max([q for q in quantity_tiers if q <= quantity], default=quantity_tiers[0])
+        upper_qty = min([q for q in quantity_tiers if q >= quantity], default=quantity_tiers[-1])
+
+        if lower_qty == upper_qty:
+            lower_fee = Decimal(str(MAIN_VALUES[lower_pair][lower_qty][group]))
+            upper_fee = Decimal(str(MAIN_VALUES[upper_pair][lower_qty][group]))
+        else:
+            lower_fee_lower = Decimal(str(MAIN_VALUES[lower_pair][lower_qty][group]))
+            lower_fee_upper = Decimal(str(MAIN_VALUES[lower_pair][upper_qty][group]))
+            upper_fee_lower = Decimal(str(MAIN_VALUES[upper_pair][lower_qty][group]))
+            upper_fee_upper = Decimal(str(MAIN_VALUES[upper_pair][upper_qty][group]))
+            qty_fraction = Decimal(str(quantity - lower_qty)) / Decimal(str(upper_qty - lower_qty))
+            lower_fee = lower_fee_lower + qty_fraction * (lower_fee_upper - lower_fee_lower)
+            upper_fee = upper_fee_lower + qty_fraction * (upper_fee_upper - upper_fee_lower)
+
+        if lower_mult == upper_mult:
+            return lower_fee
+
+        mult_fraction = (item_multiplier - Decimal(str(lower_mult))) / (
+                    Decimal(str(upper_mult)) - Decimal(str(lower_mult)))
+        return lower_fee + mult_fraction * (upper_fee - lower_fee)
+
+    except (KeyError, ValueError, decimal.InvalidOperation):
+        raise ValueError(
+            f"Invalid calculation in get_main_value: weight={weight}, size={size}, quantity={quantity}, group={group}")
 
 
 def adjust_fee_to_deviation(fee, main_value):
-    min_fee = main_value * Decimal('0.92')
-    max_fee = main_value * Decimal('1.08')
-    return max(min_fee, min(fee, max_fee)).quantize(Decimal('100'), rounding=ROUND_HALF_UP)
+    try:
+        min_fee = main_value * Decimal('0.92')
+        max_fee = main_value * Decimal('1.08')
+        return max(min_fee, min(fee, max_fee)).quantize(Decimal('100'), rounding=ROUND_HALF_UP)
+    except decimal.InvalidOperation:
+        raise ValueError(f"Invalid calculation in adjust_fee_to_deviation: fee={fee}, main_value={main_value}")
 
 
 def calculate_delivery_fee(cart):
     try:
-        delivery_settings = DeliverySettings.objects.first()
-        if not delivery_settings:
-            raise ValueError("No DeliverySettings record found in the database")
+        settings = get_delivery_settings()
+        fee_per_km = settings['fee_per_km']
+        base_fee = settings['base_fee']
+        weight_fee = settings['weight_fee']
+        size_fee = settings['size_fee']
 
-        def validate_decimal(value, field_name):
-            if value is None:
-                raise ValueError(f"{field_name} is None in DeliverySettings")
-            if not isinstance(value, (int, float, str, Decimal)):
-                raise ValueError(f"{field_name} has invalid type: {type(value)}")
-            try:
-                decimal_value = Decimal(str(value))
-                if decimal_value.is_nan() or not decimal_value.is_finite():
-                    raise ValueError(f"{field_name} is not a valid number: {value}")
-                return decimal_value
-            except (ValueError, decimal.InvalidOperation) as e:
-                raise ValueError(
-                    f"Invalid {field_name} in DeliverySettings: unable to convert to Decimal (value: {value}, error: {str(e)})")
-
-        fee_per_km = validate_decimal(FEE_PER_KM, "fee_per_km")
-        base_fee = validate_decimal(BASE_FEE, "base_fee")
-        weight_fee = validate_decimal(WEIGHT_FEE, "weigh_fee")
-        size_fee = validate_decimal(SIZE_FEE, "size_fee")
+        organization_settings = OrganizationSettings.objects.first()
+        if not organization_settings:
+            raise ValueError("No OrganizationSettings record found in the database")
+        available_states = organization_settings.available_states
+        warehouse_state = organization_settings.warehouse_state
 
         selected_state = cart.state
-        if not selected_state or selected_state.lower() not in [state.lower() for state in AVAILABLE_STATES]:
+        if not selected_state or selected_state.lower() not in [state.lower() for state in available_states]:
             raise ValueError(f"Invalid or missing delivery state: {selected_state}")
 
         state_coord_lower = {key.lower(): value for key, value in state_coords.items()}
-        warehouse_coord = state_coord_lower.get(WAREHOUSE_CITY.lower())
+        warehouse_coord = state_coord_lower.get(warehouse_state.lower())
         state_coord = state_coord_lower.get(selected_state.lower())
 
         if not warehouse_coord:
-            raise ValueError(f"Warehouse coordinates not found for {WAREHOUSE_CITY}")
+            raise ValueError(f"Warehouse coordinates not found for {warehouse_state}")
         if not state_coord:
             raise ValueError(f"Coordinates not found for state: {selected_state}")
 
@@ -217,25 +287,14 @@ def calculate_delivery_fee(cart):
             rate_per_unit_base = fee_per_km * DISTANCE_TIERS[-1][1]
             selected_group = DISTANCE_TIERS[-1][2]
 
-        standard_multipliers = {
-            1500: 'VL-VS', 3000: 'L-S', 6000: 'M-M', 9000: 'H-L', 12000: 'VH-VL', 15000: 'XXH-XXL'
-        }
-        item_fees = []
-        has_heavy_item = any(
-            (weight_fee * WEIGHT_MAPPING.get(item.product.weight, Decimal('0')) +
-             size_fee * SIZE_MAPPING.get(item.product.dimensional_size, Decimal('0'))) >= Decimal('9000')
-            for item in cart_items
-        )
-        heavy_item_count = sum(
-            1 for item in cart_items
-            if (weight_fee * WEIGHT_MAPPING.get(item.product.weight, Decimal('0')) +
-                size_fee * SIZE_MAPPING.get(item.product.dimensional_size, Decimal('0'))) >= Decimal('3500')
-        )
+        heavy_items = []
+        light_items = []
+        item_details = []
 
-        main_value_sum = Decimal('0')
         for item in cart_items:
             product = item.product
             quantity = item.quantity
+
             if quantity <= 0 or not isinstance(quantity, int):
                 raise ValueError(f"Invalid quantity for product {product.name}: {quantity}")
             if quantity > 1000:
@@ -252,25 +311,77 @@ def calculate_delivery_fee(cart):
                 raise ValueError(f"Invalid weight or size choice: {weight_choice}, {size_choice}")
 
             item_multiplier = weight_fee * weight_multiplier + size_fee * size_multiplier
-            quantity_multiplier = get_quantity_multiplier(quantity, item_multiplier)
-            item_fee = item_multiplier * Decimal(str(quantity)) * quantity_multiplier
 
-            if has_heavy_item and item_multiplier < Decimal('3500'):
+            if weight_multiplier >= Decimal('3.0') or size_multiplier >= Decimal('3.0'):
+                heavy_items.append((quantity, item_multiplier))
+            else:
+                light_items.append((quantity, item_multiplier))
+
+            item_details.append({
+                'quantity': quantity,
+                'multiplier': item_multiplier,
+                'weight': weight_choice,
+                'size': size_choice
+            })
+
+        total_heavy_qty = sum(q for q, m in heavy_items)
+        total_light_qty = sum(q for q, m in light_items)
+
+        light_discounts = {}
+        if heavy_items and light_items:
+            for qty, multiplier in light_items:
+                ratio = qty / total_heavy_qty if total_heavy_qty > 0 else float('inf')
+                if ratio <= 1:
+                    discount = Decimal('0.5')
+                elif ratio < 2:
+                    discount = Decimal('0.3')
+                else:
+                    discount = Decimal('0.1')
+                light_discounts[(qty, multiplier)] = discount
+
+        item_fees = []
+        main_value_sum = Decimal('0')
+        has_heavy_item = len(heavy_items) > 0
+        heavy_item_count = len(heavy_items)
+
+        for item in item_details:
+            quantity = item['quantity']
+            original_multiplier = item['multiplier']
+
+            if (quantity, original_multiplier) in light_discounts:
+                multiplier = original_multiplier * (Decimal('1') - light_discounts[(quantity, original_multiplier)])
+            else:
+                multiplier = original_multiplier
+
+            quantity_multiplier = get_quantity_multiplier(quantity, multiplier)
+            item_fee = multiplier * Decimal(str(quantity)) * quantity_multiplier
+
+            if has_heavy_item and original_multiplier < Decimal('3500'):
                 item_fee *= Decimal('0.5')
 
-            rate_per_unit = rate_per_unit_base * min(item_multiplier / Decimal('1000'), Decimal('5'))
+            rate_per_unit = rate_per_unit_base * min(multiplier / Decimal('1000'), Decimal('5'))
             distance_fee = min(item_fee * rate_per_unit * distance, Decimal('50000'))
 
-            lower_mult = max([m for m in standard_multipliers if m <= item_multiplier],
-                             default=min(standard_multipliers))
-            upper_mult = min([m for m in standard_multipliers if m >= item_multiplier],
-                             default=max(standard_multipliers))
-            lower_fee = calculate_fee_for_pair(standard_multipliers[lower_mult], quantity, distance, rate_per_unit_base)
-            upper_fee = calculate_fee_for_pair(standard_multipliers[upper_mult], quantity, distance, rate_per_unit_base)
-            total_item_fee = max(lower_fee, min(item_fee + distance_fee, upper_fee))
+            standard_multipliers = {
+                1500: 'VL-VS', 3000: 'L-S', 6000: 'M-M',
+                9000: 'H-L', 12000: 'VH-VL', 15000: 'XXH-XXL'
+            }
+            lower_mult = max([m for m in standard_multipliers if m <= multiplier], default=1500)
+            upper_mult = min([m for m in standard_multipliers if m >= multiplier], default=15000)
 
+            lower_fee = calculate_fee_for_pair(
+                standard_multipliers[lower_mult], quantity, distance, rate_per_unit_base
+            )
+            upper_fee = calculate_fee_for_pair(
+                standard_multipliers[upper_mult], quantity, distance, rate_per_unit_base
+            )
+
+            total_item_fee = max(lower_fee, min(item_fee + distance_fee, upper_fee))
             item_fees.append(total_item_fee)
-            main_value_sum += get_main_value(weight_choice, size_choice, quantity, selected_group)
+
+            main_value_sum += get_main_value(
+                item['weight'], item['size'], quantity, selected_group, weight_fee, size_fee
+            )
 
         if heavy_item_count >= 2:
             reduction_factor = Decimal('0.98') if heavy_item_count == 2 else Decimal('0.95')
@@ -285,7 +396,7 @@ def calculate_delivery_fee(cart):
 
         return total_fee.quantize(Decimal('100'), rounding=ROUND_HALF_UP)
 
-    except ValueError as e:
+    except ValueError:
         raise
-    except Exception as e:
-        raise ValueError(f"Unexpected error: {str(e)}")
+    except Exception:
+        raise ValueError("Unexpected error in calculate_delivery_fee")

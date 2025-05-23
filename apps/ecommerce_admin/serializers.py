@@ -28,7 +28,7 @@ class OrganizationStatesSerializer(serializers.ModelSerializer):
 class DeliverySettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = DeliverySettings
-        fields = ["base_fee", "fee_per_km", "weigh_fee", "size_fee"]
+        fields = ["base_fee", "fee_per_km", "weight_fee", "size_fee"]
 
 
 class DeveloperSettingsSerializer(serializers.ModelSerializer):
