@@ -505,7 +505,7 @@ class ApiProduct(viewsets.ModelViewSet):
         sub_category_id = request.query_params.get('sub_category_id')
         second_sub_category_id = request.query_params.get('second_sub_category_id')
         products = Product.objects.select_related('sub_category__category').filter(is_available=True)
-        max_items = 20
+        max_items = 30
 
         ordering = [
             Case(When(top_selling_items=True, then=Value(0)), default=Value(1), output_field=BooleanField()),

@@ -2,42 +2,41 @@ from django.db import models
 from django.core.exceptions import ValidationError
 
 STATE_CHOICES = (
-    ("Lagos", "Lagos"),
-    ("Ogun", "Ogun"),
-    ("Oyo", "Oyo"),
-    ("Osun", "Osun"),
-    ("Ondo", "Ondo"),
-    ("Ekiti", "Ekiti"),
-    ("Edo", "Edo"),
+    ("Abia", "Abia"),
+    ("Adamawa", "Adamawa"),
+    ("Akwa Ibom", "Akwa Ibom"),
+    ("Anambra", "Anambra"),
+    ("Bauchi", "Bauchi"),
+    ("Bayelsa", "Bayelsa"),
+    ("Benue", "Benue"),
+    ("Borno", "Borno"),
+    ("Cross River", "Cross River"),
     ("Delta", "Delta"),
-    ("Kwara", "Kwara"),
-    ("Kogi", "Kogi"),
-    ("Niger", "Niger"),
-    ("Abuja", "Abuja"),
+    ("Ebonyi", "Ebonyi"),
+    ("Edo", "Edo"),
+    ("Ekiti", "Ekiti"),
+    ("Enugu", "Enugu"),
+    ("Gombe", "Gombe"),
+    ("Imo", "Imo"),
+    ("Jigawa", "Jigawa"),
     ("Kaduna", "Kaduna"),
     ("Kano", "Kano"),
-    ("Borno", "Borno"),
-    ("Yobe", "Yobe"),
-    ("Sokoto", "Sokoto"),
-    ("Zamfara", "Zamfara"),
-    ("Taraba", "Taraba"),
-    ("Gombe", "Gombe"),
-    ("Bauchi", "Bauchi"),
-    ("Adamawa", "Adamawa"),
     ("Katsina", "Katsina"),
-    ("Jigawa", "Jigawa"),
-    ("Nasarawa", "Nasarawa"),
-    ("Benue", "Benue"),
     ("Kebbi", "Kebbi"),
-    ("Bayelsa", "Bayelsa"),
+    ("Kogi", "Kogi"),
+    ("Kwara", "Kwara"),
+    ("Lagos", "Lagos"),
+    ("Nasarawa", "Nasarawa"),
+    ("Niger", "Niger"),
+    ("Ogun", "Ogun"),
+    ("Ondo", "Ondo"),
+    ("Osun", "Osun"),
+    ("Oyo", "Oyo"),
     ("Rivers", "Rivers"),
-    ("Akwa Ibom", "Akwa Ibom"),
-    ("Cross River", "Cross River"),
-    ("Enugu", "Enugu"),
-    ("Anambra", "Anambra"),
-    ("Abia", "Abia"),
-    ("Imo", "Imo"),
-    ("Ebonyi", "Ebonyi"),
+    ("Sokoto", "Sokoto"),
+    ("Taraba", "Taraba"),
+    ("Yobe", "Yobe"),
+    ("Zamfara", "Zamfara"),
     ("FCT - Abuja", "FCT - Abuja"),
 )
 
@@ -75,10 +74,10 @@ class OrganizationSettings(models.Model):
 
 class DeliverySettings(models.Model):
     singleton = models.BooleanField(default=True, unique=True, editable=False)
-    fee_per_km = models.DecimalField(max_digits=10, decimal_places=2, default=5000)
-    base_fee = models.DecimalField(max_digits=10, decimal_places=2, default=5000)
-    weight_fee = models.DecimalField(max_digits=10, decimal_places=2, default=5000)
-    size_fee = models.DecimalField(max_digits=10, decimal_places=2, default=5000)
+    fee_per_km = models.DecimalField(max_digits=10, decimal_places=2, default=150)
+    base_fee = models.DecimalField(max_digits=10, decimal_places=2, default=4000)
+    weight_fee = models.DecimalField(max_digits=10, decimal_places=2, default=1500)
+    size_fee = models.DecimalField(max_digits=10, decimal_places=2, default=1500)
 
     def __str__(self):
         return "delivery settings"

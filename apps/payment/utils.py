@@ -13,45 +13,43 @@ AVAILABLE_STATES = available_states
 WAREHOUSE_CITY = warehouse_city
 
 state_coords = {
-    "Lagos": (6.5244, 3.3792),
-    "Ogun": (7.1604, 3.3481),
-    "Oyo": (7.3775, 3.9470),
-    "Osun": (7.5629, 4.5190),
-    "Ondo": (7.1000, 4.8419),
-    "Ekiti": (7.7180, 5.3101),
-    "Edo": (6.5243, 5.9500),
-    "Delta": (5.4891, 5.9891),
-    "Kwara": (8.4800, 4.5400),
-    "Kogi": (7.8000, 6.7333),
-    "Niger": (9.6000, 6.5500),
-    "Abuja": (9.0765, 7.3986),
-    "Kaduna": (10.5105, 7.4165),
-    "Kano": (12.0000, 8.5167),
-    "Borno": (11.8333, 13.1500),
-    "Yobe": (12.0000, 11.5000),
-    "Sokoto": (13.0059, 5.2476),
-    "Zamfara": (12.0000, 6.2333),
-    "Taraba": (7.8704, 10.7903),
-    "Gombe": (10.2900, 11.1700),
-    "Bauchi": (10.3000, 9.8333),
-    "Adamawa": (9.3265, 12.3984),
-    "Katsina": (12.9855, 7.6170),
-    "Jigawa": (12.2280, 9.5616),
-    "Nasarawa": (8.4910, 8.5140),
-    "Benue": (7.1907, 9.5616),
-    "Kebbi": (12.4500, 4.1990),
-    "Bayelsa": (4.9240, 6.2649),
-    "Rivers": (4.8436, 6.9112),
-    "Akwa Ibom": (5.0280, 7.9319),
-    "Cross River": (5.9631, 8.3309),
-    "Enugu": (6.4599, 7.5489),
-    "Anambra": (6.2209, 6.9366),
-    "Abia": (5.5320, 7.4860),
-    "Imo": (5.4897, 7.0143),
-    "Ebonyi": (6.3249, 8.1137),
-    "FCT - Abuja": (9.0765, 7.3986),
+    "Abia": (5.5333, 7.4833),          # State capital (Umuahia)
+    "Adamawa": (9.3265, 12.3984),      # State capital (Yola)
+    "Akwa Ibom": (5.0079, 7.8494),     # State capital (Uyo)
+    "Anambra": (6.2104, 7.0686),       # State capital (Awka)
+    "Bauchi": (10.3158, 9.8442),       # State capital (Bauchi)
+    "Bayelsa": (4.9267, 6.2676),       # State capital (Yenagoa)
+    "Benue": (7.7328, 8.5391),         # State capital (Makurdi)
+    "Borno": (11.8333, 13.1500),       # State capital (Maiduguri)
+    "Cross River": (4.9500, 8.3250),   # State capital (Calabar)
+    "Delta": (6.2048, 6.7320),         # State capital (Asaba)
+    "Ebonyi": (6.3249, 8.1137),        # State capital (Abakaliki)
+    "Edo": (6.3350, 5.6275),           # State capital (Benin City)
+    "Ekiti": (7.6236, 5.2209),         # State capital (Ado-Ekiti)
+    "Enugu": (6.4402, 7.5023),         # State capital (Enugu)
+    "Gombe": (10.2897, 11.1673),       # State capital (Gombe)
+    "Imo": (5.4926, 7.0260),           # State capital (Owerri)
+    "Jigawa": (11.7017, 9.3346),       # State capital (Dutse)
+    "Kaduna": (10.5167, 7.4333),       # State capital (Kaduna)
+    "Kano": (12.0022, 8.5927),         # State capital (Kano)
+    "Katsina": (12.9908, 7.6019),      # State capital (Katsina)
+    "Kebbi": (12.4539, 4.1979),        # State capital (Birnin Kebbi)
+    "Kogi": (7.8027, 6.7333),          # State capital (Lokoja)
+    "Kwara": (8.5000, 4.5500),         # State capital (Ilorin)
+    "Lagos": (6.5244, 3.3792),         # State capital (Ikeja)
+    "Nasarawa": (8.5167, 8.5333),      # State capital (Lafia)
+    "Niger": (9.6139, 6.5569),         # State capital (Minna)
+    "Ogun": (7.1557, 3.3451),          # State capital (Abeokuta)
+    "Ondo": (7.2500, 5.1950),          # State capital (Akure)
+    "Osun": (7.7669, 4.5600),          # State capital (Osogbo)
+    "Oyo": (7.3775, 3.9470),           # State capital (Ibadan)
+    "Rivers": (4.8242, 7.0336),        # State capital (Port Harcourt)
+    "Sokoto": (13.0629, 5.2438),       # State capital (Sokoto)
+    "Taraba": (8.8833, 11.3667),       # State capital (Jalingo)
+    "Yobe": (11.7483, 11.9639),        # State capital (Damaturu)
+    "Zamfara": (12.1704, 6.6641),      # State capital (Gusau)
+    "FCT - Abuja": (9.0579, 7.4951),   # Federal capital (Abuja)
 }
-
 
 def calculate_distance(coord1, coord2):
     R = 6371.0
