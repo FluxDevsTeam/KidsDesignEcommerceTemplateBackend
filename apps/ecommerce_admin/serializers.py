@@ -16,7 +16,7 @@ class PatchOrderSerializer(serializers.ModelSerializer):
 class OrganizationSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrganizationSettings
-        fields = ["available_states", "warehouse_state", "phone_number", "customer_support_email", "admin_email", "brand_logo", "facebook", "twitter", "linkedin", "tiktok"]
+        fields = ["available_states", "warehouse_state", "phone_number", "customer_support_email", "admin_email", "brand_logo", "facebook", "instagram", "twitter", "linkedin", "tiktok"]
 
 
 class OrganizationStatesSerializer(serializers.ModelSerializer):
