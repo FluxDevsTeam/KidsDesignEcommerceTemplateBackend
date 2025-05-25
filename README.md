@@ -44,6 +44,7 @@ This is a robust and scalable Django-based API template for building an ecommerc
 ├── apps/
 │   ├── authentication/
 │   ├── cart/
+│   ├── ecommerce_admin/
 │   ├── orders/
 │   ├── payment/
 │   ├── products/
@@ -90,6 +91,7 @@ The project follows a modular architecture with the following key components:
   - `authentication`: Custom user model and JWT authentication
   - `products`: Product catalog and inventory management
   - `cart`: Shopping cart implementation
+  - `ecommerce_admin`: Admin panel enhancements and ecommerce-specific administrative features
   - `orders`: Order processing and management
   - `payment`: Payment gateway integrations
   - `wishlist`: User wishlist functionality

@@ -8,7 +8,7 @@ from django.utils.functional import SimpleLazyObject
 from ..ecommerce_admin.models import OrganizationSettings, DeveloperSettings
 
 
-organization_settings =  SimpleLazyObject(lambda: OrganizationSettings.objects.first())
+organization_settings = SimpleLazyObject(lambda: OrganizationSettings.objects.first())
 organization = SimpleLazyObject(lambda: {
     'support_phone_number': getattr(organization_settings, 'phone_number', None),
     'support_email': getattr(organization_settings, 'customer_support_email', None),
@@ -20,24 +20,53 @@ organization = SimpleLazyObject(lambda: {
     'tiktok': getattr(organization_settings, 'tiktok', None),
 })
 
-SUPPORT_PHONE_NUMBER = organization['support_phone_number']
-SUPPORT_EMAIL = organization['support_email']
-BRAND_LOGO = organization['brand_logo'] 
-FB_LINK = organization['facebook']
-IG_LINK = organization['instagram']
-X_LINK = organization['x']
-LINKEDIN_LINK = organization['linkedin']
-TIKTOK_LINK = organization['tiktok']
+
+def get_support_phone_number():
+    return organization['support_phone_number']
 
 
-developer_settings =  SimpleLazyObject(lambda: DeveloperSettings.objects.first())
+def get_support_email():
+    return organization['support_email']
+
+
+def get_brand_logo():
+    return organization['brand_logo']
+
+
+def get_fb_link():
+    return organization['facebook']
+
+
+def get_ig_link():
+    return organization['instagram']
+
+
+def get_x_link():
+    return organization['x']
+
+
+def get_linkedin_link():
+    return organization['linkedin']
+
+
+def get_tiktok_link():
+    return organization['tiktok']
+
+
+developer_settings = SimpleLazyObject(lambda: DeveloperSettings.objects.first())
 developer = SimpleLazyObject(lambda: {
     'brand_name': getattr(developer_settings, 'brand_name', None),
     'terms_of_service': getattr(developer_settings, 'terms_of_service', None)
 })
 
-BRAND_NAME = developer['brand_name']
-TERMS_OF_SERVICE = developer['terms_of_service']
+
+def get_brand_name():
+    return developer['brand_name']
+
+
+def get_terms_of_service():
+    return developer['terms_of_service']
+
 
 def send_generic_email(user_email, email_type, subject, action, message, otp=None, link=None, link_text=None):
     try:
@@ -57,20 +86,19 @@ def send_generic_email(user_email, email_type, subject, action, message, otp=Non
             'site_url': settings.SITE_URL,
             'current_year': datetime.now().year,
 
-            'support_email': SUPPORT_EMAIL,
-            'support_phone_number': SUPPORT_PHONE_NUMBER,
-            'brand_name': BRAND_NAME,
-            'brand_logo': BRAND_LOGO,
-            'terms_of_service': TERMS_OF_SERVICE,
-            'social_true': any((FB_LINK, IG_LINK, X_LINK, X_LINK, LINKEDIN_LINK, TIKTOK_LINK)),
-            'fb_link': FB_LINK,
-            'ig_link': IG_LINK,
-            'x_link': X_LINK,
-            'linkedin_link': LINKEDIN_LINK,
-            'tiktok_link': TIKTOK_LINK
+            'support_email': get_support_email(),
+            'support_phone_number': get_support_phone_number(),
+            'brand_name': get_brand_name(),
+            'brand_logo': get_brand_logo(),
+            'terms_of_service': get_terms_of_service(),
+            'social_true': any((get_fb_link(), get_ig_link(), get_x_link(), get_linkedin_link(), get_tiktok_link())),
+            'fb_link': get_fb_link(),
+            'ig_link': get_ig_link(),
+            'x_link': get_x_link(),
+            'linkedin_link': get_linkedin_link(),
+            'tiktok_link': get_tiktok_link()
 
         }
-
 
         html_template_path = os.path.join(settings.BASE_DIR, 'apps', 'authentication', 'emails', 'generic_email.html')
         txt_template_path = os.path.join(settings.BASE_DIR, 'apps', 'authentication', 'emails', 'generic_email.txt')
@@ -96,7 +124,7 @@ def send_generic_email(user_email, email_type, subject, action, message, otp=Non
             html_message=html_message,
             fail_silently=False,
         )
-  
+
     except FileNotFoundError as e:
         raise
     except Exception as e:
