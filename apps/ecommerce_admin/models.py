@@ -48,7 +48,7 @@ class OrganizationSettings(models.Model):
     warehouse_state = models.CharField(max_length=50, choices=STATE_CHOICES, default="Lagos")
     phone_number = models.CharField(max_length=20, default="+0123456789")
     customer_support_email = models.EmailField(default="suskidee@gmail.com")
-    admin_email = models.EmailField("suskidee@gmail.com")
+    admin_email = models.EmailField(default="suskidee@gmail.com")
     brand_logo = models.ImageField(upload_to="brand_logo/", null=True, blank=True)
     facebook = models.URLField(max_length=100, null=True, blank=True)
     instagram = models.URLField(max_length=100, null=True, blank=True)
