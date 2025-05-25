@@ -121,7 +121,7 @@ class ApiProductSubCategory(viewsets.ModelViewSet):
     pagination_class = CustomPagination
     permission_classes = [IsAdminOrReadOnly]
     filterset_fields = ["category"]
-    search_fields = ["name"]
+    search_fields = ["name", "category__name"]
     ordering = ['name']
 
     def get_serializer_class(self):
