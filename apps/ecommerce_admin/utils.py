@@ -9,8 +9,19 @@ from .tasks import (send_refund_initiated_notification_email, is_celery_healthy,
 from django.utils.functional import SimpleLazyObject
 from ..ecommerce_admin.models import OrganizationSettings, DeveloperSettings
 
+# Define a function to get organization settings lazily and safely
+def get_organization_settings():
+    try:
+        # Check if settings are configured before accessing the database
+        if settings.configured:
+            return OrganizationSettings.objects.first()
+        # Allow crash if settings are not configured or object not found
+    except Exception:
+        # Allow crash if any other exception occurs during database access
+        raise
+
 ADMIN_EMAIL = SimpleLazyObject(
-    lambda: getattr(OrganizationSettings.objects.first(), 'admin_email', None))
+    lambda: getattr(get_organization_settings(), 'admin_email', None))
 
 
 def swagger_helper(tags, model):
