@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Wishlist
-from ..products.serializers import ProductSimpleViewSerializer
+from ..products.serializers import ProductWishlistViewSerializer
 
 
 class WishlistSerializer(serializers.ModelSerializer):
@@ -11,7 +11,7 @@ class WishlistSerializer(serializers.ModelSerializer):
 
 
 class WishlistViewSerializer(serializers.ModelSerializer):
-    product = ProductSimpleViewSerializer()
+    product = ProductWishlistViewSerializer()
 
     class Meta:
         model = Wishlist

@@ -1,6 +1,7 @@
 import json
 
 from django.conf import settings
+from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
@@ -26,11 +27,15 @@ TIMEOUT = int(settings.CACHE_TIMEOUT)
 
 class ApiProductCategory(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
-    queryset = ProductCategory.objects.all()
     pagination_class = CustomPagination
     permission_classes = [IsAdminOrReadOnly]
     search_fields = ["name"]
-    ordering = ['name']
+    # ordering = ["index", "name"]
+
+    def get_queryset(self):
+        return ProductCategory.objects.annotate(
+            index_null_last=Coalesce('index', Value(999999))
+        ).order_by('index_null_last', 'name')
 
     def get_serializer_class(self):
         if self.action == "retrieve":
@@ -42,8 +47,8 @@ class ApiProductCategory(viewsets.ModelViewSet):
         cache_timeout = TIMEOUT
         cache_params = dict(request.query_params)
         cache_key = f"category_list:{json.dumps(cache_params, sort_keys=True)}"
-        if cached_response := cache.get(cache_key):
-            return Response(cached_response)
+        # if cached_response := cache.get(cache_key):
+        #     return Response(cached_response)
 
         response = super().list(request, *args, **kwargs)
         cache.set(cache_key, response.data, cache_timeout)
