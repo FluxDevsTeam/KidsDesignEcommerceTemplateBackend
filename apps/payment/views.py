@@ -34,6 +34,10 @@ class PaymentSummaryViewSet(viewsets.ViewSet):
     def list(self, request):
         try:
             cart = get_object_or_404(Cart, user=request.user)
+            
+            include_delivery_fee = request.query_params.get('include_delivery_fee')
+            if include_delivery_fee is not None:
+                cart.include_delivery_fee = include_delivery_fee.lower() == 'true'
             cart.delivery_fee = calculate_delivery_fee(cart)
             serializer = PaymentCartSerializer(cart)
             data = serializer.data
@@ -55,6 +59,7 @@ class PaymentSummaryViewSet(viewsets.ViewSet):
 
             data["estimated_delivery"] = estimated_delivery
             data["num_items"] = cart.cartitem_cart.count()
+            data["include_delivery_fee"] = cart.include_delivery_fee
             return Response(data)
 
         except Exception as e:
@@ -83,6 +88,9 @@ class PaymentInitiateViewSet(viewsets.ModelViewSet):
             input_serializer = PaymentCartSerializer(cart, data=request.data, partial=True)
             if not input_serializer.is_valid():
                 return Response({"error": "Invalid payment data", "details": input_serializer.errors}, status=400)
+            
+            if 'include_delivery_fee' in input_serializer.validated_data:
+                cart.include_delivery_fee = input_serializer.validated_data['include_delivery_fee']
             cart.delivery_fee = calculate_delivery_fee(cart)
             cart.save()
 
@@ -220,10 +228,12 @@ class PaymentVerifyViewSet(viewsets.ViewSet):
                 product_size.save()
 
             try:
+                actual_delivery_fee = cart.delivery_fee if cart.include_delivery_fee else 0
+                
                 order = Order.objects.create(
                     user=user,
                     status="PAID",
-                    delivery_fee=cart.delivery_fee,
+                    delivery_fee=actual_delivery_fee,
                     total_amount=server_total,
                     first_name=cart.first_name or user.first_name,
                     last_name=cart.last_name or user.last_name,
@@ -441,10 +451,12 @@ class PaymentWebhookViewSet(viewsets.ViewSet):
                 product_size.save()
 
             try:
+                actual_delivery_fee = cart.delivery_fee if cart.include_delivery_fee else 0
+                
                 order = Order.objects.create(
                     user=user,
                     status="PAID",
-                    delivery_fee=cart.delivery_fee,
+                    delivery_fee=actual_delivery_fee,
                     total_amount=server_total,
                     first_name=cart.first_name or user.first_name,
                     last_name=cart.last_name or user.last_name,

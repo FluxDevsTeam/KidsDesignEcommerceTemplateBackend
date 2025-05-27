@@ -17,6 +17,7 @@ class Cart(models.Model):
     phone_number = models.CharField(max_length=50, null=True, blank=True)
     estimated_delivery = models.CharField(max_length=100, null=True, blank=True)
     delivery_fee = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    include_delivery_fee = models.BooleanField(default=True)
 
     def __str__(self):
         return f"Cart - {self.id} - {self.user.email}"
