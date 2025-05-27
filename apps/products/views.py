@@ -268,44 +268,44 @@ class ApiProduct(viewsets.ModelViewSet):
         serializer = self.get_serializer(instance, data=request.data, partial=True)
 
         if serializer.is_valid():
-            with transaction.atomic():
-                validated_data = serializer.validated_data
-                max_position = 20
-
-                if "latest_item_position" in validated_data:
-                    new_position = validated_data["latest_item_position"]
-                    self.get_queryset().filter(
-                        latest_item=True,
-                        latest_item_position__gte=new_position,
-                        latest_item_position__isnull=False
-                    ).exclude(id=instance.id).select_for_update().update(
-                        latest_item_position=Case(
-                            When(latest_item_position__gt=max_position, then=None),
-                            default=F("latest_item_position") + 1
-                        ),
-                        latest_item=Case(
-                            When(latest_item_position__gt=max_position, then=False),
-                            default=True
-                        )
-                    )
-
-                if "top_selling_position" in validated_data:
-                    new_selling_position = validated_data["top_selling_position"]
-                    self.get_queryset().filter(
-                        top_selling_items=True,
-                        top_selling_position__gte=new_selling_position,
-                        top_selling_position__isnull=False
-                    ).exclude(id=instance.id).select_for_update().update(
-                        top_selling_position=Case(
-                            When(top_selling_position__gt=max_position, then=None),
-                            default=F("top_selling_position") + 1
-                        ),
-                        top_selling_items=Case(
-                            When(top_selling_position__gt=max_position, then=False),
-                            default=True
-                        )
-                    )
-                serializer.save()
+            # with transaction.atomic():
+            #     validated_data = serializer.validated_data
+            #     max_position = 20
+            #
+            #     if "latest_item_position" in validated_data:
+            #         new_position = validated_data["latest_item_position"]
+            #         self.get_queryset().filter(
+            #             latest_item=True,
+            #             latest_item_position__gte=new_position,
+            #             latest_item_position__isnull=False
+            #         ).exclude(id=instance.id).select_for_update().update(
+            #             latest_item_position=Case(
+            #                 When(latest_item_position__gt=max_position, then=None),
+            #                 default=F("latest_item_position") + 1
+            #             ),
+            #             latest_item=Case(
+            #                 When(latest_item_position__gt=max_position, then=False),
+            #                 default=True
+            #             )
+            #         )
+            #
+            #     if "top_selling_position" in validated_data:
+            #         new_selling_position = validated_data["top_selling_position"]
+            #         self.get_queryset().filter(
+            #             top_selling_items=True,
+            #             top_selling_position__gte=new_selling_position,
+            #             top_selling_position__isnull=False
+            #         ).exclude(id=instance.id).select_for_update().update(
+            #             top_selling_position=Case(
+            #                 When(top_selling_position__gt=max_position, then=None),
+            #                 default=F("top_selling_position") + 1
+            #             ),
+            #             top_selling_items=Case(
+            #                 When(top_selling_position__gt=max_position, then=False),
+            #                 default=True
+            #             )
+            #         )
+            serializer.save()
 
             cache.delete_pattern("product_list:*")
             cache.delete_pattern(f"product_detail:{kwargs['pk']}")
