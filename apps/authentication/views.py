@@ -908,7 +908,7 @@ class LogoutViewSet(viewsets.ModelViewSet):
             return Response({"detail": "Error during logout.", "data": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class GoogleAuthViewSet(viewsets.ViewSet):
+class GoogleAuthViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         return GoogleAuthSerializer
 
