@@ -19,6 +19,7 @@ djangorestframework==3.15.2
 djangorestframework_simplejwt==5.5.0
 drf-nested-routers==0.94.1
 drf-yasg==1.21.10
+google-auth==2.40.3
 gunicorn==21.2.0
 idna==3.10
 inflection==0.5.1
