@@ -149,3 +149,7 @@ class LogoutSerializer(serializers.Serializer):
             return value
         except Exception as e:
             raise serializers.ValidationError("Invalid or expired refresh token")
+
+
+class GoogleAuthSerializer(serializers.Serializer):
+    id_token = serializers.CharField(required=True)

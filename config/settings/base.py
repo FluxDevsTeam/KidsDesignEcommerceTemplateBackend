@@ -235,3 +235,6 @@ CACHES = {
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_HEADERS = ['Authorization', 'Content-Type', 'Accept',]
 CORS_ALLOW_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
+
+# Google Authentication Settings
+GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')

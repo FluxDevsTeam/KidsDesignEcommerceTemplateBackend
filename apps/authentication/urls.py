@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import (UserSignupViewSet, UserLoginViewSet, LogoutViewSet, UserProfileViewSet, PasswordChangeRequestViewSet, ForgotPasswordViewSet)
+from .views import (UserSignupViewSet, UserLoginViewSet, LogoutViewSet, UserProfileViewSet, PasswordChangeRequestViewSet, ForgotPasswordViewSet, GoogleAuthViewSet)
 
 urlpatterns = [
     # path('', include(router.urls)),
@@ -25,4 +25,5 @@ urlpatterns = [
     path('profile/verify-email-change/', UserProfileViewSet.as_view({'post': 'verify_email_change'}), name='verify_email_change'),
     path('profile/request-profile-change/', UserProfileViewSet.as_view({'post': 'request_profile_change'}), name='request_profile_change'),
     path('profile/verify-profile-change/', UserProfileViewSet.as_view({'post': 'verify_profile_change'}), name='verify_profile_change'),
+    path('google-auth/', GoogleAuthViewSet.as_view({'post': 'google_auth'}), name='google_auth'),
 ]
