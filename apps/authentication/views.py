@@ -13,7 +13,7 @@ from .serializers import (
     VerifyEmailChangeSerializer, ProfileChangeSerializer, VerifyProfileChangeSerializer,
     PasswordChangeSerializer, VerifyPasswordChangeSerializer, RequestForgotPasswordSerializer,
     UserSignupSerializerVerify, UserSignupResendOTPSerializer, LogoutSerializer,
-    GoogleAuthSerializer
+    GoogleAuthSerializer, DeleteAccountSerializer
 )
 from rest_framework_simplejwt.tokens import RefreshToken
 from .utils import swagger_helper
@@ -27,6 +27,7 @@ from ..ecommerce_admin.models import DeveloperSettings
 from google.oauth2 import id_token
 from google.auth.transport import requests
 from django.conf import settings
+from ..orders.models import Order  # Add this import at the top
 
 
 User = get_user_model()
@@ -256,6 +257,8 @@ class UserProfileViewSet(viewsets.ModelViewSet):
             return VerifyProfileChangeSerializer
         if self.action == 'retrieve':
             return ViewUserProfileSerializer
+        if self.action == 'delete_account':
+            return DeleteAccountSerializer
 
     @swagger_helper("UserProfile", "profile", "view user profile. requires authentication (JWT)")
     def retrieve(self, request, *args, **kwargs):
@@ -470,6 +473,59 @@ class UserProfileViewSet(viewsets.ModelViewSet):
             )
 
         return Response({"data": "Name updated successfully."}, status=status.HTTP_200_OK)
+
+    @swagger_helper("UserProfile", "Delete account permanently")
+    @action(detail=False, methods=['post'], url_path='delete-account')
+    def delete_account(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        user = request.user
+        password = serializer.validated_data['password']
+
+        if not user.check_password(password):
+            return Response(
+                {"data": "Incorrect password."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Check for active orders
+        active_orders = Order.objects.filter(
+            user=user,
+            status__in=['PAID', 'SHIPPED', 'CANCELLED']
+        ).exists()
+
+        if active_orders:
+            return Response({
+                "data": "Account cannot be deleted because you have pending orders. Please wait until all orders are delivered or cancelled."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        email = user.email
+        user.delete()
+
+        if not is_celery_healthy():
+            send_email_synchronously(
+                user_email=email,
+                email_type="confirmation",
+                subject="Account Deleted",
+                action="Account Deletion",
+                message="Your account has been successfully deleted from Shop.co. We're sorry to see you go!"
+            )
+        else:
+            send_generic_email_task.apply_async(
+                kwargs={
+                    'user_email': email,
+                    'email_type': "confirmation",
+                    'subject': "Account Deleted",
+                    'action': "Account Deletion",
+                    'message': "Your account has been successfully deleted from Shop.co. We're sorry to see you go!"
+                }
+            )
+
+        return Response(
+            {"data": "Account deleted successfully."}, 
+            status=status.HTTP_200_OK
+        )
 
 
 class PasswordChangeRequestViewSet(viewsets.ModelViewSet):
