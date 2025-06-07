@@ -32,7 +32,6 @@ mysqlclient
 packaging
 Pillow
 prompt-toolkit
-psycopg2
 psycopg2-binary
 PyJWT
 pyparsing
