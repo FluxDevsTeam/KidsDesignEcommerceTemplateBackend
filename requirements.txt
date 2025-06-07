@@ -1,7 +1,6 @@
 amqp
 asgiref
 async-timeout
-backports.zoneinfo
 billiard
 cached-property
 celery
@@ -51,4 +50,3 @@ urllib3
 vine
 wcwidth
 whitenoise
-zipp
