@@ -1067,7 +1067,7 @@ class GoogleAuthViewSet(viewsets.ModelViewSet):
                 'error': str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
 
-    @swagger_helper("Set Google Auth Password", "Set password for new Google OAuth user or user with unusable password")
+    @swagger_helper("Google Auth", "Set password for new Google OAuth user or user with unusable password")
     @action(detail=False, methods=['post'], url_path='set-google-auth-password')
     def set_google_auth_password(self, request):
         serializer = self.get_serializer(data=request.data)
