@@ -13,7 +13,7 @@ from .serializers import (
     VerifyEmailChangeSerializer, ProfileChangeSerializer, VerifyProfileChangeSerializer,
     PasswordChangeSerializer, VerifyPasswordChangeSerializer, RequestForgotPasswordSerializer,
     UserSignupSerializerVerify, UserSignupResendOTPSerializer, LogoutSerializer,
-    GoogleAuthSerializer, DeleteAccountSerializer
+    GoogleAuthSerializer, DeleteAccountSerializer, SetGoogleAuthPasswordSerializer
 )
 from rest_framework_simplejwt.tokens import RefreshToken
 from .utils import swagger_helper
@@ -966,49 +966,156 @@ class LogoutViewSet(viewsets.ModelViewSet):
 
 class GoogleAuthViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
+        if self.action == 'set_google_auth_password':
+            return SetGoogleAuthPasswordSerializer
         return GoogleAuthSerializer
 
     @swagger_helper("Google Auth", "Authenticate with Google")
     @action(detail=False, methods=['post'], url_path='google-auth')
     def google_auth(self, request):
-        serializer = GoogleAuthSerializer(data=request.data)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
+
         id_token_str = serializer.validated_data['id_token']
-        
+
         try:
-            # Verify the ID token
             idinfo = id_token.verify_oauth2_token(
-                id_token_str, 
-                requests.Request(), 
+                id_token_str,
+                requests.Request(),
                 settings.GOOGLE_CLIENT_ID
             )
 
-            # Get user info from the ID token
             email = idinfo['email']
+            email_verified = idinfo['email_verified']
+            if not email_verified:
+                return Response({
+                    'message': 'Email not verified with Google'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
             first_name = idinfo.get('given_name', '')
             last_name = idinfo.get('family_name', '')
 
-            # Check if user exists
             user = User.objects.filter(email=email).first()
-            
+
             if user:
-                if not user.is_verified:
-                    user.is_verified = True
-                    user.save()
+                if user.has_usable_password() or user.is_verified:
+                    if not user.is_verified:
+                        user.is_verified = True
+                        user.save()
+
+                    refresh = RefreshToken.for_user(user)
+                    access_token = str(refresh.access_token)
+
+                    if not is_celery_healthy():
+                        send_email_synchronously(
+                            user_email=email,
+                            email_type="confirmation",
+                            subject="Login Successful",
+                            action="Google Login",
+                            message="You have successfully logged in to Shop.co using Google. Welcome!"
+                        )
+                    else:
+                        send_generic_email_task.apply_async(
+                            kwargs={
+                                'user_email': email,
+                                'email_type': "confirmation",
+                                'subject': "Login Successful",
+                                'action': "Google Login",
+                                'message': "You have successfully logged in to Shop.co using Google. Welcome!"
+                            }
+                        )
+
+                    return Response({
+                        'message': 'Google authentication successful.',
+                        'access_token': access_token,
+                        'refresh_token': str(refresh),
+                        'is_new_user': False,
+                        'user': {
+                            'email': user.email,
+                            'first_name': user.first_name,
+                            'last_name': user.last_name
+                        }
+                    }, status=status.HTTP_200_OK)
+                else:
+                    return Response({
+                        'message': 'Password required for account setup.',
+                        'is_new_user': True,
+                        'id_token': id_token_str,
+                        'email': email,
+                        'first_name': first_name,
+                        'last_name': last_name
+                    }, status=status.HTTP_200_OK)
             else:
-                # Create new user
+                return Response({
+                    'message': 'Password required for new user.',
+                    'is_new_user': True,
+                    'id_token': id_token_str,
+                    'email': email,
+                    'first_name': first_name,
+                    'last_name': last_name
+                }, status=status.HTTP_200_OK)
+
+        except ValueError as e:
+            return Response({
+                'message': 'Invalid ID token',
+                'error': str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response({
+                'message': 'Authentication failed',
+                'error': str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+    @swagger_helper("Set Google Auth Password", "Set password for new Google OAuth user or user with unusable password")
+    @action(detail=False, methods=['post'], url_path='set-google-auth-password')
+    def set_google_auth_password(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        id_token_str = serializer.validated_data['id_token']
+        password = serializer.validated_data['password']
+
+        try:
+            idinfo = id_token.verify_oauth2_token(
+                id_token_str,
+                requests.Request(),
+                settings.GOOGLE_CLIENT_ID
+            )
+
+            email = idinfo['email']
+            email_verified = idinfo['email_verified']
+            if not email_verified:
+                return Response({
+                    'message': 'Email not verified with Google'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            first_name = idinfo.get('given_name', '')
+            last_name = idinfo.get('family_name', '')
+
+            user = User.objects.filter(email=email).first()
+
+            if user:
+                if user.has_usable_password():
+                    return Response({
+                        'message': 'User already has a password. Use Google login or email/password login.'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
+                user.first_name = first_name or user.first_name
+                user.last_name = last_name or user.last_name
+                user.is_verified = True
+                user.set_password(password)
+                user.save()
+            else:
                 user = User.objects.create(
                     email=email,
                     first_name=first_name,
                     last_name=last_name,
                     is_verified=True
                 )
-                # Set unusable password as user will only login via Google
-                user.set_unusable_password()
+                user.set_password(password)
                 user.save()
 
-            # Generate tokens
             refresh = RefreshToken.for_user(user)
             access_token = str(refresh.access_token)
 
@@ -1016,28 +1123,40 @@ class GoogleAuthViewSet(viewsets.ModelViewSet):
                 send_email_synchronously(
                     user_email=email,
                     email_type="confirmation",
-                    subject="Login Successful",
-                    action="Google Login",
-                    message="You have successfully logged in to Shop.co using Google. Welcome!"
+                    subject="Account Setup Successful",
+                    action="Google Account Setup",
+                    message="You have successfully set up your Shop.co account using Google and a password. You can now log in with your email and password or Google. Welcome!"
                 )
             else:
                 send_generic_email_task.apply_async(
                     kwargs={
                         'user_email': email,
                         'email_type': "confirmation",
-                        'subject': "Login Successful",
-                        'action': "Google Login",
-                        'message': "You have successfully logged in to Shop.co using Google. Welcome!"
+                        'subject': "Account Setup Successful",
+                        'action': "Google Account Setup",
+                        'message': "You have successfully set up your Shop.co account using Google and a password. You can now log in with your email and password or Google. Welcome!"
                     }
                 )
 
             return Response({
-                'message': 'Google authentication successful.',
+                'message': 'Account setup successful.',
                 'access_token': access_token,
                 'refresh_token': str(refresh),
+                'user': {
+                    'email': user.email,
+                    'first_name': user.first_name,
+                    'last_name': user.last_name
+                }
             }, status=status.HTTP_200_OK)
 
-        except ValueError:
+        except ValueError as e:
             return Response({
-                'message': 'Invalid ID token'
+                'message': 'Invalid ID token',
+                'error': str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response({
+                'message': 'Account setup failed',
+                'error': str(e)
             }, status=status.HTTP_400_BAD_REQUEST)

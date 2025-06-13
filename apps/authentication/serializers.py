@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth.password_validation import validate_password
 
 User = get_user_model()
 
@@ -153,6 +154,18 @@ class LogoutSerializer(serializers.Serializer):
 
 class GoogleAuthSerializer(serializers.Serializer):
     id_token = serializers.CharField(required=True)
+
+
+class SetGoogleAuthPasswordSerializer(serializers.Serializer):
+    id_token = serializers.CharField(required=True)
+    password = serializers.CharField(required=True, write_only=True)
+
+    def validate_password(self, value):
+
+        validate_password(value)
+        if len(value) < 8:
+            raise serializers.ValidationError("Password must be at least 8 characters long.")
+        return value
 
 
 class DeleteAccountSerializer(serializers.Serializer):
