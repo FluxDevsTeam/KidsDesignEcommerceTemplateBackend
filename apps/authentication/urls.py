@@ -27,4 +27,5 @@ urlpatterns = [
     path('profile/verify-profile-change/', UserProfileViewSet.as_view({'post': 'verify_profile_change'}), name='verify_profile_change'),
     path('profile/delete-account/', UserProfileViewSet.as_view({'post': 'delete_account'}), name='delete_account'),
     path('google-auth/', GoogleAuthViewSet.as_view({'post': 'google_auth'}), name='google_auth'),
+    path('set-google-auth-password/', GoogleAuthViewSet.as_view({'post': 'set_google_auth_password'}), name='set_google_auth'),
 ]
