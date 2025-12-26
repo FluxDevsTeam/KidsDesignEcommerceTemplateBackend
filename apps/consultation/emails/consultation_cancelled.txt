@@ -1,0 +1,13 @@
+Consultation Cancelled
+
+Dear {{ user_name }},
+
+Your consultation has been cancelled.
+
+Package: {{ package_name }}
+Original Date: {{ scheduled_date }}
+Original Time: {{ scheduled_time }}
+
+If you would like to reschedule, please contact us.
+
+© 2024 KidsDesignCompany. All rights reserved.

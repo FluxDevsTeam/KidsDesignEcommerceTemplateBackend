@@ -1,0 +1,13 @@
+Consultation Completed
+
+Dear {{ user_name }},
+
+Thank you for your consultation!
+
+Package: {{ package_name }}
+Date: {{ scheduled_date }}
+Time: {{ scheduled_time }}
+
+We hope the consultation was helpful. Please don't hesitate to contact us if you have any further questions.
+
+© 2024 KidsDesignCompany. All rights reserved.
