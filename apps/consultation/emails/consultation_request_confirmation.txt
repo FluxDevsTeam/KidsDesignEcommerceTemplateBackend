@@ -1,0 +1,15 @@
+Consultation Request Received
+
+Dear {{ user_name }},
+
+Thank you for your consultation request! We have received your booking.
+
+Package: {{ package_name }}
+Requested Date: {{ scheduled_date }}
+Requested Time: {{ scheduled_time }}
+
+Our team will review your request and confirm the appointment shortly. You will receive a confirmation email once it's approved.
+
+If you have any questions, please don't hesitate to contact us.
+
+© 2024 KidsDesignCompany. All rights reserved.

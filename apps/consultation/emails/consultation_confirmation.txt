@@ -1,0 +1,16 @@
+Consultation Confirmed
+
+Dear {{ user_name }},
+
+Your consultation has been confirmed!
+
+Package: {{ package_name }}
+Date: {{ scheduled_date }}
+Time: {{ scheduled_time }}
+{% if zoom_link %}
+Zoom Link: {{ zoom_link }}
+{% endif %}
+
+We look forward to speaking with you!
+
+© 2024 KidsDesignCompany. All rights reserved.
