@@ -1,0 +1,9 @@
+{{ subject }}
+
+{{ content|striptags }}
+
+---
+You received this newsletter because you subscribed to our updates.
+If you no longer wish to receive these emails, you can unsubscribe.
+
+© 2024 KidsDesignCompany. All rights reserved.

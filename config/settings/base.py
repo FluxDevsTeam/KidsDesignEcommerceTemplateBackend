@@ -46,8 +46,12 @@ INSTALLED_APPS = [
     'rest_framework',
     'api',
     'apps.authentication',
+    'apps.blog',
     'apps.cart',
+    'apps.consultation',
+    'apps.newsletter',
     'apps.orders',
+    'apps.packages',
     'apps.payment',
     'apps.products',
     'apps.wishlist',
@@ -189,7 +193,7 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 
 # Task routing
-CELERY_IMPORTS = ('apps.payment.tasks',)
+CELERY_IMPORTS = ('apps.payment.tasks', 'apps.newsletter.tasks', 'apps.consultation.tasks')
 
 CELERY_WORKER_POOL = 'solo'
 CELERY_WORKER_CONCURRENCY = 1
