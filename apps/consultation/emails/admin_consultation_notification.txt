@@ -1,0 +1,17 @@
+New Consultation Request
+
+A new consultation request has been submitted.
+
+Client: {{ user_name }} ({{ user_email }})
+Package: {{ package_name }}
+Requested Date: {{ scheduled_date }}
+Requested Time: {{ scheduled_time }}
+{% if notes %}
+Notes: {{ notes }}
+{% endif %}
+
+Please review and confirm this consultation request.
+
+View in Admin Panel: {{ site_url }}/admin/consultation/consultation/
+
+© 2024 KidsDesignCompany. All rights reserved.

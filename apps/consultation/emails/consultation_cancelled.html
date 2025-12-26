@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consultation Cancelled</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #f8f9fa; padding: 20px; text-align: center; }
+        .content { padding: 20px; }
+        .footer { background-color: #f8f9fa; padding: 20px; text-align: center; font-size: 12px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Consultation Cancelled</h1>
+        </div>
+        <div class="content">
+            <p>Dear {{ user_name }},</p>
+            <p>Your consultation has been cancelled.</p>
+            <p><strong>Package:</strong> {{ package_name }}</p>
+            <p><strong>Original Date:</strong> {{ scheduled_date }}</p>
+            <p><strong>Original Time:</strong> {{ scheduled_time }}</p>
+            <p>If you would like to reschedule, please contact us.</p>
+        </div>
+        <div class="footer">
+            <p>&copy; 2024 KidsDesignCompany. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
