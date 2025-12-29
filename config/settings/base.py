@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'apps.products',
     'apps.wishlist',
     'apps.ecommerce_admin',
+    'apps.past_projects',
 ]
 
 MIDDLEWARE = [
