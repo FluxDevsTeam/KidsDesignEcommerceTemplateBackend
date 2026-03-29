@@ -22,7 +22,7 @@ from .tasks import send_order_confirmation_email, is_celery_healthy, send_email_
 from django.contrib.auth import get_user_model
 from .delivery_date import calculate_delivery_dates
 from .utils import generate_confirm_token, swagger_helper, initiate_refund
-from ..products.models import Product, ProductSize
+from ..products.models import InventoryItem, ProductSize
 from .variables import order_route_frontend, frontend_base_route, backend_base_route, payment_failed_url, admin_email
 User = get_user_model()
 

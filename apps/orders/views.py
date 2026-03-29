@@ -8,7 +8,7 @@ from rest_framework import viewsets, status
 from .pagination import CustomPagination
 from .utils import swagger_helper, initiate_refund
 from datetime import timedelta
-from ..products.models import ProductSize, Product
+from ..products.models import ProductSize, InventoryItem
 from django.utils import timezone
 
 

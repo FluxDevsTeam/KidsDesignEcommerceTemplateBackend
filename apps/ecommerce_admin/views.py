@@ -17,7 +17,7 @@ from django.contrib.auth import get_user_model
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
-from apps.products.models import Product
+from apps.products.models import InventoryItem
 from django.db.models.functions import TruncMonth
 from rest_framework import viewsets
 from datetime import date, timedelta

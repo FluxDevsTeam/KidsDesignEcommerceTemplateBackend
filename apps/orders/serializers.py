@@ -35,6 +35,3 @@ class UserPatchOrderSerializer(serializers.ModelSerializer):
 #         model = OrderItem
 #         fields = ["id", "product", "order", "quantity", "name", "size", "description", "colour", "image1", "price"]
 #         read_only_fields = ["id", "order"]
-
-
-
