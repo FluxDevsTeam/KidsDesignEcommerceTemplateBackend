@@ -42,7 +42,7 @@ class ApiInventoryCategory(viewsets.ModelViewSet):
             return InventoryCategoryDetailSerializer
         return InventoryCategorySerializer
 
-    @swagger_helper(tags="ProductCategory", model="Product category")
+    @swagger_helper(tags="InventoryCategory", model="Inventory category")
     def list(self, request, *args, **kwargs):
         cache_timeout = TIMEOUT
         cache_params = dict(request.query_params)
@@ -54,7 +54,7 @@ class ApiInventoryCategory(viewsets.ModelViewSet):
         cache.set(cache_key, response.data, cache_timeout)
         return response
 
-    @swagger_helper(tags="ProductCategory", model="Product category")
+    @swagger_helper(tags="InventoryCategory", model="Inventory category")
     def retrieve(self, request, *args, **kwargs):
         cache_timeout = TIMEOUT
         cache_key = f"category_detail:{kwargs['pk']}"
@@ -65,7 +65,7 @@ class ApiInventoryCategory(viewsets.ModelViewSet):
         cache.set(cache_key, response.data, cache_timeout)
         return response
 
-    @swagger_helper(tags="ProductCategory", model="Product category")
+    @swagger_helper(tags="InventoryCategory", model="Inventory category")
     def create(self, *args, **kwargs):
         response = super().create(*args, **kwargs)
         cache.delete_pattern("category_list:*")
@@ -83,7 +83,7 @@ class ApiInventoryCategory(viewsets.ModelViewSet):
         cache.delete_pattern("product_homepage:*")
         return response
 
-    @swagger_helper(tags="ProductCategory", model="Product category")
+    @swagger_helper(tags="InventoryCategory", model="Inventory category")
     def partial_update(self, *args, **kwargs):
         response = super().partial_update(*args, **kwargs)
         cache.delete_pattern("category_list:*")
@@ -101,7 +101,7 @@ class ApiInventoryCategory(viewsets.ModelViewSet):
         cache.delete_pattern("product_homepage:*")
         return response
 
-    @swagger_helper(tags="ProductCategory", model="Product category")
+    @swagger_helper(tags="InventoryCategory", model="Inventory category")
     def destroy(self, *args, **kwargs):
         response = super().destroy(*args, **kwargs)
         cache.delete_pattern("category_list:*")
@@ -134,7 +134,7 @@ class ApiInventorySubCategory(viewsets.ModelViewSet):
             return InventorySubCategoryViewSerializer
         return InventorySubCategorySerializer
 
-    @swagger_helper(tags="ProductSubCategory", model="Product sub category")
+    @swagger_helper(tags="InventorySubCategory", model="Inventory sub category")
     def list(self, request, *args, **kwargs):
         cache_timeout = TIMEOUT
         cache_params = dict(request.query_params)
@@ -146,7 +146,7 @@ class ApiInventorySubCategory(viewsets.ModelViewSet):
         cache.set(cache_key, response.data, cache_timeout)
         return response
 
-    @swagger_helper(tags="ProductSubCategory", model="Product sub category")
+    @swagger_helper(tags="InventorySubCategory", model="Inventory sub category")
     def retrieve(self, request, *args, **kwargs):
         cache_timeout = TIMEOUT
         cache_key = f"subcategory_detail:{kwargs['pk']}"
@@ -157,7 +157,7 @@ class ApiInventorySubCategory(viewsets.ModelViewSet):
         cache.set(cache_key, response.data, cache_timeout)
         return response
 
-    @swagger_helper(tags="ProductSubCategory", model="Product sub category")
+    @swagger_helper(tags="InventorySubCategory", model="Inventory sub category")
     def create(self, *args, **kwargs):
         response = super().create(*args, **kwargs)
         cache.delete_pattern("subcategory_list:*")
@@ -173,7 +173,7 @@ class ApiInventorySubCategory(viewsets.ModelViewSet):
         cache.delete_pattern("product_homepage:*")
         return response
 
-    @swagger_helper(tags="ProductSubCategory", model="Product sub category")
+    @swagger_helper(tags="InventorySubCategory", model="Inventory sub category")
     def partial_update(self, *args, **kwargs):
         response = super().partial_update(*args, **kwargs)
         cache.delete_pattern("subcategory_list:*")
@@ -189,7 +189,7 @@ class ApiInventorySubCategory(viewsets.ModelViewSet):
         cache.delete_pattern("product_homepage:*")
         return response
 
-    @swagger_helper(tags="ProductSubCategory", model="Product sub category")
+    @swagger_helper(tags="InventorySubCategory", model="Inventory sub category")
     def destroy(self, *args, **kwargs):
         response = super().destroy(*args, **kwargs)
         cache.delete_pattern("subcategory_list:*")
@@ -211,7 +211,7 @@ class ApiInventoryItem(viewsets.ModelViewSet):
     queryset = InventoryItem.objects.all()
     pagination_class = CustomPagination
     permission_classes = [IsAdminOrReadOnly]
-    ordering_fields = ["selling_price", "is_available", "latest_item", "top_selling_items"]
+    ordering_fields = ["price", "date_created", "is_available", "latest_item", "top_selling_items"]
     filterset_class = InventoryItemFilter
     ordering = ["top_selling_items", "latest_item"]
 
@@ -222,7 +222,7 @@ class ApiInventoryItem(viewsets.ModelViewSet):
             return InventoryItemViewSerializer
         return InventoryItemSerializer
 
-    @swagger_helper(tags="Product", model="Product")
+    @swagger_helper(tags="InventoryItem", model="InventoryItem")
     def list(self, request, *args, **kwargs):
         cache_timeout = TIMEOUT
         cache_params = dict(request.query_params)
@@ -234,7 +234,7 @@ class ApiInventoryItem(viewsets.ModelViewSet):
         cache.set(cache_key, response.data, cache_timeout)
         return response
 
-    @swagger_helper(tags="Product", model="Product")
+    @swagger_helper(tags="InventoryItem", model="InventoryItem")
     def retrieve(self, request, *args, **kwargs):
         cache_timeout = TIMEOUT
         cache_key = f"product_detail:{kwargs['pk']}"
@@ -245,7 +245,7 @@ class ApiInventoryItem(viewsets.ModelViewSet):
         cache.set(cache_key, response.data, cache_timeout)
         return response
 
-    @swagger_helper(tags="Product", model="Product")
+    @swagger_helper(tags="InventoryItem", model="InventoryItem")
     def create(self, *args, **kwargs):
         response = super().create(*args, **kwargs)
         cache.delete_pattern("product_list:*")
@@ -262,7 +262,7 @@ class ApiInventoryItem(viewsets.ModelViewSet):
         cache.delete_pattern("product_homepage:*")
         return response
 
-    @swagger_helper(tags="Product", model="Product")
+    @swagger_helper(tags="InventoryItem", model="InventoryItem")
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=True)
@@ -323,7 +323,7 @@ class ApiInventoryItem(viewsets.ModelViewSet):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @swagger_helper(tags="Product", model="Product")
+    @swagger_helper(tags="InventoryItem", model="InventoryItem")
     def destroy(self, *args, **kwargs):
         response = super().destroy(*args, **kwargs)
         cache.delete_pattern("product_list:*")
@@ -529,7 +529,7 @@ class ApiInventoryItem(viewsets.ModelViewSet):
 
                 if sub_category_id:
                     sub_category_id = int(sub_category_id)
-                    target_subcategory = ProductSubCategory.objects.get(id=sub_category_id)
+                    target_subcategory = InventorySubCategory.objects.get(id=sub_category_id)
                     target_category = target_subcategory.category
                     used_category_ids.add(target_category.id)
                     priority_pools.append({
@@ -547,7 +547,7 @@ class ApiInventoryItem(viewsets.ModelViewSet):
                     if sub_category_id and sub_category_id == second_sub_category_id:
                         second_sub_category_id = None
                     else:
-                        second_target_subcategory = ProductSubCategory.objects.get(id=second_sub_category_id)
+                        second_target_subcategory = InventorySubCategory.objects.get(id=second_sub_category_id)
                         second_target_category = second_target_subcategory.category
                         used_category_ids.add(second_target_category.id)
                         priority_pools.append({
@@ -606,7 +606,7 @@ class ApiInventoryItem(viewsets.ModelViewSet):
 
                 final_products = final_products[:max_items]
 
-            except (ProductSubCategory.DoesNotExist, ValueError):
+            except (InventorySubCategory.DoesNotExist, ValueError):
                 final_products = list(products.order_by('?')[:max_items])
 
         paginator = self.pagination_class()
