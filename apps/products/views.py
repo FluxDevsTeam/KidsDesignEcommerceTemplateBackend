@@ -6,13 +6,13 @@ from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from django.core.cache import cache
-from .filters import ProductFilter
+from .filters import InventoryItemFilter
 from .pagination import CustomPagination
 from .permissions import IsAdminOrReadOnly
-from .serializers import ProductCategorySerializer, ProductSubCategorySerializer, ProductSerializer, \
-    ProductSizeSerializer, ProductViewSerializer, ProductSubCategoryViewSerializer, ProductCategoryDetailSerializer, \
-    ProductSizeViewSerializer, ProductDetailViewSerializer
-from .models import Product, ProductSubCategory, ProductCategory, ProductSize
+from .serializers import InventoryCategorySerializer, InventorySubCategorySerializer, InventoryItemSerializer, \
+    ProductSizeSerializer, InventoryItemViewSerializer, InventorySubCategoryViewSerializer, InventoryCategoryDetailSerializer, \
+    ProductSizeViewSerializer, InventoryItemDetailViewSerializer
+from .models import InventoryItem, InventorySubCategory, InventoryCategory, ProductSize
 from rest_framework import viewsets, status
 from .utils import swagger_helper
 from rest_framework.decorators import action
@@ -25,7 +25,7 @@ import random
 TIMEOUT = int(settings.CACHE_TIMEOUT)
 
 
-class ApiProductCategory(viewsets.ModelViewSet):
+class ApiInventoryCategory(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
     pagination_class = CustomPagination
     permission_classes = [IsAdminOrReadOnly]
@@ -33,14 +33,14 @@ class ApiProductCategory(viewsets.ModelViewSet):
     # ordering = ["index", "name"]
 
     def get_queryset(self):
-        return ProductCategory.objects.annotate(
+        return InventoryCategory.objects.annotate(
             index_null_last=Coalesce('index', Value(999999))
         ).order_by('index_null_last', 'name')
 
     def get_serializer_class(self):
         if self.action == "retrieve":
-            return ProductCategoryDetailSerializer
-        return ProductCategorySerializer
+            return InventoryCategoryDetailSerializer
+        return InventoryCategorySerializer
 
     @swagger_helper(tags="ProductCategory", model="Product category")
     def list(self, request, *args, **kwargs):
@@ -120,9 +120,9 @@ class ApiProductCategory(viewsets.ModelViewSet):
         return response
 
 
-class ApiProductSubCategory(viewsets.ModelViewSet):
+class ApiInventorySubCategory(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
-    queryset = ProductSubCategory.objects.all()
+    queryset = InventorySubCategory.objects.all()
     pagination_class = CustomPagination
     permission_classes = [IsAdminOrReadOnly]
     filterset_fields = ["category"]
@@ -131,8 +131,8 @@ class ApiProductSubCategory(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         if self.request.method == "GET":
-            return ProductSubCategoryViewSerializer
-        return ProductSubCategorySerializer
+            return InventorySubCategoryViewSerializer
+        return InventorySubCategorySerializer
 
     @swagger_helper(tags="ProductSubCategory", model="Product sub category")
     def list(self, request, *args, **kwargs):
@@ -206,21 +206,21 @@ class ApiProductSubCategory(viewsets.ModelViewSet):
         return response
 
 
-class ApiProduct(viewsets.ModelViewSet):
+class ApiInventoryItem(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
-    queryset = Product.objects.all()
+    queryset = InventoryItem.objects.all()
     pagination_class = CustomPagination
     permission_classes = [IsAdminOrReadOnly]
-    ordering_fields = ["price", "date_created", "is_available", "latest_item", "top_selling_items"]
-    filterset_class = ProductFilter
+    ordering_fields = ["selling_price", "is_available", "latest_item", "top_selling_items"]
+    filterset_class = InventoryItemFilter
     ordering = ["top_selling_items", "latest_item"]
 
     def get_serializer_class(self):
         if self.action == "retrieve":
-            return ProductDetailViewSerializer
+            return InventoryItemDetailViewSerializer
         if self.request.method == "GET":
-            return ProductViewSerializer
-        return ProductSerializer
+            return InventoryItemViewSerializer
+        return InventoryItemSerializer
 
     @swagger_helper(tags="Product", model="Product")
     def list(self, request, *args, **kwargs):
