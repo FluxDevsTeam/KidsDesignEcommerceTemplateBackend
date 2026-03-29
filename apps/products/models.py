@@ -66,6 +66,10 @@ class InventoryItem(models.Model):
     sub_category = models.ForeignKey(InventorySubCategory, on_delete=models.SET_NULL, null=True, blank=True, related_name="inventory_items")
     description = models.TextField(blank=True, null=True)
     image = models.ImageField(upload_to="shop/", blank=True, null=True)
+    image1 = models.ImageField(upload_to="shop/", blank=True, null=True)
+    image2 = models.ImageField(upload_to="shop/", blank=True, null=True)
+    image3 = models.ImageField(upload_to="shop/", blank=True, null=True)
+    colour = models.CharField(max_length=50, blank=True, null=True)
     stock = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     cost_price = models.DecimalField(max_digits=10, decimal_places=2)
     selling_price = models.DecimalField(max_digits=10, decimal_places=2)
@@ -87,6 +91,8 @@ class InventoryItem(models.Model):
     created_by = models.ForeignKey('authentication.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='inventory_items_created')
     edited_by = models.ForeignKey('authentication.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='inventory_items_edited')
     edited_at = models.DateTimeField(null=True, blank=True)
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_updated = models.DateTimeField(auto_now=True)
 
     class Meta:
         managed = False
@@ -101,17 +107,21 @@ class InventoryItem(models.Model):
         return self.selling_price - self.cost_price
 
 
-# Product Size model for product variants
 class ProductSize(models.Model):
     """Model for product size variants"""
     product = models.ForeignKey(InventoryItem, on_delete=models.CASCADE, related_name='sizes')
     size = models.CharField(max_length=50, help_text="Size variant (e.g., Small, Medium, Large)")
     stock = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    quantity = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    undiscounted_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     price_adjustment = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Additional price for this size")
     is_available = models.BooleanField(default=True)
     created_by = models.ForeignKey('authentication.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='product_sizes_created')
     edited_by = models.ForeignKey('authentication.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='product_sizes_edited')
     edited_at = models.DateTimeField(null=True, blank=True)
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_updated = models.DateTimeField(auto_now=True)
 
     class Meta:
         managed = False
