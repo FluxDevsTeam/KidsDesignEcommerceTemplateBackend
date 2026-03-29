@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-from ..products.models import Product
+from apps.products.models import InventoryItem
 import uuid
 
 # Status choices
@@ -39,7 +39,7 @@ class Order(models.Model):
 
 
 class OrderItem(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="orderitem_product")
+    product = models.ForeignKey(InventoryItem, on_delete=models.CASCADE, related_name="orderitem_product")
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="orderitem_order")
     quantity = models.PositiveIntegerField()
     # create duplicate of products
