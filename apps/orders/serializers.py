@@ -1,10 +1,10 @@
 from rest_framework import serializers
 from .models import Order, OrderItem
-from ..products.serializers import ProductSimpleViewSerializer
+from ..products.serializers import InventoryItemSimpleViewSerializer
 
 
 class OrderItemSerializerView(serializers.ModelSerializer):
-    product = ProductSimpleViewSerializer()
+    product = InventoryItemSimpleViewSerializer()
 
     class Meta:
         model = OrderItem
