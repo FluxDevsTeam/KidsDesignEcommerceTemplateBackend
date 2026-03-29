@@ -11,7 +11,7 @@ from .serializers import CartSerializer, CartItemSerializer, CartItemSerializerV
 from rest_framework import viewsets, status
 from .pagination import CustomPagination
 from .utils import swagger_helper
-from ..products.models import Product, ProductSize
+from ..products.models import InventoryItem, ProductSize
 
 TIMEOUT = int(settings.CACHE_TIMEOUT)
 
@@ -119,7 +119,7 @@ class ApiCartItem(viewsets.ModelViewSet):
         cart_id = self.kwargs.get("cart_pk")
         cart = get_object_or_404(Cart, id=cart_id)
         size = get_object_or_404(ProductSize, id=size_id)
-        product = get_object_or_404(Product, id=product_id)
+        product = get_object_or_404(InventoryItem, id=product_id)
 
         if product != size.product:
             return Response({"error": "Selected size does not belong to the chosen product."}, status=status.HTTP_400_BAD_REQUEST)
@@ -169,7 +169,7 @@ class ApiCartItem(viewsets.ModelViewSet):
                 return Response({"error": "Quantity must be a valid number."}, status=status.HTTP_400_BAD_REQUEST)
 
         size = get_object_or_404(ProductSize, id=size_id) if size_id else original_size
-        product = get_object_or_404(Product, id=size.product.id)
+        product = get_object_or_404(InventoryItem, id=size.product.id)
 
         response_messages = []
         updated = False

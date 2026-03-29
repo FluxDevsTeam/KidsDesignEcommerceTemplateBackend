@@ -1,7 +1,7 @@
 import uuid
 from django.db import models
 from django.conf import settings
-from ..products.models import Product, ProductSize
+from ..products.models import InventoryItem, ProductSize
 from django.core.exceptions import ValidationError
 
 
@@ -24,7 +24,7 @@ class Cart(models.Model):
 
 
 class CartItem(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="cartitem_product")
+    product = models.ForeignKey(InventoryItem, on_delete=models.CASCADE, related_name="cartitem_product")
     size = models.ForeignKey(ProductSize, on_delete=models.CASCADE, related_name="cartitem_size")
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name="cartitem_cart")
     quantity = models.PositiveIntegerField()

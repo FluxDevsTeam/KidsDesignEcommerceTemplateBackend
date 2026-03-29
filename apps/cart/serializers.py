@@ -1,8 +1,8 @@
 from django.db.models import Sum, Case, When, F, DecimalField
 from rest_framework import serializers
 from .models import Cart, CartItem
-from ..products.models import Product
-from ..products.serializers import SimpleProductSizeSerializer
+from ..products.models import InventoryItem, ProductSize
+# from ..products.serializers import SimpleProductSizeSerializer
 
 
 class CartSerializer(serializers.ModelSerializer):
@@ -34,8 +34,15 @@ class CartItemSerializer(serializers.ModelSerializer):
 
 class CartProductViewSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Product
+        model = InventoryItem
         fields = ["id", "name", "image1"]
+        read_only_fields = ["id"]
+
+
+class SimpleProductSizeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductSize
+        fields = ["id", "size", "price", "quantity"]
         read_only_fields = ["id"]
 
 
