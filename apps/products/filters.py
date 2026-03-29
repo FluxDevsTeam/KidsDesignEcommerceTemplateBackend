@@ -1,19 +1,19 @@
 from django_filters import ModelChoiceFilter
 from django_filters.rest_framework import FilterSet, NumberFilter, BooleanFilter
-from .models import Product, ProductCategory
+from .models import InventoryItem, InventoryCategory
 from django.db.models import Min, Q
 from django.db import models
 
 
-class ProductFilter(FilterSet):
+class InventoryItemFilter(FilterSet):
     min_price = NumberFilter(method='filter_min_price')
     max_price = NumberFilter(method='filter_max_price')
     discount = BooleanFilter(method='filter_discount')
-    category = ModelChoiceFilter(field_name='sub_category__category', queryset=ProductCategory.objects.all())
+    category = ModelChoiceFilter(field_name='sub_category__category', queryset=InventoryCategory.objects.all())
 
     class Meta:
-        model = Product
-        fields = ['category', 'sub_category', 'date_created', 'min_price', 'max_price', 'is_available', 'latest_item', 'top_selling_items']
+        model = InventoryItem
+        fields = ['category', 'sub_category', 'edited_at', 'min_price', 'max_price', 'is_available', 'latest_item', 'top_selling_items']
 
     def filter_min_price(self, queryset, name, value):
         return queryset.filter(sizes__price__gt=0).annotate(min_size_price=Min('sizes__price')).filter(min_size_price__gte=value)

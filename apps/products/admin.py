@@ -1,7 +1,6 @@
 from django.contrib import admin
-from .models import ProductSize, Product, ProductSubCategory, ProductCategory
+from .models import InventoryItem, InventoryCategory, InventorySubCategory
 
-admin.site.register(ProductSize)
-admin.site.register(Product)
-admin.site.register(ProductSubCategory)
-admin.site.register(ProductCategory)
+admin.site.register(InventoryItem)
+admin.site.register(InventoryCategory)
+admin.site.register(InventorySubCategory)
