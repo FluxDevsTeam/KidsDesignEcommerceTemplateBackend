@@ -70,7 +70,6 @@ class InventoryItem(models.Model):
     image2 = models.ImageField(upload_to="shop/", blank=True, null=True)
     image3 = models.ImageField(upload_to="shop/", blank=True, null=True)
     colour = models.CharField(max_length=50, blank=True, null=True)
-    stock = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     cost_price = models.DecimalField(max_digits=10, decimal_places=2)
     selling_price = models.DecimalField(max_digits=10, decimal_places=2)
     dimensions = models.CharField(max_length=100)
@@ -101,7 +100,14 @@ class InventoryItem(models.Model):
     @property
     def total_price(self):
         return self.stock * self.selling_price
-
+    
+    @property
+    def stock(self):
+        """Calculate total stock from sum of all product sizes"""
+        from django.db.models import Sum
+        result = self.sizes.aggregate(total_stock=Sum('stock'))
+        return result['total_stock'] or 0
+    
     @property
     def profit_per_item(self):
         return self.selling_price - self.cost_price
