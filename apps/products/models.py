@@ -62,7 +62,6 @@ class InventoryItem(models.Model):
     ]
 
     name = models.CharField(max_length=100, unique=True)
-    category = models.ForeignKey(InventoryCategory, on_delete=models.SET_NULL, null=True, blank=True)
     sub_category = models.ForeignKey(InventorySubCategory, on_delete=models.SET_NULL, null=True, blank=True, related_name="inventory_items")
     description = models.TextField(blank=True, null=True)
     image = models.ImageField(upload_to="shop/", blank=True, null=True)
@@ -74,7 +73,6 @@ class InventoryItem(models.Model):
     selling_price = models.DecimalField(max_digits=10, decimal_places=2)
     dimensions = models.CharField(max_length=100)
     archived = models.BooleanField(default=False)
-    operation_type = models.CharField(max_length=10, choices=OPERATION_CHOICES, default='shop')
 
     # Ecommerce fields (for website sales)
     is_available = models.BooleanField(default=True, help_text="Is item available for sale on ecommerce?")
@@ -100,7 +98,14 @@ class InventoryItem(models.Model):
     @property
     def total_price(self):
         return self.stock * self.selling_price
-    
+
+    @property
+    def category(self):
+        """Get category from sub_category - category is derived from sub_category"""
+        if self.sub_category:
+            return self.sub_category.category
+        return None
+
     @property
     def stock(self):
         """Calculate total stock from sum of all product sizes"""
